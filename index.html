@@ -1094,6 +1094,11 @@ input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:11px;hei
   .color-row input[type="color"]{width:36px;height:28px;}
 }
 
+/* ── MOBILE PORTRAIT: hide zoom controls ── */
+@media (max-width:768px) and (orientation:portrait){
+  .zoom-ctrl{display:none !important;}
+}
+
 /* ── MOBILE PORTRAIT: timeline pinned right under the top toolbar ── */
 @media (max-width:768px) and (orientation:portrait){
   #timeline{
@@ -1175,8 +1180,35 @@ input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:11px;hei
     <button class="tbtn active" id="toolSelect" onclick="setTool('select')" type="button">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 3l14 9-7 2-2 7z"/></svg><span>Select</span>
     </button>
-    <button class="tbtn" id="toolText" onclick="setTool('text')" type="button">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg><span>Text</span>
+  </div>
+  <div class="hdr-sep"></div>
+  <div class="tool-grp">
+    <button class="tbtn" onclick="doUndo()" type="button" title="Undo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10h10a7 7 0 010 14h-5"/><path d="M3 10l4-4M3 10l4 4"/></svg><span>Undo</span>
+    </button>
+    <button class="tbtn" onclick="doRedo()" type="button" title="Redo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10H11a7 7 0 000 14h5"/><path d="M21 10l-4-4M21 10l-4 4"/></svg><span>Redo</span>
+    </button>
+  </div>
+  <div class="hdr-sep"></div>
+  <div class="tool-grp">
+    <button class="tbtn" onclick="deleteSelected()" type="button" title="Delete selected layer">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg><span>Del</span>
+    </button>
+    <button class="tbtn" onclick="doClearAll()" type="button" title="Clear all layers">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="2"/><line x1="2" y1="9" x2="22" y2="9"/><path d="M8 3v6M16 3v6"/><line x1="7" y1="14" x2="17" y2="14"/><line x1="7" y1="18" x2="17" y2="18"/></svg><span>Clear</span>
+    </button>
+  </div>
+  <div class="hdr-sep"></div>
+  <div class="tool-grp">
+    <button class="tbtn" onclick="doNewProject()" type="button" title="New project">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg><span>New</span>
+    </button>
+    <button class="tbtn" onclick="doSaveProject()" type="button" title="Save project">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg><span>Save</span>
+    </button>
+    <button class="tbtn" onclick="doOpenProject()" type="button" title="Open project">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg><span>Open</span>
     </button>
   </div>
   <div class="hdr-sep"></div>
@@ -1404,6 +1436,33 @@ input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:11px;hei
         <!-- MEDIA-ONLY: crop & color filters (image/video) -->
         <div id="mediaFx" style="display:none">
           <div class="divider"></div>
+          <!-- FRAME MODE: slide content within fixed frame -->
+          <div id="frameModeSection" style="display:none">
+            <div class="pgrp">
+              <div class="plabel">Frame Mode</div>
+              <div class="tip">Content fills frame boundary. Toggle to pan/resize inside it.</div>
+              <div class="style-row">
+                <button class="style-btn" id="frameModeBtn" onclick="toggleFrameMode()" type="button">[ ] Slide in Frame</button>
+              </div>
+              <div id="frameSliders" style="display:none;margin-top:6px">
+                <div class="prow"><label style="width:auto;font-size:9px">Pan X</label><input type="range" id="pFrameX" min="-500" max="500" value="0" oninput="frameOffsetToLayer()"><span class="rval" id="pFrameXVal">0</span></div>
+                <div class="prow"><label style="width:auto;font-size:9px">Pan Y</label><input type="range" id="pFrameY" min="-500" max="500" value="0" oninput="frameOffsetToLayer()"><span class="rval" id="pFrameYVal">0</span></div>
+                <div class="prow"><label style="width:auto;font-size:9px">Zoom</label><input type="range" id="pFrameZ" min="50" max="400" value="100" oninput="frameScaleToLayer()"><span class="rval" id="pFrameZVal">1.0×</span></div>
+                <button class="style-btn" type="button" onclick="resetFrameContent()" style="width:100%;margin-top:4px">[ Reset Content ]</button>
+              </div>
+            </div>
+            <div class="divider"></div>
+          </div>
+          <!-- VIDEO-ONLY: in/out trim -->
+          <div id="videoTrimSec" style="display:none">
+            <div class="pgrp">
+              <div class="plabel">Video Trim (In / Out)</div>
+              <div class="prow"><label style="width:auto;font-size:9px">In</label><input type="range" id="pTrimIn" min="0" max="100" value="0" oninput="document.getElementById('pTrimInVal').textContent=this.value+'s';trimToLayer()"><span class="rval" id="pTrimInVal">0s</span></div>
+              <div class="prow"><label style="width:auto;font-size:9px">Out</label><input type="range" id="pTrimOut" min="0" max="100" value="100" oninput="document.getElementById('pTrimOutVal').textContent=this.value+'s';trimToLayer()"><span class="rval" id="pTrimOutVal">100s</span></div>
+              <button class="style-btn" type="button" onclick="resetTrim()" style="width:100%;margin-top:4px">[ Reset Trim ]</button>
+            </div>
+            <div class="divider"></div>
+          </div>
           <div class="pgrp">
             <div class="plabel">Crop / Mask</div>
             <div class="prow"><label>L</label><input type="range" id="pCropL" min="0" max="95" value="0" oninput="document.getElementById('pCropLVal').textContent=this.value+'%';mediaFxToLayer()"><span class="rval" id="pCropLVal">0%</span></div>
@@ -1424,6 +1483,10 @@ input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:11px;hei
         </div>
 
         <div class="divider"></div>
+        <div id="replaceSourceSec" style="display:none">
+          <button class="add-text-btn" onclick="replaceLayerSource()" type="button" style="background:var(--surface2);color:var(--text);margin-bottom:6px">[ Replace Source File ]</button>
+          <input type="file" id="replaceFileInput" accept="image/*,video/*" style="display:none" onchange="handleReplaceFile(this.files)">
+        </div>
         <button class="add-text-btn del-btn-red" onclick="deleteSelected()" type="button">[ Delete Layer ]</button>
       </div>
     </div>
@@ -1881,17 +1944,39 @@ function drawMedia(l){
   const sw=src.naturalWidth||src.videoWidth||0;
   const sh=src.naturalHeight||src.videoHeight||0;
   if(!sw||!sh)return;
-  const cL=Math.max(0,Math.min(99,Number(l.cropL)||0))/100;
-  const cR=Math.max(0,Math.min(99,Number(l.cropR)||0))/100;
-  const cT=Math.max(0,Math.min(99,Number(l.cropT)||0))/100;
-  const cB=Math.max(0,Math.min(99,Number(l.cropB)||0))/100;
-  if(cL+cR>=0.99||cT+cB>=0.99)return;
   const expN=Number(l.exposure), conN=Number(l.contrast);
   const expV=isFinite(expN)?expN:0;
   const conV=isFinite(conN)?conN:0;
   const brightness=Math.max(0,1+expV/100);
   const contrast=Math.max(0,1+conV/100);
   const invert=!!l.invert;
+
+  // ── FRAME MODE (fill-and-slide) ──
+  // If l.frameMode is true, the layer boundary is a fixed frame.
+  // The content fills that frame with cover scaling, then can be panned/zoomed within it.
+  if(l.frameMode){
+    const drawSrc=bakeMediaFx(src,sw,sh,brightness,contrast,invert);
+    const contentScale=l.contentScale||1;
+    // Cover scale: content covers the full frame at scale=1
+    const baseScale=Math.max(l.w/sw, l.h/sh);
+    const scale=baseScale*contentScale;
+    const cw=sw*scale, ch=sh*scale;
+    // Center offset + user pan
+    const ox=(l.w-cw)/2 + (l.contentOffsetX||0);
+    const oy=(l.h-ch)/2 + (l.contentOffsetY||0);
+    ctx.save();
+    ctx.beginPath();ctx.rect(0,0,l.w,l.h);ctx.clip();
+    ctx.drawImage(drawSrc,0,0,sw,sh,ox,oy,cw,ch);
+    ctx.restore();
+    return;
+  }
+
+  // ── LEGACY CROP MODE ──
+  const cL=Math.max(0,Math.min(99,Number(l.cropL)||0))/100;
+  const cR=Math.max(0,Math.min(99,Number(l.cropR)||0))/100;
+  const cT=Math.max(0,Math.min(99,Number(l.cropT)||0))/100;
+  const cB=Math.max(0,Math.min(99,Number(l.cropB)||0))/100;
+  if(cL+cR>=0.99||cT+cB>=0.99)return;
   const drawSrc=bakeMediaFx(src,sw,sh,brightness,contrast,invert);
   ctx.save();
   const clipX=l.w*cL, clipY=l.h*cT;
@@ -1956,6 +2041,9 @@ function onMD(e){
   }else{
     if(!e.shiftKey){selectedIds.clear();isRubber=true;rubStart=c2o(e.clientX,e.clientY);const rb=document.getElementById('rubberBand');rb.style.display='block';rb.style.left=rubStart.x+'px';rb.style.top=rubStart.y+'px';rb.style.width='0';rb.style.height='0';}
     updatePropsPanel();updateLayersList();
+    // Hide quick bar when tapping empty canvas
+    const bar=document.getElementById('mobQuickBar');if(bar)bar.classList.remove('show');
+    document.body.classList.remove('mob-has-sel');
   }
 }
 function onMM(e){
@@ -2725,10 +2813,10 @@ function closeExport(){document.getElementById('exportModal').classList.remove('
 function updateFpsVis(){const f=document.getElementById('fpsChooser');if(f)f.style.display=(exportFmt==='mp4')?'block':'none';}
 function selectFmt(el){document.querySelectorAll('.eopt[data-fmt]').forEach(e=>e.classList.remove('selected'));el.classList.add('selected');exportFmt=el.dataset.fmt;updateFpsVis();}
 function selectFps(el){document.querySelectorAll('.eopt[data-fps]').forEach(e=>e.classList.remove('selected'));el.classList.add('selected');exportFps=parseInt(el.dataset.fps,10);}
-function doExport(){if(exportFmt==='png')exportImg('png');else if(exportFmt==='jpg')exportImg('jpg');else exportVid();}
+function doExport(){if(exportFmt==='png')exportImg('png');else if(exportFmt==='jpg')exportImg('jpg');else window.exportVid();}
 function exportImg(fmt){const pv=new Set(selectedIds);selectedIds.clear();render(true);setTimeout(()=>{const a=document.createElement('a');a.download=`omitsu-studio.${fmt}`;a.href=canvas.toDataURL(fmt==='jpg'?'image/jpeg':'image/png',fmt==='jpg'?0.95:1);a.click();selectedIds=pv;closeExport();},80);}
 
-async function exportVid(){
+async function _exportVidOrig(){
   const pw=document.getElementById('progWrap'),pb=document.getElementById('progBar'),pl=document.getElementById('progLbl');
   pw.classList.add('show');
   const pv=new Set(selectedIds);selectedIds.clear();
@@ -2782,6 +2870,584 @@ async function exportVid(){
   playhead=savedPlayhead;syncVideosToPlayhead();
 }
 updateTlUI();
+
+// ─────────────────────────────────────────────────────────
+// UNDO / REDO
+// ─────────────────────────────────────────────────────────
+let _undoStack=[], _redoStack=[];
+function _snapshot(){
+  // Serialize current state (without DOM elements - store refs)
+  const state={
+    layers:layers.map(l=>{
+      const s={...l};
+      // Don't serialize DOM elements - we'll re-attach on restore
+      delete s.img; delete s.vid;
+      s._imgSrc=l.img?l.img.src:null;
+      s._vidSrc=l.vid?l.vid.src:null;
+      s._vidEl=l.vid||null; // keep ref for video
+      s._imgEl=l.img||null;
+      return s;
+    }),
+    bgColor,
+    nextId
+  };
+  return JSON.parse(JSON.stringify(state,(_k,v)=>v instanceof HTMLElement?null:v));
+}
+function _pushUndo(){
+  _undoStack.push({
+    layers:layers.map(l=>({...l})),
+    bgColor,nextId,
+    _refs:layers.map(l=>({id:l.id,img:l.img||null,vid:l.vid||null}))
+  });
+  if(_undoStack.length>50)_undoStack.shift();
+  _redoStack=[];
+}
+function _restoreState(st){
+  const refs=st._refs||[];
+  layers=st.layers.map(l=>{
+    const ref=refs.find(r=>r.id===l.id)||{};
+    return {...l,img:ref.img||null,vid:ref.vid||null};
+  });
+  bgColor=st.bgColor;nextId=st.nextId;
+  selectedIds=new Set();
+  updateLayersList();updatePropsPanel();
+}
+function doUndo(){
+  if(!_undoStack.length)return;
+  // push current to redo
+  _redoStack.push({layers:layers.map(l=>({...l})),bgColor,nextId,_refs:layers.map(l=>({id:l.id,img:l.img||null,vid:l.vid||null}))});
+  _restoreState(_undoStack.pop());
+}
+function doRedo(){
+  if(!_redoStack.length)return;
+  _undoStack.push({layers:layers.map(l=>({...l})),bgColor,nextId,_refs:layers.map(l=>({id:l.id,img:l.img||null,vid:l.vid||null}))});
+  _restoreState(_redoStack.pop());
+}
+
+// Wrap addLayer to push undo snapshot before adding
+const _origAddLayer=addLayer;
+window.addLayer=function(l){_pushUndo();_origAddLayer(l);};
+// Wrap deleteSelected
+const _origDeleteSelected=deleteSelected;
+window.deleteSelected=function(){_pushUndo();_origDeleteSelected();updateQuickBar&&updateQuickBar();};
+
+// ─────────────────────────────────────────────────────────
+// CLEAR ALL
+// ─────────────────────────────────────────────────────────
+function doClearAll(){
+  if(layers.length===0)return;
+  if(!confirm('Clear all layers?'))return;
+  _pushUndo();
+  layers=[];selectedIds=new Set();nextId=1;
+  updateLayersList();updatePropsPanel();
+}
+
+// ─────────────────────────────────────────────────────────
+// PROJECT SAVE / OPEN (JSON, no media blobs — store refs as data URLs)
+// ─────────────────────────────────────────────────────────
+async function doSaveProject(){
+  // Serialize layers - convert img/vid to dataURL where possible
+  const serialized=[];
+  for(const l of layers){
+    const s={...l};
+    delete s.img;delete s.vid;delete s._qbRefW;delete s._qbRefH;delete s._qbRefX;delete s._qbRefY;
+    if(l.type==='image'&&l.img){
+      try{
+        const c=document.createElement('canvas');c.width=l.img.naturalWidth||300;c.height=l.img.naturalHeight||300;
+        const x=c.getContext('2d');x.drawImage(l.img,0,0);s._dataUrl=c.toDataURL('image/jpeg',0.85);
+      }catch(e){s._dataUrl=l.img.src;}
+    }
+    if(l.type==='video'&&l.vid){s._dataUrl=null;s._name=l.name;} // videos can't be data-urled easily
+    serialized.push(s);
+  }
+  const proj={version:2,bgColor,CW,CH,nextId,layers:serialized,savedAt:new Date().toISOString()};
+  const blob=new Blob([JSON.stringify(proj)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='omitsu-project.json';a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+  showToast('Project saved ✓');
+}
+
+function doOpenProject(){
+  const fi=document.createElement('input');fi.type='file';fi.accept='.json';
+  fi.onchange=async(e)=>{
+    const f=e.target.files[0];if(!f)return;
+    const txt=await f.text();
+    let proj;try{proj=JSON.parse(txt);}catch(err){alert('Invalid project file');return;}
+    _pushUndo();
+    bgColor=proj.bgColor||'#000000';
+    CW=proj.CW||1080;CH=proj.CH||1920;
+    if(canvas){canvas.width=CW;canvas.height=CH;}
+    nextId=proj.nextId||1;
+    layers=[];
+    for(const s of (proj.layers||[])){
+      const l={...s};
+      if(l._dataUrl&&l.type==='image'){
+        const img=new Image();img.src=l._dataUrl;l.img=img;delete l._dataUrl;
+      }
+      layers.push(l);
+    }
+    selectedIds=new Set();
+    try{zoomFit();}catch(e){}
+    updateLayersList();updatePropsPanel();
+    showToast('Project loaded ✓');
+  };
+  fi.click();
+}
+
+function doNewProject(){
+  if(layers.length>0&&!confirm('Start new project? Current work will be lost.'))return;
+  _pushUndo();
+  layers=[];selectedIds=new Set();nextId=1;
+  bgColor='#000000';
+  document.querySelectorAll('#tab-canvas .swatches .sw').forEach((s,i)=>{s.classList.toggle('active',i===0);});
+  const bp=document.getElementById('bgPicker');if(bp)bp.value='#000000';
+  updateLayersList();updatePropsPanel();
+  showToast('New project');
+}
+
+// ─────────────────────────────────────────────────────────
+// PRESETS (canvas arrangements)
+// ─────────────────────────────────────────────────────────
+function savePreset(){
+  const name=prompt('Preset name:');if(!name)return;
+  const preset={name,bgColor,CW,CH,layers:layers.map(l=>{
+    const s={...l};delete s.img;delete s.vid;delete s._qbRefW;delete s._qbRefH;delete s._qbRefX;delete s._qbRefY;
+    if(l.type==='image'&&l.img){try{const c=document.createElement('canvas');c.width=l.img.naturalWidth||300;c.height=l.img.naturalHeight||300;const x=c.getContext('2d');x.drawImage(l.img,0,0);s._dataUrl=c.toDataURL('image/jpeg',0.7);}catch(e){}}
+    return s;
+  })};
+  try{
+    const stored=JSON.parse(localStorage.getItem('omitsuPresets')||'[]');
+    stored.push(preset);
+    localStorage.setItem('omitsuPresets',JSON.stringify(stored));
+    showToast('Preset saved: '+name);
+    renderPresetsList();
+  }catch(e){alert('Could not save preset: '+e.message);}
+}
+function loadPreset(idx){
+  try{
+    const stored=JSON.parse(localStorage.getItem('omitsuPresets')||'[]');
+    const p=stored[idx];if(!p)return;
+    _pushUndo();
+    bgColor=p.bgColor||'#000000';
+    layers=p.layers.map(l=>{
+      const nl={...l};
+      if(nl._dataUrl&&nl.type==='image'){const img=new Image();img.src=nl._dataUrl;nl.img=img;delete nl._dataUrl;}
+      return nl;
+    });
+    selectedIds=new Set();nextId=Math.max(...layers.map(l=>l.id||0),0)+1;
+    try{zoomFit();}catch(e){}
+    updateLayersList();updatePropsPanel();
+    showToast('Preset loaded: '+p.name);
+  }catch(e){alert('Error loading preset');}
+}
+function deletePreset(idx){
+  try{
+    const stored=JSON.parse(localStorage.getItem('omitsuPresets')||'[]');
+    stored.splice(idx,1);
+    localStorage.setItem('omitsuPresets',JSON.stringify(stored));
+    renderPresetsList();
+  }catch(e){}
+}
+function renderPresetsList(){
+  const el=document.getElementById('presetsList');if(!el)return;
+  try{
+    const stored=JSON.parse(localStorage.getItem('omitsuPresets')||'[]');
+    if(!stored.length){el.innerHTML='<div class="no-sel-msg" style="font-size:9px;padding:8px">No presets saved yet.</div>';return;}
+    el.innerHTML='';
+    stored.forEach((p,i)=>{
+      const row=document.createElement('div');
+      row.style.cssText='display:flex;align-items:center;gap:6px;margin-bottom:5px;';
+      const btn=document.createElement('button');
+      btn.className='style-btn';btn.style.flex='1';btn.textContent=p.name;
+      btn.onclick=()=>loadPreset(i);
+      const del=document.createElement('button');
+      del.className='style-btn del-btn-red';del.style.cssText='width:30px;font-size:10px;padding:4px 0;';del.textContent='X';
+      del.onclick=()=>{if(confirm('Delete preset "'+p.name+'"?'))deletePreset(i);};
+      row.appendChild(btn);row.appendChild(del);el.appendChild(row);
+    });
+  }catch(e){el.innerHTML='<div class="no-sel-msg">Error loading presets.</div>';}
+}
+
+// ─────────────────────────────────────────────────────────
+// REPLACE SOURCE FILE
+// ─────────────────────────────────────────────────────────
+let _replaceTargetId=null;
+function replaceLayerSource(){
+  const id=[...selectedIds][0];if(id==null)return;
+  const l=layers.find(x=>x.id===id);if(!l||(l.type!=='image'&&l.type!=='video'))return;
+  _replaceTargetId=id;
+  document.getElementById('replaceFileInput').value='';
+  document.getElementById('replaceFileInput').click();
+}
+function handleReplaceFile(files){
+  const f=files[0];if(!f||_replaceTargetId==null)return;
+  const l=layers.find(x=>x.id===_replaceTargetId);if(!l)return;
+  _pushUndo();
+  const url=URL.createObjectURL(f);
+  const isVideo=f.type.startsWith('video/');
+  function applyReplace(el,isVid){
+    // Keep the existing frame (l.x, l.y, l.w, l.h, rotation) intact.
+    // Switch to frameMode so content fills the frame with cover scaling.
+    l.type=isVid?'video':'image';
+    l.vid=isVid?el:null;
+    l.img=isVid?null:el;
+    l.name=f.name.replace(/\.[^.]+$/,'').substring(0,22);
+    // Reset frame-mode content state to centered/cover
+    l.frameMode=true;
+    l.contentOffsetX=0;
+    l.contentOffsetY=0;
+    l.contentScale=1;
+    // Clear legacy crop
+    l.cropL=l.cropR=l.cropT=l.cropB=0;
+    updateLayersList();updatePropsPanel();
+    showToast('Source replaced — frame mode on ✓');
+  }
+  if(isVideo){
+    const v=document.createElement('video');
+    v.src=url;v.muted=true;v.playsInline=true;
+    v.setAttribute('playsinline','');v.setAttribute('webkit-playsinline','');
+    v.preload='metadata';v.pause();
+    v.onloadedmetadata=()=>{v.pause();v.currentTime=l.trimIn||0;applyReplace(v,true);};
+    setTimeout(()=>{if(!l.vid)applyReplace(v,true);},3000);
+  }else{
+    const img=new Image();img.src=url;
+    img.onload=()=>applyReplace(img,false);
+    setTimeout(()=>{if(!l.img)applyReplace(img,false);},3000);
+  }
+  _replaceTargetId=null;
+}
+
+// ─────────────────────────────────────────────────────────
+// VIDEO TRIM (in/out scrub)
+// ─────────────────────────────────────────────────────────
+function trimToLayer(){
+  const l=layers.find(x=>x.id===[...selectedIds][0]);if(!l||l.type!=='video')return;
+  const inEl=document.getElementById('pTrimIn'),outEl=document.getElementById('pTrimOut');
+  if(!inEl||!outEl)return;
+  l.trimIn=parseFloat(inEl.value)||0;
+  l.trimOut=parseFloat(outEl.value)||0;
+  // Apply to video element seek
+  if(l.vid&&!isPlaying){try{l.vid.currentTime=l.trimIn;}catch(e){}}
+  document.getElementById('pTrimInVal').textContent=l.trimIn.toFixed(1)+'s';
+  document.getElementById('pTrimOutVal').textContent=l.trimOut.toFixed(1)+'s';
+}
+function resetTrim(){
+  const l=layers.find(x=>x.id===[...selectedIds][0]);if(!l||l.type!=='video')return;
+  l.trimIn=0;l.trimOut=0;
+  updatePropsPanel();
+}
+
+// ─────────────────────────────────────────────────────────
+// FRAME MODE — pan/zoom content inside fixed frame
+// ─────────────────────────────────────────────────────────
+function toggleFrameMode(){
+  const l=layers.find(x=>x.id===[...selectedIds][0]);if(!l)return;
+  l.frameMode=!l.frameMode;
+  if(l.frameMode){l.contentOffsetX=l.contentOffsetX||0;l.contentOffsetY=l.contentOffsetY||0;l.contentScale=l.contentScale||1;}
+  updatePropsPanel();
+}
+function frameOffsetToLayer(){
+  const l=layers.find(x=>x.id===[...selectedIds][0]);if(!l)return;
+  l.contentOffsetX=parseFloat(document.getElementById('pFrameX').value)||0;
+  l.contentOffsetY=parseFloat(document.getElementById('pFrameY').value)||0;
+  document.getElementById('pFrameXVal').textContent=Math.round(l.contentOffsetX);
+  document.getElementById('pFrameYVal').textContent=Math.round(l.contentOffsetY);
+}
+function frameScaleToLayer(){
+  const l=layers.find(x=>x.id===[...selectedIds][0]);if(!l)return;
+  l.contentScale=parseFloat(document.getElementById('pFrameZ').value)/100;
+  document.getElementById('pFrameZVal').textContent=l.contentScale.toFixed(2)+'×';
+}
+function resetFrameContent(){
+  const l=layers.find(x=>x.id===[...selectedIds][0]);if(!l)return;
+  l.contentOffsetX=0;l.contentOffsetY=0;l.contentScale=1;updatePropsPanel();
+}
+
+// ─────────────────────────────────────────────────────────
+// PATCH updatePropsPanel to show frame mode section
+// ─────────────────────────────────────────────────────────
+const _origUpdatePropsPanel=updatePropsPanel;
+window.updatePropsPanel=function(){
+  _origUpdatePropsPanel();
+  const l=selectedIds.size===1?layers.find(x=>x.id===[...selectedIds][0]):null;
+  const isMedia=l&&(l.type==='image'||l.type==='video');
+  const isVid=l&&l.type==='video';
+
+  // Frame mode section — show for any media layer
+  const fmSec=document.getElementById('frameModeSection');
+  if(fmSec){
+    fmSec.style.display=isMedia?'block':'none';
+    if(isMedia){
+      const fmBtn=document.getElementById('frameModeBtn');
+      const fsSliders=document.getElementById('frameSliders');
+      const fm=!!l.frameMode;
+      if(fmBtn)fmBtn.textContent=fm?'[x] Slide in Frame':'[ ] Slide in Frame';
+      if(fmBtn)fmBtn.classList.toggle('on',fm);
+      if(fsSliders)fsSliders.style.display=fm?'block':'none';
+      if(fm){
+        const fxEl=document.getElementById('pFrameX'),fyEl=document.getElementById('pFrameY'),fzEl=document.getElementById('pFrameZ');
+        if(fxEl){fxEl.value=l.contentOffsetX||0;document.getElementById('pFrameXVal').textContent=Math.round(l.contentOffsetX||0);}
+        if(fyEl){fyEl.value=l.contentOffsetY||0;document.getElementById('pFrameYVal').textContent=Math.round(l.contentOffsetY||0);}
+        if(fzEl){fzEl.value=Math.round((l.contentScale||1)*100);document.getElementById('pFrameZVal').textContent=(l.contentScale||1).toFixed(2)+'×';}
+      }
+    }
+  }
+
+  // Show/hide video trim
+  const vtSec=document.getElementById('videoTrimSec');
+  if(vtSec)vtSec.style.display=isVid?'block':'none';
+  // Show/hide replace source button
+  const repSec=document.getElementById('replaceSourceSec');
+  if(repSec)repSec.style.display=isMedia?'block':'none';
+  // Sync trim sliders if video
+  if(isVid&&l.vid){
+    const dur=l.vid.duration||15;
+    const inEl=document.getElementById('pTrimIn'),outEl=document.getElementById('pTrimOut');
+    if(inEl){inEl.max=Math.floor(dur);inEl.value=l.trimIn||0;document.getElementById('pTrimInVal').textContent=(l.trimIn||0).toFixed(1)+'s';}
+    if(outEl){outEl.max=Math.floor(dur);outEl.value=l.trimOut||Math.floor(dur);document.getElementById('pTrimOutVal').textContent=(l.trimOut||Math.floor(dur)).toFixed(1)+'s';}
+  }
+};
+
+// ─────────────────────────────────────────────────────────
+// PATCH onMM (mouse move) to slide content in frameMode
+// ─────────────────────────────────────────────────────────
+const _origOnMM=onMM;
+window.onMM=function(e){
+  // If dragging a single layer that's in frameMode + slide enabled, pan content not frame
+  if(isDragging&&selectedIds.size===1){
+    const l=layers.find(x=>x.id===[...selectedIds][0]);
+    if(l&&l.frameMode){
+      const pos=c2c(e.clientX,e.clientY);
+      const dx=pos.x-dragStart.x, dy=pos.y-dragStart.y;
+      const start=dragLayerStarts[0];
+      if(start){
+        l.contentOffsetX=(start._cfx||0)+dx;
+        l.contentOffsetY=(start._cfy||0)+dy;
+        updatePropsPanel();
+        return;
+      }
+    }
+  }
+  _origOnMM(e);
+};
+
+// Patch onMD to store contentOffset in dragLayerStarts when in frameMode
+const _origOnMD=onMD;
+window.onMD=function(e){
+  _origOnMD(e);
+  // After the original handler stores dragLayerStarts, enrich with content offsets
+  if(isDragging&&selectedIds.size===1){
+    const l=layers.find(x=>x.id===[...selectedIds][0]);
+    if(l&&l.frameMode&&dragLayerStarts.length){
+      dragLayerStarts[0]._cfx=l.contentOffsetX||0;
+      dragLayerStarts[0]._cfy=l.contentOffsetY||0;
+    }
+  }
+};
+
+// Patch touch move (onTM) to also handle frameMode pan
+const _origOnTM=onTM;
+window.onTM=function(e){
+  if(isDragging&&selectedIds.size===1&&!isPinching){
+    const l=layers.find(x=>x.id===[...selectedIds][0]);
+    if(l&&l.frameMode){
+      const t=e.touches[0];
+      const pos=c2c(t.clientX,t.clientY);
+      const dx=pos.x-dragStart.x, dy=pos.y-dragStart.y;
+      const start=dragLayerStarts[0];
+      if(start){
+        l.contentOffsetX=(start._cfx||0)+dx;
+        l.contentOffsetY=(start._cfy||0)+dy;
+        updatePropsPanel();
+        e.preventDefault();return;
+      }
+    }
+  }
+  _origOnTM(e);
+};
+
+
+// Patch syncVideosToPlayhead to respect trimIn offset
+const _origSyncVids=syncVideosToPlayhead;
+window.syncVideosToPlayhead=function(){
+  for(const l of layers){
+    if(l.type==='video'&&l.vid){
+      const trimIn=l.trimIn||0;
+      try{l.vid.currentTime=trimIn+playhead;}catch(e){}
+    }
+  }
+};
+
+// ─────────────────────────────────────────────────────────
+// TOAST NOTIFICATION
+// ─────────────────────────────────────────────────────────
+function showToast(msg){
+  let t=document.getElementById('omitsuToast');
+  if(!t){
+    t=document.createElement('div');t.id='omitsuToast';
+    t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border2);color:var(--text);padding:8px 18px;border-radius:20px;font-family:"DM Mono",monospace;font-size:11px;z-index:9999;pointer-events:none;transition:opacity .3s;opacity:0;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,0.4);';
+    document.body.appendChild(t);
+  }
+  t.textContent=msg;t.style.opacity='1';
+  clearTimeout(t._to);t._to=setTimeout(()=>{t.style.opacity='0';},2000);
+}
+
+// ─────────────────────────────────────────────────────────
+// VIDEO EXPORT — fixed for iOS share + desktop download
+// ─────────────────────────────────────────────────────────
+window.exportVid=async function(){
+  const pw=document.getElementById('progWrap'),pb=document.getElementById('progBar'),pl=document.getElementById('progLbl');
+  if(!pw||!pb||!pl)return;
+  pw.classList.add('show');pb.style.width='0%';pl.textContent='Preparing…';
+
+  const pv=new Set(selectedIds);
+  selectedIds.clear();
+  const FPS_OUT=exportFps||30;
+
+  // Pick best supported mimeType
+  const fmtCandidates=['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'];
+  let mimeType='video/webm';
+  for(const m of fmtCandidates){if(MediaRecorder.isTypeSupported(m)){mimeType=m;break;}}
+
+  // Capture stream from canvas
+  let stream;
+  try{stream=canvas.captureStream(FPS_OUT);}
+  catch(e){pl.textContent='captureStream not supported on this browser';selectedIds=pv;return;}
+  const track=stream.getVideoTracks()[0];
+  const reqFrame=track&&typeof track.requestFrame==='function'?()=>{try{track.requestFrame();}catch(e){}}:()=>{};
+
+  // Build recorder
+  const chunks=[];
+  let rec;
+  try{
+    rec=new MediaRecorder(stream,{mimeType,videoBitsPerSecond:8000000});
+  }catch(e){
+    try{rec=new MediaRecorder(stream);}
+    catch(e2){pl.textContent='MediaRecorder not available';selectedIds=pv;return;}
+  }
+  rec.ondataavailable=(e)=>{if(e.data&&e.data.size>0)chunks.push(e.data);};
+
+  // Seek all to start
+  const savedPlayhead=playhead;
+  pauseTimeline();
+  playhead=0;
+  syncVideosToPlayhead();
+  render(true);
+
+  // Wait for video elements to seek
+  await new Promise(r=>setTimeout(r,300));
+
+  // Start recorder with timeslice to force regular data delivery
+  rec.start(200);
+  await new Promise(r=>setTimeout(r,50));
+
+  // Encode frame by frame
+  const TOT=Math.round(DURATION*FPS_OUT);
+  for(let f=0;f<TOT;f++){
+    playhead=f/FPS_OUT;
+    syncVideosToPlayhead();
+    // Wait for video frame to settle (important for accuracy)
+    await new Promise(r=>setTimeout(r,Math.max(16,Math.round(800/FPS_OUT))));
+    render(true);
+    reqFrame();
+    const pct=Math.round((f+1)/TOT*100);
+    pb.style.width=pct+'%';
+    pl.textContent=`Encoding frame ${f+1} / ${TOT}`;
+  }
+
+  // Flush final frames
+  await new Promise(r=>setTimeout(r,300));
+  try{if(typeof rec.requestData==='function')rec.requestData();}catch(e){}
+  await new Promise(r=>setTimeout(r,200));
+
+  // Stop and wait for onstop
+  await new Promise(resolve=>{
+    rec.onstop=()=>resolve();
+    rec.stop();
+  });
+
+  // Restore state
+  playhead=savedPlayhead;
+  syncVideosToPlayhead();
+  selectedIds=pv;
+
+  // Build blob
+  const blob=new Blob(chunks,{type:mimeType});
+  if(blob.size<500){
+    pl.textContent='Export failed — no video data captured. Try a shorter clip or different browser.';
+    setTimeout(closeExport,4000);
+    return;
+  }
+
+  const sizeMB=(blob.size/1024/1024).toFixed(1);
+  pl.textContent=`Done! ${sizeMB} MB — saving…`;
+  const ext='webm';
+  const url=URL.createObjectURL(blob);
+
+  // iOS: try Web Share API (shows Save to Photos / Files)
+  if(navigator.share&&typeof File!=='undefined'){
+    try{
+      const file=new File([blob],`omitsu-studio.${ext}`,{type:mimeType});
+      if(navigator.canShare&&navigator.canShare({files:[file]})){
+        await navigator.share({files:[file],title:'Omitsu Studio'});
+        pl.textContent='Shared ✓';
+        setTimeout(closeExport,2000);
+        URL.revokeObjectURL(url);
+        return;
+      }
+    }catch(err){
+      if(err.name==='AbortError'){setTimeout(closeExport,500);URL.revokeObjectURL(url);return;}
+      // Not supported or failed — fall through to download
+    }
+  }
+
+  // Desktop: anchor download
+  const a=document.createElement('a');
+  a.href=url;a.download=`omitsu-studio.${ext}`;
+  document.body.appendChild(a);a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),10000);
+  pl.textContent=`Saved as ${ext.toUpperCase()} — ${sizeMB} MB`;
+  setTimeout(closeExport,3000);
+};
+
+// ─────────────────────────────────────────────────────────
+// PRESETS UI — inject into Canvas tab
+// ─────────────────────────────────────────────────────────
+window.addEventListener('load',()=>{
+  // Add presets section to Canvas tab
+  const canvasTab=document.getElementById('tab-canvas');
+  if(canvasTab){
+    const div=document.createElement('div');
+    div.innerHTML=`
+      <div class="divider"></div>
+      <div class="pgrp">
+        <div class="plabel">Presets</div>
+        <div class="tip">Save current canvas layout as a reusable preset</div>
+        <button class="add-text-btn" onclick="savePreset()" type="button" style="margin-bottom:8px">[ Save as Preset ]</button>
+        <div id="presetsList"></div>
+      </div>`;
+    canvasTab.appendChild(div);
+    renderPresetsList();
+  }
+  // Fix toolText reference guard (text tool button removed from header)
+  const toolTextEl=document.getElementById('toolText');
+  if(!toolTextEl){
+    // Patch setTool to not crash on missing toolText
+    const origSetTool=setTool;
+    window.setTool=function(t){
+      activeTool=t;
+      const sel=document.getElementById('toolSelect');
+      if(sel)sel.classList.toggle('active',t==='select');
+      const txt=document.getElementById('toolText');
+      if(txt)txt.classList.toggle('active',t==='text');
+      canvas.style.cursor=t==='text'?'crosshair':'default';
+      if(t==='text'){switchTab('text');if(isMob())openMobPanel('left');}
+    };
+  }
+});
+
 </script>
 </body>
 </html>
