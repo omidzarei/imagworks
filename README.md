@@ -1,24 +1,19 @@
-# Omitsu Studio — Self-Host PWA
+# Omitsu Studio — Self-Hosted PWA
 
-Drop these files at the root of any static host (Nginx, Caddy, Apache, Netlify, Cloudflare Pages, GitHub Pages, S3+CloudFront, etc.).
+Drop these files at the root (or a sub-path) of any static host (GitHub Pages, Netlify, S3, Nginx, Caddy).
+All asset paths are RELATIVE so it works under sub-paths like `https://yoursite.com/omitsu/`.
 
 ## Files
-- `index.html` — the app (also available as `app.html`)
+- `index.html` (or `app.html`) — the editor
 - `manifest.webmanifest` — PWA manifest
 - `sw.js` — service worker (offline cache)
-- `pwa-icon-192.png`, `pwa-icon-512.png`, `apple-touch-icon.png`, `favicon.ico`
+- `favicon.ico`, `apple-touch-icon.png`, `pwa-icon-192.png`, `pwa-icon-512.png` — icons
 
 ## Requirements
-1. Serve over **HTTPS** (required for service workers + PWA install).
-2. `sw.js` MUST be served from the site root (`/sw.js`) with `Content-Type: application/javascript`.
-3. `manifest.webmanifest` MUST be served with `Content-Type: application/manifest+json` (most hosts do this automatically).
+- Must be served over **HTTPS** (or `localhost`) for the service worker + Add-to-Home-Screen.
+- No build step; pure static files.
 
-## Install
-- **iPhone Safari**: open the site → Share → Add to Home Screen.
-- **Android Chrome / Desktop Chrome / Edge**: address-bar install icon, or menu → Install app.
-
-## Nginx snippet
-```
-location = /sw.js { add_header Cache-Control "no-cache"; }
-location = /manifest.webmanifest { types { } default_type application/manifest+json; }
-```
+## GitHub Pages
+1. Create a repo, drop these files in the root (or `docs/`).
+2. Enable Pages → main branch → root.
+3. Visit `https://<user>.github.io/<repo>/` — icon and PWA install will work.

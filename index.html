@@ -4,15 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Omitsu Studio</title>
-<link rel="manifest" href="/manifest.webmanifest">
+<link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#a59f80">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Omitsu">
-<link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<link rel="icon" type="image/png" sizes="192x192" href="/pwa-icon-192.png">
-<link rel="icon" type="image/png" sizes="512x512" href="/pwa-icon-512.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="pwa-icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="pwa-icon-512.png">
+<link rel="shortcut icon" href="favicon.ico">
 <script>
 (function(){
   if (!('serviceWorker' in navigator)) return;
@@ -31,7 +33,7 @@
     return;
   }
   window.addEventListener('load', function(){
-    navigator.serviceWorker.register('/sw.js').catch(function(){});
+    navigator.serviceWorker.register('sw.js').catch(function(){});
   });
 })();
 </script>
@@ -962,8 +964,9 @@ input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:11px;hei
   #mobNav{
     display:flex;
     position:fixed;bottom:0;left:0;right:0;
-    height:calc(var(--mob-nav-h) + env(safe-area-inset-bottom,0px));
-    padding-bottom:env(safe-area-inset-bottom,0px);
+    /* extra 14px lift so the row sits above the home-indicator / curved bezel */
+    height:calc(var(--mob-nav-h) + env(safe-area-inset-bottom,0px) + 14px);
+    padding-bottom:calc(env(safe-area-inset-bottom,0px) + 14px);
     /* indent away from curved corners on iPhone landscape/portrait */
     padding-left:env(safe-area-inset-left,0px);
     padding-right:env(safe-area-inset-right,0px);
@@ -1115,8 +1118,14 @@ input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:11px;hei
   #timeline .tl-play svg{width:14px;height:14px;}
   #timeline .tl-track-wrap{flex:1;min-width:0;height:28px;}
   #timeline .tl-time{font-size:9px;min-width:0;flex:0 0 auto;white-space:nowrap;}
-  /* push canvas down so it isn't covered by the now-top timeline */
-  .canvas-area{padding-top:46px;}
+  /* hide second number labels in portrait — they crowd the compact timeline */
+  #timeline .tl-tick-label{display:none !important;}
+  /* center canvas exactly between top toolbar+timeline and bottom nav */
+  .canvas-area{
+    padding-top:46px;  /* timeline height (42px) + small gap */
+    padding-bottom:calc(var(--mob-nav-h) + env(safe-area-inset-bottom,0px) + 18px);
+    box-sizing:border-box;
+  }
 }
 
 /* ── MOBILE LANDSCAPE: small toggles in header to hide/show alignment + timeline ── */
