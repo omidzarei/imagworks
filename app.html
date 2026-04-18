@@ -658,7 +658,11 @@ input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:11px;hei
 #canvasTextEditor{position:absolute;transform-origin:0 0;background:rgba(0,0,0,0.35);border:1px dashed #ffea00;
   outline:none;resize:none;overflow:hidden;padding:4px;margin:0;box-sizing:border-box;
   color:#fff;font-family:inherit;line-height:1.15;white-space:pre-wrap;word-break:break-word;
-  caret-color:#ffea00;z-index:50;}
+  caret-color:#ffea00;z-index:50;
+  /* Prevent iOS from resizing font or substituting typeface */
+  -webkit-text-size-adjust:none;text-size-adjust:none;
+  -webkit-appearance:none;appearance:none;
+  touch-action:manipulation;}
 .sg-h,.sg-v{position:absolute;background:var(--snap-color);pointer-events:none;z-index:999;display:none;}
 .sg-h{height:1px;left:0;right:0;}.sg-v{width:1px;top:0;bottom:0;}
 #rubberBand{position:absolute;border:1.5px dashed rgba(200,245,90,0.7);background:rgba(200,245,90,0.05);display:none;pointer-events:none;z-index:900;}
@@ -1686,7 +1690,7 @@ input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:11px;hei
     <div class="canvas-bg-grad"></div>
     <div class="canvas-outer" id="canvasOuter">
       <canvas id="mainCanvas"></canvas>
-      <textarea id="canvasTextEditor" style="display:none" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off"></textarea>
+      <textarea id="canvasTextEditor" style="display:none" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" inputmode="text" enterkeyhint="done"></textarea>
       <div class="sg-h" id="guideH"></div>
       <div class="sg-v" id="guideV"></div>
       <div id="rubberBand"></div>
@@ -2191,8 +2195,10 @@ function onMD(e){
   if(selectedIds.size===1){const l=layers.find(x=>x.id===[...selectedIds][0]);if(l){const h=hitH(pos,l);if(h){_pushUndo();isResizing=true;resizeHandle=h;dragStart=pos;layerStart={...l};return;}}}
   let hit=null;for(let i=layers.length-1;i>=0;i--)if(hitT(pos,layers[i])){hit=layers[i];break;}
   if(hit){
-    // Single-click on an already-selected text layer → edit inline
-    if(hit.type==='text' && selectedIds.size===1 && selectedIds.has(hit.id) && !e.shiftKey){
+    // On mobile: single tap on any text layer goes straight to edit
+    const mob=isMob&&isMob();
+    if(hit.type==='text' && (mob || (selectedIds.size===1 && selectedIds.has(hit.id))) && !e.shiftKey){
+      selectedIds=new Set([hit.id]);updatePropsPanel();updateLayersList();
       beginTextEdit(hit);return;
     }
     if(e.shiftKey){if(selectedIds.has(hit.id))selectedIds.delete(hit.id);else selectedIds.add(hit.id);}
@@ -2231,32 +2237,67 @@ function onCanvasDblClick(e){
   }
 }
 let _editingLayerId=null;
+let _editBlurGuard=false;
 function beginTextEdit(l){
   if(!l||l.type!=='text')return;
   endTextEdit();
   _editingLayerId=l.id;
   const ta=document.getElementById('canvasTextEditor');
-  // Position in CSS pixels relative to canvas-outer (which is sized CW*zoom × CH*zoom)
-  ta.style.display='block';
+
+  // Position over the layer (canvasOuter space)
   ta.style.left=(l.x*zoom)+'px';
   ta.style.top=(l.y*zoom)+'px';
   ta.style.width=(l.w*zoom)+'px';
   ta.style.height=(l.h*zoom)+'px';
-  ta.style.fontFamily=l.font||'sans-serif';
-  ta.style.fontSize=((l.size||40)*zoom)+'px';
+  ta.style.transform='rotate('+(l.rotation||0)+'deg)';
+
+  // Apply layer font explicitly — must come before display:block so iOS
+  // doesn't snapshot a different font at focus time
+  const ff=l.font||'sans-serif';
+  const fs=((l.size||40)*zoom)+'px';
+  ta.style.fontFamily=ff;
+  ta.style.fontSize=fs;
   ta.style.fontWeight=l.bold?'bold':'normal';
   ta.style.fontStyle=l.italic?'italic':'normal';
+  ta.style.textAlign=l.align||'left';
   ta.style.color=l.color||'#fff';
-  ta.style.transform='rotate('+(l.rotation||0)+'deg)';
+  ta.style.lineHeight='1.15';
+
   ta.value=l.text||'';
-  // Hide on-canvas text while editing to avoid double-render
   l._editing=true;
-  ta.oninput=()=>{const lay=layers.find(x=>x.id===_editingLayerId);if(lay){lay.text=ta.value;}};
-  ta.onblur=endTextEdit;
+  ta.style.display='block';
+
+  ta.oninput=()=>{
+    const lay=layers.find(x=>x.id===_editingLayerId);
+    if(lay){
+      lay.text=ta.value;
+      // Keep font locked — iOS may reset it; re-apply on every input
+      ta.style.fontFamily=lay.font||'sans-serif';
+      ta.style.fontSize=((lay.size||40)*zoom)+'px';
+      ta.style.fontWeight=lay.bold?'bold':'normal';
+      ta.style.fontStyle=lay.italic?'italic':'normal';
+    }
+  };
+
+  // Blur guard: iOS fires spurious blur during keyboard animation; ignore it
+  // for 400ms after focus
+  _editBlurGuard=true;
+  setTimeout(()=>{ _editBlurGuard=false; },400);
+  ta.onblur=()=>{ if(!_editBlurGuard)endTextEdit(); };
+
   ta.onkeydown=(ev)=>{
     if(ev.key==='Escape'){ev.preventDefault();endTextEdit();}
+    if(ev.key==='Enter'&&ev.metaKey){ev.preventDefault();endTextEdit();}
   };
-  setTimeout(()=>{ta.focus();ta.select();},0);
+
+  // Focus — requestAnimationFrame ensures layout is settled before focus
+  // so iOS keyboard positions correctly relative to the element
+  requestAnimationFrame(()=>{
+    ta.focus({preventScroll:true});
+    // Move cursor to end
+    const len=ta.value.length;
+    ta.setSelectionRange(len,len);
+  });
 }
 function endTextEdit(){
   const ta=document.getElementById('canvasTextEditor');
@@ -2265,6 +2306,7 @@ function endTextEdit(){
   if(lay){lay.text=ta.value;delete lay._editing;}
   ta.style.display='none';ta.value='';ta.oninput=null;ta.onblur=null;ta.onkeydown=null;
   _editingLayerId=null;
+  render&&render();
 }
 function onKD(e){if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.tagName==='SELECT')return;const s=e.shiftKey?10:1;if(selectedIds.size&&(e.key==='ArrowLeft'||e.key==='ArrowRight'||e.key==='ArrowUp'||e.key==='ArrowDown'))_pushUndo();for(const id of selectedIds){const l=layers.find(x=>x.id===id);if(!l)continue;if(e.key==='ArrowLeft')l.x-=s;if(e.key==='ArrowRight')l.x+=s;if(e.key==='ArrowUp')l.y-=s;if(e.key==='ArrowDown')l.y+=s;}if((e.key==='Delete'||e.key==='Backspace')&&selectedIds.size){deleteSelected();return;}updatePropsPanel();}
 
@@ -2295,6 +2337,8 @@ function doResize(pos){
 function d2(t1,t2){return Math.hypot(t1.clientX-t2.clientX,t1.clientY-t2.clientY);}
 let _lastTapTime=0,_lastTapId=null;
 function onTS(e){
+  // If tapping directly on the text editor textarea, let it handle its own touches
+  if(e.target&&e.target.id==='canvasTextEditor')return;
   if(_editingLayerId!=null)endTextEdit();
   e.preventDefault();
   if(e.touches.length===2){isPinching=true;isDragging=false;isResizing=false;isRubber=false;document.getElementById('rubberBand').style.display='none';pinchStartDist=d2(e.touches[0],e.touches[1]);pinchStartZoom=zoom;return;}
@@ -2309,32 +2353,20 @@ function onTS(e){
   }
   if(selectedIds.size===1){const l=layers.find(x=>x.id===[...selectedIds][0]);if(l){const h=hitH(pos,l);if(h){_pushUndo();isResizing=true;resizeHandle=h;dragStart=pos;layerStart={...l};return;}}}
   let hit=null;for(let i=layers.length-1;i>=0;i--)if(hitT(pos,layers[i])){hit=layers[i];break;}
-  // Tap on text: if already selected → edit immediately; else select first, second tap edits
+  // Single tap on any text layer → edit immediately
   if(hit&&hit.type==='text'){
-    if(selectedIds.size===1 && selectedIds.has(hit.id)){
-      _lastTapTime=0;_lastTapId=null;
-      beginTextEdit(hit);
-      return;
-    }
-    const now=Date.now();
-    if(_lastTapId===hit.id && (now-_lastTapTime)<350){
-      _lastTapTime=0;_lastTapId=null;
-      selectedIds=new Set([hit.id]);
-      updatePropsPanel();updateLayersList();
-      beginTextEdit(hit);
-      return;
-    }
-    _lastTapTime=now;_lastTapId=hit.id;
+    selectedIds=new Set([hit.id]);
+    updatePropsPanel();updateLayersList();
+    beginTextEdit(hit);
+    return;
   }
   if(hit){
-    // Tap on already-selected (in multi-sel) keeps selection so user can drag the group
     if(!selectedIds.has(hit.id))selectedIds=new Set([hit.id]);
     _pushUndo();
     isDragging=true;dragStart=pos;dragLayerStarts=layers.filter(l=>selectedIds.has(l.id)).map(l=>({id:l.id,x:l.x,y:l.y}));
     for(const l of layers){delete l._qbRefW;delete l._qbRefH;delete l._qbRefX;delete l._qbRefY;}
     updatePropsPanel();updateLayersList();
   } else {
-    // EMPTY CANVAS TOUCH → start marquee selection
     selectedIds.clear();
     isRubber=true;
     rubStart=c2o(t.clientX,t.clientY);
