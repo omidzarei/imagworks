@@ -1230,6 +1230,7 @@ input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:11px;hei
   <button class="exp-btn" onclick="openExport()" type="button">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Export
   </button>
+  <span id="canvasResLabel" style="font-family:'DM Mono',monospace;font-size:8px;color:var(--text-muted);letter-spacing:0.08em;white-space:nowrap;padding:0 10px;opacity:0.7;pointer-events:none;"></span>
 </header>
 
 <div id="alignBar">
@@ -1696,7 +1697,7 @@ input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:11px;hei
 'use strict';
 let CW=1080,CH=1920;const SNAP_T=10,DURATION=15,FPS=30;
 const ASPECTS={'9:16':[1080,1920],'1:1':[1080,1080],'16:9':[1920,1080],'4:5':[1080,1350]};
-function setAspect(key){const a=ASPECTS[key];if(!a)return;CW=a[0];CH=a[1];if(canvas){canvas.width=CW;canvas.height=CH;}document.querySelectorAll('.aspect-btn').forEach(b=>b.classList.toggle('active',b.dataset.aspect===key));try{zoomFit();}catch(e){}try{draw();}catch(e){}}
+function setAspect(key){const a=ASPECTS[key];if(!a)return;CW=a[0];CH=a[1];if(canvas){canvas.width=CW;canvas.height=CH;}document.querySelectorAll('.aspect-btn').forEach(b=>b.classList.toggle('active',b.dataset.aspect===key));updateResLabel();try{zoomFit();}catch(e){}try{draw();}catch(e){}}
 let canvas,ctx,zoom=0.3;
 let layers=[],nextId=1,selectedIds=new Set();
 let activeTool='select',bgColor='#000000',mediaItems=[],lockRatio=true;
@@ -1829,7 +1830,7 @@ window.onload=()=>{
   canvas.width=CW;canvas.height=CH;
   // Restore saved UI scale
   try{const s=localStorage.getItem('omitsuUiScale');if(s)setUiScale(parseFloat(s));}catch(e){}
-  zoomFit();buildTicks();updateFontPreview();
+  zoomFit();buildTicks();updateFontPreview();updateResLabel();
   canvas.addEventListener('mousedown',onMD);
   canvas.addEventListener('mousemove',onMM);
   canvas.addEventListener('mouseup',onMU);
@@ -2016,6 +2017,7 @@ function getHand(x,y,w,h){return[{x,y,t:'nw'},{x:x+w/2,y,t:'n'},{x:x+w,y,t:'ne'}
 function drawR3(){ctx.strokeStyle='rgba(255,255,255,0.12)';ctx.lineWidth=1;ctx.setLineDash([8,8]);for(let i=1;i<=2;i++){ctx.beginPath();ctx.moveTo(CW*i/3,0);ctx.lineTo(CW*i/3,CH);ctx.stroke();ctx.beginPath();ctx.moveTo(0,CH*i/3);ctx.lineTo(CW,CH*i/3);ctx.stroke();}ctx.setLineDash([]);}
 function drawSZ(){ctx.strokeStyle='rgba(200,245,90,0.2)';ctx.lineWidth=2;ctx.setLineDash([12,6]);ctx.strokeRect(90,90,CW-180,CH-180);ctx.setLineDash([]);}
 
+function updateResLabel(){const el=document.getElementById('canvasResLabel');if(el)el.textContent=CW+'×'+CH;}
 function applyZoom(){const o=document.getElementById('canvasOuter');const w=Math.round(CW*zoom),h=Math.round(CH*zoom);o.style.width=w+'px';o.style.height=h+'px';canvas.style.width=w+'px';canvas.style.height=h+'px';document.getElementById('zlabel').textContent=Math.round(zoom*100)+'%';}
 function zoomIn(){zoom=Math.min(zoom+0.1,3);applyZoom();}
 function zoomOut(){zoom=Math.max(zoom-0.1,0.05);applyZoom();}
@@ -2056,6 +2058,7 @@ function onMD(e){
     updatePropsPanel();updateLayersList();if(selectedIds.size===1)switchTab('props');
   }else{
     if(!e.shiftKey){selectedIds.clear();isRubber=true;rubStart=c2o(e.clientX,e.clientY);const rb=document.getElementById('rubberBand');rb.style.display='block';rb.style.left=rubStart.x+'px';rb.style.top=rubStart.y+'px';rb.style.width='0';rb.style.height='0';}
+    propsZoomOut&&propsZoomOut();
     updatePropsPanel();updateLayersList();
     // Hide quick bar when tapping empty canvas
     const bar=document.getElementById('mobQuickBar');if(bar)bar.classList.remove('show');
@@ -2723,7 +2726,7 @@ function addSwipeClose(el){
     const dy=e.changedTouches[0].clientY-sy;
     el.style.transform='';
     active=false;
-    if(dy>90){revertPropsZoom&&revertPropsZoom();closeMobPanels();}
+    if(dy>90){closeMobPanels();}
   },{passive:true});
   el.addEventListener('touchcancel',()=>{active=false;el.style.transform='';},{passive:true});
 }
@@ -2987,9 +2990,47 @@ async function doSaveProject(){
 }
 
 function doOpenProject(){
-  const fi=document.createElement('input');fi.type='file';fi.accept='.json';
+  const fi=document.createElement('input');fi.type='file';fi.accept='.json,image/*,video/*';
   fi.onchange=async(e)=>{
     const f=e.target.files[0];if(!f)return;
+
+    // ── Image / Video: set canvas to asset aspect ratio, add as full layer ──
+    if(f.type.startsWith('image/')||f.type.startsWith('video/')){
+      const url=URL.createObjectURL(f);
+      const name=f.name.replace(/\.[^.]+$/,'');
+      const isVideo=f.type.startsWith('video/');
+      const applyAsset=(el,nw,nh)=>{
+        _pushUndo();
+        // Set canvas to asset's exact pixel dimensions (capped at 4096)
+        const maxDim=4096;
+        const scale=Math.min(1,maxDim/Math.max(nw,nh));
+        CW=Math.round(nw*scale);
+        CH=Math.round(nh*scale);
+        canvas.width=CW;canvas.height=CH;
+        document.querySelectorAll('.aspect-btn').forEach(b=>b.classList.remove('active'));
+        layers=[];selectedIds=new Set();nextId=1;
+        const ar=nw/nh;
+        addLayer({id:nextId++,type:isVideo?'video':'image',name:name.substring(0,22),
+          img:isVideo?null:el,vid:isVideo?el:null,aspectRatio:ar,
+          x:0,y:0,w:CW,h:CH,rotation:0,opacity:100});
+        updateResLabel();try{zoomFit();}catch(ex){}
+        draw();updateLayersList();updatePropsPanel();
+        showToast('Opened ✓');
+      };
+      if(isVideo){
+        const v=document.createElement('video');
+        v.src=url;v.muted=true;v.playsInline=true;v.preload='metadata';
+        v.setAttribute('playsinline','');v.setAttribute('webkit-playsinline','');
+        v.onloadedmetadata=()=>{ v.pause();applyAsset(v,v.videoWidth,v.videoHeight); };
+        setTimeout(()=>{ if(v.videoWidth)applyAsset(v,v.videoWidth,v.videoHeight); },2000);
+      } else {
+        const img=new Image();img.src=url;
+        img.onload=()=>applyAsset(img,img.naturalWidth,img.naturalHeight);
+      }
+      return;
+    }
+
+    // ── JSON project file ──
     const txt=await f.text();
     let proj;try{proj=JSON.parse(txt);}catch(err){alert('Invalid project file');return;}
     _pushUndo();
@@ -3006,7 +3047,7 @@ function doOpenProject(){
       layers.push(l);
     }
     selectedIds=new Set();
-    try{zoomFit();}catch(e){}
+    updateResLabel();try{zoomFit();}catch(e){}
     updateLayersList();updatePropsPanel();
     showToast('Project loaded ✓');
   };
@@ -3466,135 +3507,96 @@ window.addEventListener('load',()=>{
 });
 
 // ─────────────────────────────────────────────────────────
-// PROPS-TAB ZOOM: portrait mobile only.
-// Fires ONLY when user explicitly taps the Props tab/nav.
+// PROPS-TAB FOCUS: zoom + panY to show selected asset.
+// Triggers when Props tab clicked with 1 asset selected.
+// Reverts on: Props tab clicked again, or empty canvas click.
 // ─────────────────────────────────────────────────────────
-let _propsZoomSaved=null;
 let _propsZoomActive=false;
 
-function zoomToSelectedLayer(){
-  if(!isMob())return;
-  if(window.innerHeight<=window.innerWidth)return; // portrait only
+function propsZoomIn(){
   const l=selectedIds.size===1?layers.find(x=>x.id===[...selectedIds][0]):null;
   if(!l)return;
-  if(_propsZoomSaved===null)_propsZoomSaved=zoom;
   _propsZoomActive=true;
 
-  // Props sheet covers ~52dvh.
-  // Visible canvas zone: from below header+timeline down to where props sheet starts.
-  // header ~46px, timeline ~42px fixed on top → top of visible zone = 46+42 = 88px from top
-  // Props sheet top = window.innerHeight * 0.48 from top
-  // So usable height = innerHeight*0.48 - 88 - padding
-  const sheetTop=window.innerHeight*0.48; // px from top of screen where sheet begins
-  const zoneTop=88; // header + timeline
-  const pad=28;
-  const availH=sheetTop - zoneTop - pad;
-  const availW=window.innerWidth - 48;
-  if(availH<40||availW<40)return;
+  const area=document.getElementById('canvasArea');
+  const areaRect=area.getBoundingClientRect();
 
-  const targetZoom=Math.min((availW-32)/l.w,(availH-32)/l.h,2.5);
-  zoom=Math.max(0.05,Math.round(targetZoom*100)/100);
-  applyZoom();
+  const leftPanel=document.getElementById('leftPanel');
+  const panelRect=leftPanel?leftPanel.getBoundingClientRect():null;
+  const mobPortrait=isMob()&&window.innerHeight>window.innerWidth;
 
-  // Pan canvas up so selected layer is centered in the visible zone above the props sheet.
-  // The canvas-outer is flex-centered inside canvas-area.
-  // After applyZoom the canvas is centered. We need to shift it so the layer center
-  // aligns with the center of the visible zone.
-  //
-  // Layer center in canvas pixels:
-  const lCX=l.x+l.w/2;
-  const lCY=l.y+l.h/2;
-  // Layer center in screen pixels (relative to canvas-area top):
-  const canvasAreaEl=document.getElementById('canvasArea');
-  const areaRect=canvasAreaEl.getBoundingClientRect();
-  // Canvas is centered in canvas-area. Canvas-area padding-top=46px (timeline).
-  // Canvas top within canvas-area (after centering):
+  const zoneTop=areaRect.top;
+  const zoneBottom=mobPortrait&&panelRect&&panelRect.height>0
+    ? Math.min(areaRect.bottom, window.innerHeight-panelRect.height)
+    : areaRect.bottom;
+
+  // Pan Y only — no zoom change.
+  // Find where the asset centre currently sits in screen coords,
+  // then shift canvasOuter so it lands on the centre of the available zone.
   const canvasH=CH*zoom;
-  const canvasW=CW*zoom;
-  const innerH=areaRect.height - 46 - (parseFloat(window.getComputedStyle(canvasAreaEl).paddingBottom)||0);
-  const innerW=areaRect.width;
-  // Current canvas top relative to canvas-area top edge (including padding-top):
-  const canvasTop=46 + Math.max(0,(innerH-canvasH)/2);
-  // Layer center Y in screen coords relative to canvas-area top:
-  const layerScreenY=canvasTop + lCY*zoom;
-  // Desired center of visible zone, relative to canvas-area top:
-  const visibleZoneCenter=(zoneTop - areaRect.top) + availH/2;
-  // How much we need to shift the canvas up (negative = move up):
-  const shiftY=visibleZoneCenter - layerScreenY;
+  const naturalCanvasScreenTop=areaRect.top+Math.max(0,(areaRect.height-canvasH)/2);
+  const assetScreenY=naturalCanvasScreenTop+(l.y+l.h/2)*zoom;
+  const zoneCentreY=(zoneTop+zoneBottom)/2;
+  const shiftY=zoneCentreY-assetScreenY;
 
-  // Clamp: layer top edge must stay at least 12px below the bottom of the top toolbar zone
-  const topIndent=36; // px gap from toolbar bottom to asset top edge
-  // Layer top in screen coords after applying shiftY:
-  //   areaRect.top + canvasTop + l.y*zoom + shiftY  >= zoneTop + topIndent
-  const layerTopScreen=areaRect.top + canvasTop + l.y*zoom + shiftY;
-  const minAllowedLayerTop=zoneTop + topIndent;
-  const clampedShiftY=layerTopScreen < minAllowedLayerTop
-    ? shiftY + (minAllowedLayerTop - layerTopScreen)
-    : shiftY;
-
-  // Apply via translateY on canvasOuter
   const o=document.getElementById('canvasOuter');
   o.style.transition='transform 0.3s cubic-bezier(0.4,0,0.2,1)';
-  o.style.transform=`translateY(${Math.round(clampedShiftY)}px)`;
-  // Clear transition after animation
-  setTimeout(()=>{ if(o)o.style.transition=''; },350);
+  o.style.transform=`translateY(${Math.round(shiftY)}px)`;
+  setTimeout(()=>{if(o)o.style.transition='';},350);
 }
 
-function revertPropsZoom(){
+function propsZoomOut(){
   if(!_propsZoomActive)return;
   _propsZoomActive=false;
-  // Clear canvas pan
   const o=document.getElementById('canvasOuter');
   if(o){
     o.style.transition='transform 0.3s cubic-bezier(0.4,0,0.2,1)';
     o.style.transform='';
-    setTimeout(()=>{ if(o)o.style.transition=''; },350);
+    setTimeout(()=>{if(o)o.style.transition='';},350);
   }
-  if(_propsZoomSaved!==null){
-    zoom=_propsZoomSaved;
-    applyZoom();
-    _propsZoomSaved=null;
-  }
+  setTimeout(zoomFit,20);
 }
 
-// ── Wire up after all other JS has run ──
-// Use a single final load listener so all function references are settled.
-window.addEventListener('load',()=>{
-  // 1) Desktop left-panel Props ptab
-  const propsPtab=document.querySelector('.ptab[onclick*="switchTab(\'props\')"]');
-  if(propsPtab){
-    propsPtab.removeAttribute('onclick');
-    propsPtab.addEventListener('click',()=>{
-      switchTab('props');
-      if(isMob())setTimeout(zoomToSelectedLayer,160);
+// Patch Props tab (desktop ptab) and mobile navProps button onclick directly
+(function(){
+  function wirePropsPtab(){
+    // Desktop: left-panel ptab
+    const tabs=document.querySelectorAll('.ptab');
+    tabs.forEach(t=>{
+      if(t.textContent.trim()==='Props'){
+        t.onclick=function(){
+          if(_propsZoomActive){propsZoomOut();return;}
+          switchTab('props');
+          if(selectedIds.size===1)setTimeout(propsZoomIn,320);
+        };
+      }
     });
+    // Mobile portrait: bottom-nav Props button
+    const navProps=document.getElementById('navProps');
+    if(navProps){
+      navProps.onclick=function(){
+        // If panel already open on Props tab → close and revert
+        if(mobActiveSheet==='left'){
+          const ct=document.querySelector('.ptab.active')?.textContent?.toLowerCase().trim();
+          if(ct==='props'){propsZoomOut();closeMobPanels();return;}
+          switchTab('props');setNavActive('navProps');
+          if(selectedIds.size===1)setTimeout(propsZoomIn,320);
+        } else {
+          closeMobPanels();
+          switchTab('props');
+          mobActiveSheet='left';
+          document.getElementById('leftPanel').classList.add('mob-open');
+          document.getElementById('sheetBackdrop').classList.add('show');
+          setNavActive('navProps');
+          _setSheetOpenClass();
+          if(selectedIds.size===1)setTimeout(propsZoomIn,320);
+        }
+      };
+    }
   }
-
-  // 2) Mobile bottom-nav Props button — the onclick is mobNavTap('props')
-  //    Patch it directly on the element to avoid wrapping the global function.
-  const navPropsBtn=document.getElementById('navProps');
-  if(navPropsBtn){
-    navPropsBtn.removeAttribute('onclick');
-    navPropsBtn.addEventListener('click',()=>{
-      // Call the current (possibly already-patched) mobNavTap
-      mobNavTap('props');
-      setTimeout(zoomToSelectedLayer,160);
-    });
-  }
-
-  // 3) Revert when any OTHER bottom-nav button is tapped
-  ['navMedia','navText','navCanvas','navLayers'].forEach(id=>{
-    const btn=document.getElementById(id);
-    if(!btn)return;
-    btn.addEventListener('click',()=>{ revertPropsZoom(); },true); // capture phase
-  });
-
-  // 4) Revert when backdrop is tapped (closes panels)
-  const backdrop=document.getElementById('sheetBackdrop');
-  if(backdrop){
-    backdrop.addEventListener('click',()=>{ revertPropsZoom(); });
-  }
-});
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',wirePropsPtab);
+  else wirePropsPtab();
+})();
 
 
 </script>
