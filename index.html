@@ -2311,14 +2311,18 @@ function beginTextEdit(l){
   ta.style.transform='none';
   ta.style.display='block';
 
+  // Show textarea off-screen and focus SYNCHRONOUSLY here — must be
+  // called directly from a touchend handler for iOS to honour the keyboard
+  ta.style.display='block';
   ta.value=l.text||'';
   _caretPos=ta.value.length;
   l._editing=true;
 
-  // SGI caret blink
-  _caretVisible=true;
-  if(_caretInterval)clearInterval(_caretInterval);
-  _caretInterval=setInterval(()=>{ _caretVisible=!_caretVisible; render&&render(); },530);
+  // Synchronous focus — inside the touchend gesture stack
+  ta.focus({preventScroll:true});
+  const len=ta.value.length;
+  try{ta.setSelectionRange(len,len);}catch(e){}
+  _caretPos=len;
 
   ta.oninput=()=>{
     const lay=layers.find(x=>x.id===_editingLayerId);
@@ -2342,12 +2346,10 @@ function beginTextEdit(l){
     if(ev.key==='Enter'&&ev.metaKey){ev.preventDefault();endTextEdit();}
   };
 
-  requestAnimationFrame(()=>{
-    ta.focus({preventScroll:true});
-    const len=ta.value.length;
-    ta.setSelectionRange(len,len);
-    _caretPos=len;
-  });
+  // Start SGI caret blink after focus
+  _caretVisible=true;
+  if(_caretInterval)clearInterval(_caretInterval);
+  _caretInterval=setInterval(()=>{ _caretVisible=!_caretVisible; render&&render(); },530);
 }
 function endTextEdit(){
   if(_caretInterval){clearInterval(_caretInterval);_caretInterval=null;}
