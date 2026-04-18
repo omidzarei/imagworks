@@ -1975,7 +1975,7 @@ window.onload=()=>{
   // Swipe-to-close sheets
   addSwipeClose(document.getElementById('leftPanel'));
   addSwipeClose(document.getElementById('rightPanel'));
-  window.addEventListener('resize',()=>{ setTimeout(zoomFit,100); });
+  window.addEventListener('resize',()=>{ if(_editingLayerId!=null)return; setTimeout(zoomFit,100); });
   // Initial state: align bar + timeline visible → show toggles as active
   document.getElementById('toggleAlignBtn')?.classList.add('active');
   document.getElementById('toggleTimelineBtn')?.classList.add('active');
@@ -2126,7 +2126,6 @@ function drawMedia(l){
   ctx.restore();
 }
 function drawTxt(l){
-  if(l._editing)return;
   const s=(l.italic?'italic ':'')+(l.bold?'bold ':'');
   ctx.font=`${s}${l.size}px ${l.font}`;ctx.fillStyle=l.color;ctx.textBaseline='top';
   const align=l.align||'left';
@@ -2134,12 +2133,66 @@ function drawTxt(l){
   const xAnchor = align==='center' ? l.w/2 : (align==='right' ? l.w-8 : 8);
   if(l.shadow){ctx.shadowColor='rgba(0,0,0,0.75)';ctx.shadowBlur=l.size*.15;ctx.shadowOffsetX=2;ctx.shadowOffsetY=2;}
   const lines=l.text.split('\n');let y=4;
-  for(const line of lines){const words=line.split(' ');let row='';
-    for(let n=0;n<words.length;n++){const t=row+words[n]+' ';
-      if(ctx.measureText(t).width>l.w-16&&n>0){ctx.fillText(row,xAnchor,y);row=words[n]+' ';y+=l.size*1.2;}else row=t;}
-    ctx.fillText(row,xAnchor,y);y+=l.size*1.2;}
+
+  // Track char index per row for caret placement
+  const rowData=[]; // {text, x, y, startIdx}
+  let charIdx=0;
+  for(const line of lines){
+    const words=line.split(' ');let row='';let rowStart=charIdx;
+    for(let n=0;n<words.length;n++){
+      const t=row+words[n]+' ';
+      if(ctx.measureText(t).width>l.w-16&&n>0){
+        rowData.push({text:row,x:xAnchor,y,startIdx:rowStart});
+        ctx.fillText(row,xAnchor,y);
+        rowStart+=row.length;charIdx=rowStart;
+        row=words[n]+' ';y+=l.size*1.2;
+      }else row=t;
+    }
+    rowData.push({text:row,x:xAnchor,y,startIdx:rowStart});
+    ctx.fillText(row,xAnchor,y);
+    charIdx+=row.length;
+    y+=l.size*1.2;
+    charIdx++; // for the \n
+  }
   ctx.textAlign='left';
   ctx.shadowColor='transparent';ctx.shadowBlur=0;ctx.shadowOffsetX=0;ctx.shadowOffsetY=0;
+
+  // SGI IRIX caret — amber/yellow blinking I-beam
+  if(l._editing && _caretVisible && _editingLayerId===l.id){
+    const cp=_caretPos??0;
+    // Find which row the caret is in
+    let caretRow=rowData[rowData.length-1];
+    for(let i=0;i<rowData.length;i++){
+      const next=rowData[i+1];
+      if(!next||cp<next.startIdx){caretRow=rowData[i];break;}
+    }
+    if(caretRow){
+      const posInRow=cp-caretRow.startIdx;
+      const textBefore=caretRow.text.slice(0,Math.max(0,posInRow));
+      ctx.font=`${s}${l.size}px ${l.font}`;
+      const tw=ctx.measureText(textBefore).width;
+      let cx;
+      if(align==='center') cx=l.w/2-ctx.measureText(caretRow.text.trimEnd()).width/2+tw;
+      else if(align==='right') cx=l.w-8-ctx.measureText(caretRow.text.trimEnd()).width+tw;
+      else cx=8+tw;
+      const cy=caretRow.y;
+      const ch=l.size*1.1;
+      // SGI-style caret: amber vertical bar + tiny serifs
+      ctx.save();
+      ctx.shadowColor='transparent';ctx.shadowBlur=0;
+      ctx.strokeStyle='#ffcc00';
+      ctx.lineWidth=Math.max(1.5,l.size*0.045);
+      ctx.globalAlpha=0.95;
+      // Vertical bar
+      ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx,cy+ch);ctx.stroke();
+      // Top serif
+      const sf=Math.max(2,l.size*0.08);
+      ctx.beginPath();ctx.moveTo(cx-sf,cy);ctx.lineTo(cx+sf,cy);ctx.stroke();
+      // Bottom serif
+      ctx.beginPath();ctx.moveTo(cx-sf,cy+ch);ctx.lineTo(cx+sf,cy+ch);ctx.stroke();
+      ctx.restore();
+    }
+  }
 }
 function drawSel(l,multi){
   ctx.save();const cx=l.x+l.w/2,cy=l.y+l.h/2;
@@ -2154,7 +2207,7 @@ function drawR3(){ctx.strokeStyle='rgba(255,255,255,0.12)';ctx.lineWidth=1;ctx.s
 function drawSZ(){ctx.strokeStyle='rgba(200,245,90,0.2)';ctx.lineWidth=2;ctx.setLineDash([12,6]);ctx.strokeRect(90,90,CW-180,CH-180);ctx.setLineDash([]);}
 
 function updateResLabel(){const el=document.getElementById('canvasResLabel');if(el)el.textContent=CW+'×'+CH;}
-function applyZoom(){if(typeof endTextEdit==='function')endTextEdit();const o=document.getElementById('canvasOuter');const w=Math.round(CW*zoom),h=Math.round(CH*zoom);o.style.width=w+'px';o.style.height=h+'px';canvas.style.width=w+'px';canvas.style.height=h+'px';document.getElementById('zlabel').textContent=Math.round(zoom*100)+'%';}
+function applyZoom(){const o=document.getElementById('canvasOuter');const w=Math.round(CW*zoom),h=Math.round(CH*zoom);o.style.width=w+'px';o.style.height=h+'px';canvas.style.width=w+'px';canvas.style.height=h+'px';document.getElementById('zlabel').textContent=Math.round(zoom*100)+'%';}
 function zoomIn(){zoom=Math.min(zoom+0.1,3);applyZoom();}
 function zoomOut(){zoom=Math.max(zoom-0.1,0.05);applyZoom();}
 function zoomFit(){
@@ -2238,49 +2291,48 @@ function onCanvasDblClick(e){
 }
 let _editingLayerId=null;
 let _editBlurGuard=false;
+let _caretVisible=true;
+let _caretInterval=null;
+let _caretPos=0; // character index in ta.value
 function beginTextEdit(l){
   if(!l||l.type!=='text')return;
   endTextEdit();
   _editingLayerId=l.id;
   const ta=document.getElementById('canvasTextEditor');
 
-  // Position over the layer (canvasOuter space)
-  ta.style.left=(l.x*zoom)+'px';
-  ta.style.top=(l.y*zoom)+'px';
-  ta.style.width=(l.w*zoom)+'px';
-  ta.style.height=(l.h*zoom)+'px';
-  ta.style.transform='rotate('+(l.rotation||0)+'deg)';
-
-  // Apply layer font explicitly — must come before display:block so iOS
-  // doesn't snapshot a different font at focus time
-  const ff=l.font||'sans-serif';
-  const fs=((l.size||40)*zoom)+'px';
-  ta.style.fontFamily=ff;
-  ta.style.fontSize=fs;
-  ta.style.fontWeight=l.bold?'bold':'normal';
-  ta.style.fontStyle=l.italic?'italic':'normal';
-  ta.style.textAlign=l.align||'left';
-  ta.style.color=l.color||'#fff';
-  ta.style.lineHeight='1.15';
+  ta.style.position='fixed';
+  ta.style.left='-9999px';
+  ta.style.top='50%';
+  ta.style.width='1px';
+  ta.style.height='1px';
+  ta.style.opacity='0';
+  ta.style.fontSize='16px';
+  ta.style.fontFamily='sans-serif';
+  ta.style.transform='none';
+  ta.style.display='block';
 
   ta.value=l.text||'';
+  _caretPos=ta.value.length;
   l._editing=true;
-  ta.style.display='block';
+
+  // SGI caret blink
+  _caretVisible=true;
+  if(_caretInterval)clearInterval(_caretInterval);
+  _caretInterval=setInterval(()=>{ _caretVisible=!_caretVisible; render&&render(); },530);
 
   ta.oninput=()=>{
     const lay=layers.find(x=>x.id===_editingLayerId);
-    if(lay){
-      lay.text=ta.value;
-      // Keep font locked — iOS may reset it; re-apply on every input
-      ta.style.fontFamily=lay.font||'sans-serif';
-      ta.style.fontSize=((lay.size||40)*zoom)+'px';
-      ta.style.fontWeight=lay.bold?'bold':'normal';
-      ta.style.fontStyle=lay.italic?'italic':'normal';
-    }
+    if(lay) lay.text=ta.value;
+    _caretPos=ta.selectionStart??ta.value.length;
+    _caretVisible=true;
+    render&&render();
+  };
+  ta.onkeyup=()=>{
+    _caretPos=ta.selectionStart??ta.value.length;
+    _caretVisible=true;
+    render&&render();
   };
 
-  // Blur guard: iOS fires spurious blur during keyboard animation; ignore it
-  // for 400ms after focus
   _editBlurGuard=true;
   setTimeout(()=>{ _editBlurGuard=false; },400);
   ta.onblur=()=>{ if(!_editBlurGuard)endTextEdit(); };
@@ -2290,21 +2342,21 @@ function beginTextEdit(l){
     if(ev.key==='Enter'&&ev.metaKey){ev.preventDefault();endTextEdit();}
   };
 
-  // Focus — requestAnimationFrame ensures layout is settled before focus
-  // so iOS keyboard positions correctly relative to the element
   requestAnimationFrame(()=>{
     ta.focus({preventScroll:true});
-    // Move cursor to end
     const len=ta.value.length;
     ta.setSelectionRange(len,len);
+    _caretPos=len;
   });
 }
 function endTextEdit(){
+  if(_caretInterval){clearInterval(_caretInterval);_caretInterval=null;}
+  _caretVisible=false;
   const ta=document.getElementById('canvasTextEditor');
   if(!ta||ta.style.display==='none'){_editingLayerId=null;return;}
   const lay=_editingLayerId!=null?layers.find(x=>x.id===_editingLayerId):null;
   if(lay){lay.text=ta.value;delete lay._editing;}
-  ta.style.display='none';ta.value='';ta.oninput=null;ta.onblur=null;ta.onkeydown=null;
+  ta.style.display='none';ta.value='';ta.oninput=null;ta.onblur=null;ta.onkeydown=null;ta.onkeyup=null;
   _editingLayerId=null;
   render&&render();
 }
@@ -2337,6 +2389,7 @@ function doResize(pos){
 function d2(t1,t2){return Math.hypot(t1.clientX-t2.clientX,t1.clientY-t2.clientY);}
 let _lastTapTime=0,_lastTapId=null;
 function onTS(e){
+  _pendingTextEdit=null;
   // If tapping directly on the text editor textarea, let it handle its own touches
   if(e.target&&e.target.id==='canvasTextEditor')return;
   if(_editingLayerId!=null)endTextEdit();
@@ -2353,11 +2406,13 @@ function onTS(e){
   }
   if(selectedIds.size===1){const l=layers.find(x=>x.id===[...selectedIds][0]);if(l){const h=hitH(pos,l);if(h){_pushUndo();isResizing=true;resizeHandle=h;dragStart=pos;layerStart={...l};return;}}}
   let hit=null;for(let i=layers.length-1;i>=0;i--)if(hitT(pos,layers[i])){hit=layers[i];break;}
-  // Single tap on any text layer → edit immediately
+  // Single tap on any text layer — defer beginTextEdit to touchend so
+  // iOS treats the .focus() call as inside a direct user-gesture handler
   if(hit&&hit.type==='text'){
     selectedIds=new Set([hit.id]);
     updatePropsPanel();updateLayersList();
-    beginTextEdit(hit);
+    _pendingTextEdit=hit;
+    isDragging=false;
     return;
   }
   if(hit){
@@ -2400,10 +2455,13 @@ function onTM(e){
   if(isDragging){const dx=pos.x-dragStart.x,dy=pos.y-dragStart.y;for(const s of dragLayerStarts){const l=layers.find(x=>x.id===s.id);if(!l)continue;let nx=s.x+dx,ny=s.y+dy;if(selectedIds.size===1){const sn=applySnap(nx,ny,l.w,l.h,l.id);nx=sn.x;ny=sn.y;}l.x=nx;l.y=ny;}updatePropsPanel();}
   if(isResizing)doResize(pos);
 }
+let _pendingTextEdit=null;
 function onTE(e){
   e.preventDefault();
   if(isRubber){document.getElementById('rubberBand').style.display='none';}
   isPinching=false;isDragging=false;isResizing=false;isRubber=false;resizeHandle=null;hideGuides();
+  // Fire text edit here — inside touchend = reliable iOS user-gesture for .focus()
+  if(_pendingTextEdit){const l=_pendingTextEdit;_pendingTextEdit=null;beginTextEdit(l);}
 }
 
 // Timeline touch — seek only, no auto-play
@@ -4406,6 +4464,7 @@ X.oooooooo.X
   display:none;
 }
 .irix-toolchest{ min-width:172px; padding:2px; }
+@media(max-width:600px){ .irix-toolchest{ min-width:220px; } }
 .irix-toolchest .tc-title{
   background:linear-gradient(#5b6f8e,#3e5170); color:#fff;
   font-size:9px; letter-spacing:.08em; padding:2px 6px; margin-bottom:2px;
@@ -4414,7 +4473,12 @@ X.oooooooo.X
 .irix-toolchest .tc-item{
   display:flex; align-items:center; gap:8px;
   padding:4px 8px 4px 4px; font-size:10px; cursor:pointer;
-  border:1px solid transparent;
+  border:1px solid transparent; touch-action:manipulation;
+  min-height:28px;
+}
+@media(max-width:600px){
+  .irix-toolchest .tc-item{ min-height:44px; font-size:13px; padding:10px 14px 10px 8px; gap:10px; }
+  .irix-toolchest .tc-ico{ width:20px!important; height:20px!important; }
 }
 .irix-toolchest .tc-item:hover{ background:#5b6f8e; color:#fff;
   border-top-color:#8aa0c0; border-left-color:#8aa0c0;
@@ -4747,16 +4811,27 @@ XXXXXXXXXX..
     if(!disabled){
       it.addEventListener('mousedown',e=>{e.preventDefault();e.stopPropagation();});
       it.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();hideTC();try{fn();}catch(err){console.error(err);}});
-      // touch
       it.addEventListener('touchend',e=>{e.preventDefault();e.stopPropagation();hideTC();try{fn();}catch(err){console.error(err);}},{passive:false});
     }
     return it;
   }
   function buildSep(){ const s=document.createElement('div'); s.className='tc-sep'; return s; }
+
+  function selIsText(){
+    if(!W.selectedIds||W.selectedIds.size!==1)return false;
+    const l=W.layers&&W.layers.find(x=>x.id===[...W.selectedIds][0]);
+    return l&&l.type==='text';
+  }
+  function doAlign(a){
+    if(!W.layers||!W.selectedIds)return;
+    const l=W.layers.find(x=>x.id===[...W.selectedIds][0]);
+    if(l&&l.type==='text'){l.align=a;if(W.render)W.render();}
+  }
+
   function rebuildTC(){
     TC.innerHTML='';
     const t=document.createElement('div'); t.className='tc-title'; t.textContent='Toolchest'; TC.appendChild(t);
-    const sel=hasSelection(), canPaste=!!(CLIP&&CLIP.length);
+    const sel=hasSelection(), canPaste=!!(CLIP&&CLIP.length), isText=selIsText();
     TC.appendChild(buildItem('Cut',       'cut',   doCut,       '⌘X', !sel));
     TC.appendChild(buildItem('Copy',      'copy',  doCopy,      '⌘C', !sel));
     TC.appendChild(buildItem('Paste',     'paste', doPaste,     '⌘V', !canPaste));
@@ -4765,13 +4840,18 @@ XXXXXXXXXX..
     TC.appendChild(buildItem('Bring Forward','fwd', doForward, '⌘]', !sel));
     TC.appendChild(buildItem('Send Back',    'back',doBackward,'⌘[', !sel));
     TC.appendChild(buildSep());
+    if(isText){
+      TC.appendChild(buildItem('Align Left',   'talignL', ()=>doAlign('left'),   '', false));
+      TC.appendChild(buildItem('Align Center', 'talignC', ()=>doAlign('center'), '', false));
+      TC.appendChild(buildItem('Align Right',  'talignR', ()=>doAlign('right'),  '', false));
+      TC.appendChild(buildSep());
+    }
     TC.appendChild(buildItem('Delete', 'del2', doDelete, '⌫', !sel));
   }
   function showTC(x,y){
     rebuildTC();
     TC.style.display='block';
-    // Position; clamp inside viewport
-    const pad=4, vw=window.innerWidth, vh=window.innerHeight;
+    const pad=8, vw=window.innerWidth, vh=window.innerHeight;
     TC.style.left='0px'; TC.style.top='0px';
     const r=TC.getBoundingClientRect();
     const px=Math.min(Math.max(pad,x), vw-r.width-pad);
@@ -4780,40 +4860,55 @@ XXXXXXXXXX..
   }
   function hideTC(){ TC.style.display='none'; }
 
-  // Bind to canvas: contextmenu (desktop) + long-press (touch)
+  // Bind long-press to the canvas AREA element (which receives all touches via onTS/onTM/onTE)
+  // We hook the area's touchstart/move/end directly — separate from the canvas's own handlers
   function bindCanvas(){
-    const c = document.getElementById('mainCanvas') || document.querySelector('canvas');
-    if(!c){ setTimeout(bindCanvas,200); return; }
-    c.addEventListener('contextmenu', e=>{
-      e.preventDefault();
-      showTC(e.clientX,e.clientY);
-    });
-    let lpT=null, lpStart=null, lpMoved=false;
-    c.addEventListener('touchstart', e=>{
-      if(e.touches.length!==1) { clearTimeout(lpT); lpT=null; return; }
-      const t=e.touches[0]; lpStart={x:t.clientX,y:t.clientY}; lpMoved=false;
+    const area = document.getElementById('canvasArea');
+    if(!area){ setTimeout(bindCanvas,200); return; }
+
+    // Desktop right-click
+    const c=document.getElementById('mainCanvas');
+    if(c) c.addEventListener('contextmenu',e=>{e.preventDefault();showTC(e.clientX,e.clientY);});
+
+    let lpT=null, lpStart=null, lpMoved=false, lpShown=false;
+
+    area.addEventListener('touchstart',e=>{
+      lpShown=false;
+      if(e.touches.length!==1){clearTimeout(lpT);lpT=null;return;}
+      const t=e.touches[0];
+      lpStart={x:t.clientX,y:t.clientY};
+      lpMoved=false;
       clearTimeout(lpT);
       lpT=setTimeout(()=>{
-        if(!lpMoved && lpStart){
+        if(!lpMoved&&lpStart){
+          lpShown=true;
           showTC(lpStart.x,lpStart.y);
-          // haptic-ish feedback
-          if(navigator.vibrate) try{navigator.vibrate(15);}catch(e){}
+          if(navigator.vibrate)try{navigator.vibrate(18);}catch(ex){}
         }
-      }, 520);
+      },520);
     },{passive:true});
-    c.addEventListener('touchmove', e=>{
-      if(!lpStart) return;
+
+    area.addEventListener('touchmove',e=>{
+      if(!lpStart)return;
       const t=e.touches[0];
-      if(Math.hypot(t.clientX-lpStart.x,t.clientY-lpStart.y)>8){ lpMoved=true; clearTimeout(lpT); lpT=null; }
+      if(Math.hypot(t.clientX-lpStart.x,t.clientY-lpStart.y)>10){
+        lpMoved=true;clearTimeout(lpT);lpT=null;
+      }
     },{passive:true});
-    c.addEventListener('touchend',()=>{ clearTimeout(lpT); lpT=null; lpStart=null; },{passive:true});
-    c.addEventListener('touchcancel',()=>{ clearTimeout(lpT); lpT=null; lpStart=null; },{passive:true});
+
+    area.addEventListener('touchend',()=>{clearTimeout(lpT);lpT=null;lpStart=null;},{passive:true});
+    area.addEventListener('touchcancel',()=>{clearTimeout(lpT);lpT=null;lpStart=null;},{passive:true});
   }
-  // Dismiss on outside click / scroll / resize / Esc
-  document.addEventListener('mousedown', e=>{ if(!TC.contains(e.target)) hideTC(); }, true);
-  document.addEventListener('touchstart', e=>{ if(!TC.contains(e.target)) hideTC(); }, true);
-  window.addEventListener('resize', hideTC);
-  window.addEventListener('scroll', hideTC, true);
+
+  // Dismiss — but NOT if the touch is inside TC itself
+  document.addEventListener('mousedown',e=>{ if(!TC.contains(e.target))hideTC(); },true);
+  // For touch: dismiss only on touchend outside TC, not touchstart (avoids race with long-press)
+  document.addEventListener('touchend',e=>{
+    if(TC.style.display==='none')return;
+    if(!TC.contains(e.target))hideTC();
+  },true);
+  window.addEventListener('resize',hideTC);
+  window.addEventListener('scroll',hideTC,true);
   document.addEventListener('keydown', e=>{
     if(e.key==='Escape'){ hideTC(); hideTB(); return; }
     // Shortcuts when not typing in an input
