@@ -2125,12 +2125,16 @@ function drawTxt(l){
   if(l._editing)return;
   const s=(l.italic?'italic ':'')+(l.bold?'bold ':'');
   ctx.font=`${s}${l.size}px ${l.font}`;ctx.fillStyle=l.color;ctx.textBaseline='top';
+  const align=l.align||'left';
+  ctx.textAlign = align==='center' ? 'center' : (align==='right' ? 'right' : 'left');
+  const xAnchor = align==='center' ? l.w/2 : (align==='right' ? l.w-8 : 8);
   if(l.shadow){ctx.shadowColor='rgba(0,0,0,0.75)';ctx.shadowBlur=l.size*.15;ctx.shadowOffsetX=2;ctx.shadowOffsetY=2;}
   const lines=l.text.split('\n');let y=4;
   for(const line of lines){const words=line.split(' ');let row='';
     for(let n=0;n<words.length;n++){const t=row+words[n]+' ';
-      if(ctx.measureText(t).width>l.w-16&&n>0){ctx.fillText(row,8,y);row=words[n]+' ';y+=l.size*1.2;}else row=t;}
-    ctx.fillText(row,8,y);y+=l.size*1.2;}
+      if(ctx.measureText(t).width>l.w-16&&n>0){ctx.fillText(row,xAnchor,y);row=words[n]+' ';y+=l.size*1.2;}else row=t;}
+    ctx.fillText(row,xAnchor,y);y+=l.size*1.2;}
+  ctx.textAlign='left';
   ctx.shadowColor='transparent';ctx.shadowBlur=0;ctx.shadowOffsetX=0;ctx.shadowOffsetY=0;
 }
 function drawSel(l,multi){
@@ -2176,10 +2180,21 @@ function c2o(cx,cy){const r=document.getElementById('canvasOuter').getBoundingCl
 function onMD(e){
   if(_editingLayerId!=null)endTextEdit();
   const pos=c2c(e.clientX,e.clientY);
-  if(activeTool==='text'){addTextAt(pos.x,pos.y);setTool('select');return;}
+  if(activeTool==='text'){
+    const nl=addTextAt(pos.x,pos.y);
+    setTool('select');
+    // Immediately enter inline edit so iPhone keyboard pops
+    const lay=nl||layers[layers.length-1];
+    if(lay&&lay.type==='text'){selectedIds=new Set([lay.id]);updatePropsPanel();updateLayersList();beginTextEdit(lay);}
+    return;
+  }
   if(selectedIds.size===1){const l=layers.find(x=>x.id===[...selectedIds][0]);if(l){const h=hitH(pos,l);if(h){_pushUndo();isResizing=true;resizeHandle=h;dragStart=pos;layerStart={...l};return;}}}
   let hit=null;for(let i=layers.length-1;i>=0;i--)if(hitT(pos,layers[i])){hit=layers[i];break;}
   if(hit){
+    // Single-click on an already-selected text layer → edit inline
+    if(hit.type==='text' && selectedIds.size===1 && selectedIds.has(hit.id) && !e.shiftKey){
+      beginTextEdit(hit);return;
+    }
     if(e.shiftKey){if(selectedIds.has(hit.id))selectedIds.delete(hit.id);else selectedIds.add(hit.id);}
     else if(!selectedIds.has(hit.id))selectedIds=new Set([hit.id]);
     _pushUndo();
@@ -2280,15 +2295,27 @@ function doResize(pos){
 function d2(t1,t2){return Math.hypot(t1.clientX-t2.clientX,t1.clientY-t2.clientY);}
 let _lastTapTime=0,_lastTapId=null;
 function onTS(e){
+  if(_editingLayerId!=null)endTextEdit();
   e.preventDefault();
   if(e.touches.length===2){isPinching=true;isDragging=false;isResizing=false;isRubber=false;document.getElementById('rubberBand').style.display='none';pinchStartDist=d2(e.touches[0],e.touches[1]);pinchStartZoom=zoom;return;}
   if(e.touches.length!==1)return;
   const t=e.touches[0],pos=c2c(t.clientX,t.clientY);
-  if(activeTool==='text'){addTextAt(pos.x,pos.y);setTool('select');return;}
+  if(activeTool==='text'){
+    const nl=addTextAt(pos.x,pos.y);
+    setTool('select');
+    const lay=nl||layers[layers.length-1];
+    if(lay&&lay.type==='text'){selectedIds=new Set([lay.id]);updatePropsPanel();updateLayersList();beginTextEdit(lay);}
+    return;
+  }
   if(selectedIds.size===1){const l=layers.find(x=>x.id===[...selectedIds][0]);if(l){const h=hitH(pos,l);if(h){_pushUndo();isResizing=true;resizeHandle=h;dragStart=pos;layerStart={...l};return;}}}
   let hit=null;for(let i=layers.length-1;i>=0;i--)if(hitT(pos,layers[i])){hit=layers[i];break;}
-  // Double-tap on text → enter edit mode
+  // Tap on text: if already selected → edit immediately; else select first, second tap edits
   if(hit&&hit.type==='text'){
+    if(selectedIds.size===1 && selectedIds.has(hit.id)){
+      _lastTapTime=0;_lastTapId=null;
+      beginTextEdit(hit);
+      return;
+    }
     const now=Date.now();
     if(_lastTapId===hit.id && (now-_lastTapTime)<350){
       _lastTapTime=0;_lastTapId=null;
@@ -3897,6 +3924,1014 @@ function propsZoomOut(){
 })();
 
 
+</script>
+
+<!-- ─────────── SGI IRIX pixel-art icons (override modern SVGs) ─────────── -->
+<style id="sgiPixIconsCSS">
+body.theme-sgi-irix .tbtn[data-pix] > svg,
+body.theme-sgi-irix .abtn[data-pix] > svg{display:none !important;}
+body.theme-sgi-irix .tbtn[data-pix],
+body.theme-sgi-irix .abtn[data-pix]{position:relative;}
+body.theme-sgi-irix .tbtn[data-pix]::before,
+body.theme-sgi-irix .abtn[data-pix]::before{
+  content:"";
+  display:inline-block;
+  width:18px;height:18px;
+  background-repeat:no-repeat;
+  background-position:center;
+  background-size:18px 18px;
+  image-rendering:pixelated;
+  image-rendering:-moz-crisp-edges;
+  image-rendering:crisp-edges;
+  vertical-align:middle;
+  margin-right:4px;
+  filter:drop-shadow(1px 1px 0 rgba(0,0,0,.55));
+}
+body.theme-sgi-irix .abtn[data-pix]::before{margin-right:0;}
+body.theme-sgi-irix .tbtn[data-pix].icon-only::before{margin-right:0;}
+</style>
+<script>
+/* Pixel-art icon engine — converts compact 12x12 ASCII grids into inline SVG
+   data-URIs and assigns them to .tbtn / .abtn buttons by mapping key.
+   Legend: '.' = transparent, 'X' = primary (amber), 'o' = secondary (steel),
+           '#' = dark outline, '+' = highlight (cream). */
+(function(){
+  const SIZE=12;
+  const PAL={X:'#ffb000', o:'#7e8aa8', '#':'#1a1f2e', '+':'#fff2c8', 'r':'#d44b3a', 'g':'#5fb86b', 'b':'#3a78ff'};
+  function svgFromGrid(g){
+    const rows=g.trim().split('\n').map(r=>r.padEnd(SIZE,'.').slice(0,SIZE));
+    while(rows.length<SIZE) rows.push('.'.repeat(SIZE));
+    let rects='';
+    for(let y=0;y<SIZE;y++){
+      for(let x=0;x<SIZE;x++){
+        const ch=rows[y][x]; const fill=PAL[ch];
+        if(fill) rects+=`<rect x="${x}" y="${y}" width="1" height="1" fill="${fill}"/>`;
+      }
+    }
+    const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SIZE} ${SIZE}" shape-rendering="crispEdges">${rects}</svg>`;
+    return 'url("data:image/svg+xml;utf8,'+encodeURIComponent(svg)+'")';
+  }
+
+  // ── Glyph library (12×12). Visual goal: chunky SGI-IRIX desktop iconography.
+  const G = {
+    select: `
+............
+.X..........
+.XX.........
+.XXX........
+.XXXX.......
+.XXXXX......
+.XXXXXX.....
+.XXXX.......
+.XX.X.......
+.X..XX......
+.....XX.....
+......XX....`,
+    undo: `
+............
+....##......
+...#XX#.....
+..#XX#......
+.#XX#.......
+#XX#XXXXX#..
+#X#XXXXXXX#.
+#X#......XX#
+.##.......XX
+..........XX
+.........XX#
+........##..`,
+    redo: `
+............
+......##....
+.....#XX#...
+......#XX#..
+.......#XX#.
+.#XXXXX#XX#.
+#XXXXXXX#X#.
+#XX......#X#
+XX.......##.
+XX..........
+#XX.........
+..##........`,
+    del: `
+............
+...######...
+..#X+++X#...
+.##########.
+..#XXXXXX#..
+..#X#X#X##..
+..#X#X#X##..
+..#X#X#X##..
+..#XXXXXX#..
+..##########
+............
+............`,
+    clear: `
+############
+#oooooooooo#
+#o########o#
+#o#......#o#
+#o#XXXXXX#o#
+#o#......#o#
+#o#XXXXXX#o#
+#o#......#o#
+#o#XXXXXX#o#
+#o########o#
+#oooooooooo#
+############`,
+    new: `
+.########...
+.#++++++#...
+.#+....+##..
+.#+.XX.+#+#.
+.#+XXXX+##..
+.#+.XX.+#...
+.#+XXXX+#...
+.#+.XX.+#...
+.#+....+#...
+.#++++++#...
+.########...
+............`,
+    save: `
+############
+#oo########o
+#o########oo
+#o#XXXXXX#o.
+#o#X....X#o.
+#o#X.gg.X#o.
+#o#X.gg.X#o.
+#o#XXXXXX#o.
+#o########o.
+#o#X+X+X+#o.
+#oo######oo.
+############`,
+    open: `
+............
+.####.......
+.#XX#.......
+.######XXXX#
+.#oooooooo##
+.#oooooooo#.
+.#oo####oo#.
+.#oo#XX#oo#.
+.#oo####oo#.
+.#oooooooo#.
+.##########.
+............`,
+    align_toggle: `
+############
+#XXXXXXXXXX#
+############
+....####....
+.##########.
+.#XXXXXXXX#.
+.##########.
+....####....
+############
+#XXXXXXXXXX#
+############
+............`,
+    play: `
+............
+.##.........
+.#X##.......
+.#XXX##.....
+.#XXXXX##...
+.#XXXXXXX##.
+.#XXXXXXX##.
+.#XXXXX##...
+.#XXX##.....
+.#X##.......
+.##.........
+............`,
+    export: `
+............
+....XXXX....
+....XXXX....
+....XXXX....
+.X..XXXX..X.
+.XX.XXXX.XX.
+.XXXXXXXXXX.
+..XXXXXXXX..
+...XXXXXX...
+....XXXX....
+.##########.
+############`,
+    // Alignment glyphs (steel rectangles aligned to amber rule line)
+    align_left: `
+X...........
+X.oooo......
+X...........
+X.oooooooo..
+X...........
+X.oooo......
+X...........
+X.oooooo....
+X...........
+X.oo........
+X...........
+X...........`,
+    align_centerH: `
+.....X......
+..oooXoo....
+.....X......
+.oooooXooo..
+.....X......
+..oooXooo...
+.....X......
+..oooXo.....
+.....X......
+....oXo.....
+.....X......
+............`,
+    align_right: `
+...........X
+......oooo.X
+...........X
+..oooooooo.X
+...........X
+......oooo.X
+...........X
+....oooooo.X
+...........X
+.........oo.X
+...........X
+............`,
+    align_top: `
+XXXXXXXXXXXX
+.o.o.o.o.o..
+.o.o.o.o.o..
+.o.o.o.o.o..
+.o.o.o.o....
+...o.o.o....
+...o.o.o....
+.....o.o....
+.....o.o....
+.....o.o....
+.......o....
+............`,
+    align_centerV: `
+............
+.....oo.....
+.....oo.....
+....oooo....
+....oooo....
+XXXXXXXXXXXX
+....oooo....
+....oooo....
+.....oo.....
+.....oo.....
+.....oo.....
+............`,
+    align_bottom: `
+............
+.......o....
+.....o.o....
+.....o.o....
+.....o.o....
+...o.o.o....
+...o.o.o....
+.o.o.o.o....
+.o.o.o.o.o..
+.o.o.o.o.o..
+.o.o.o.o.o..
+XXXXXXXXXXXX`,
+    same_w: `
+............
+............
+oooooooooooo
+oooooooooooo
+oooooooooooo
+............
+............
+oooooooooooo
+oooooooooooo
+oooooooooooo
+............
+............`,
+    same_h: `
+.oo....oo...
+.oo....oo...
+.oo....oo...
+.oo....oo...
+.oo....oo...
+.oo....oo...
+.oo....oo...
+.oo....oo...
+.oo....oo...
+.oo....oo...
+.oo....oo...
+.oo....oo...`,
+    dist_h: `
+X.........X.
+X.oo..oo..X.
+X.oo..oo..X.
+X.oo..oo..X.
+X.oo..oo..X.
+X.oo..oo..X.
+X.oo..oo..X.
+X.oo..oo..X.
+X.oo..oo..X.
+X.oo..oo..X.
+X.........X.
+............`,
+    dist_v: `
+XXXXXXXXXXX.
+............
+.oooooooo...
+.oooooooo...
+.oooooooo...
+............
+.oooooooo...
+.oooooooo...
+.oooooooo...
+............
+XXXXXXXXXXX.
+............`,
+    canvas_h: `
+############
+#..........#
+#..........#
+#..........#
+#.oooooooo.#
+X.oooooooo.X
+#.oooooooo.#
+#..........#
+#..........#
+#..........#
+############
+............`,
+    canvas_v: `
+############
+#....X.....#
+#....X.....#
+#..ooXoo...#
+#..ooXoo...#
+#..ooXoo...#
+#..ooXoo...#
+#..ooXoo...#
+#....X.....#
+#....X.....#
+############
+............`,
+    timeline: `
+############
+#XXXXX######
+############
+.X.X.X.X.X..
+.X.X.X.X.X..
+.X.X.X.X.X..
+............
+....XX......
+...X##X.....
+....XX......
+............
+............`,
+  };
+
+  // Pre-build URLs
+  const URL_={};
+  for(const k in G) URL_[k]=svgFromGrid(G[k]);
+
+  function setIcon(el,key,iconOnly){
+    if(!el||!URL_[key])return;
+    el.setAttribute('data-pix',key);
+    if(iconOnly) el.classList.add('icon-only');
+    el.style.setProperty('--pix-icon',URL_[key]);
+    // Apply directly via a per-element rule so multiple instances work
+    el.style.backgroundImage='';
+  }
+
+  // Inject per-key CSS rules (one rule per key keeps DOM clean)
+  function injectKeyRules(){
+    let css='';
+    for(const k in URL_){
+      css += `body.theme-sgi-irix .tbtn[data-pix="${k}"]::before,body.theme-sgi-irix .abtn[data-pix="${k}"]::before{background-image:${URL_[k]};}\n`;
+    }
+    const s=document.createElement('style');s.id='sgiPixIconsKeys';s.textContent=css;document.head.appendChild(s);
+  }
+
+  // Map a button to a glyph key based on id / onclick / title
+  function keyFor(btn){
+    const id=btn.id||'', oc=(btn.getAttribute('onclick')||'').toLowerCase(), ti=(btn.title||'').toLowerCase();
+    if(id==='toolSelect'||/select/.test(oc+' '+ti))return 'select';
+    if(/doundo|undo/.test(oc+id))return 'undo';
+    if(/doredo|redo/.test(oc+id))return 'redo';
+    if(/deleteselected/.test(oc)||ti==='delete selected layer'||ti==='del')return 'del';
+    if(/doclearall|clear/.test(oc+id))return 'clear';
+    if(/donewproject|new project/.test(oc+ti))return 'new';
+    if(/dosaveproject|save project/.test(oc+ti))return 'save';
+    if(/doopenproject|open project/.test(oc+ti))return 'open';
+    if(id==='toggleAlignBtn'||/toggleviewalign/.test(oc))return 'align_toggle';
+    if(id==='toggleTimelineBtn'||/toggleviewtimeline/.test(oc))return 'timeline';
+    if(/togglepreviewplay|preview/.test(oc+ti)&&!/timeline/.test(ti))return 'play';
+    if(/openexportdialog|export/.test(oc+ti))return 'export';
+    // Alignment bar
+    if(/alignlayers\(['"]left/.test(oc))return 'align_left';
+    if(/alignlayers\(['"]center-h/.test(oc))return 'align_centerH';
+    if(/alignlayers\(['"]right/.test(oc))return 'align_right';
+    if(/alignlayers\(['"]top/.test(oc))return 'align_top';
+    if(/alignlayers\(['"]center-v/.test(oc))return 'align_centerV';
+    if(/alignlayers\(['"]bottom/.test(oc))return 'align_bottom';
+    if(/alignlayers\(['"]same-width/.test(oc))return 'same_w';
+    if(/alignlayers\(['"]same-height/.test(oc))return 'same_h';
+    if(/alignlayers\(['"]dist-h/.test(oc))return 'dist_h';
+    if(/alignlayers\(['"]dist-v/.test(oc))return 'dist_v';
+    if(/alignlayers\(['"]canvas-center-h/.test(oc))return 'canvas_h';
+    if(/alignlayers\(['"]canvas-center-v/.test(oc))return 'canvas_v';
+    return null;
+  }
+
+  function applyAll(){
+    injectKeyRules();
+    document.querySelectorAll('.tbtn,.abtn').forEach(btn=>{
+      const k=keyFor(btn); if(!k) return;
+      // Aspect ratio buttons keep their text label, skip them
+      if(btn.classList.contains('aspect-btn')) return;
+      const isAlign = btn.classList.contains('abtn');
+      const hasLabel = !!btn.querySelector('span') || /\S/.test(btn.textContent.replace(/\s+/g,''));
+      const iconOnly = isAlign || !hasLabel;
+      setIcon(btn,k,iconOnly);
+    });
+  }
+
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',applyAll);
+  else applyAll();
+})();
+</script>
+
+<!-- ============================================================
+     IRIX Toolchest (right-click / long-press) + floating Text mini-toolbar
+     ============================================================ -->
+<style>
+.irix-toolchest, .irix-textbar{
+  position:fixed; z-index:9999;
+  font-family:'ScreenBold','Screen',monospace;
+  background:#a8a89c; color:#000;
+  border:1px solid #fff; border-right-color:#3a3a36; border-bottom-color:#3a3a36;
+  box-shadow:1px 1px 0 #000, 2px 2px 4px rgba(0,0,0,.45);
+  user-select:none; -webkit-user-select:none;
+  display:none;
+}
+.irix-toolchest{ min-width:172px; padding:2px; }
+.irix-toolchest .tc-title{
+  background:linear-gradient(#5b6f8e,#3e5170); color:#fff;
+  font-size:9px; letter-spacing:.08em; padding:2px 6px; margin-bottom:2px;
+  border:1px solid #2a3850; text-transform:uppercase;
+}
+.irix-toolchest .tc-item{
+  display:flex; align-items:center; gap:8px;
+  padding:4px 8px 4px 4px; font-size:10px; cursor:pointer;
+  border:1px solid transparent;
+}
+.irix-toolchest .tc-item:hover{ background:#5b6f8e; color:#fff;
+  border-top-color:#8aa0c0; border-left-color:#8aa0c0;
+  border-right-color:#2a3850; border-bottom-color:#2a3850;
+}
+.irix-toolchest .tc-item.disabled{ opacity:.45; pointer-events:none; }
+.irix-toolchest .tc-sep{ height:1px; background:#3a3a36; margin:2px 4px;
+  box-shadow:0 1px 0 #fff; }
+.irix-toolchest .tc-ico{
+  width:14px;height:14px; flex:0 0 14px;
+  background-repeat:no-repeat; background-size:contain; background-position:center;
+  image-rendering:pixelated; image-rendering:crisp-edges;
+}
+.irix-toolchest .tc-key{ margin-left:auto; font-size:8px; color:#3a3a36; opacity:.7; }
+.irix-toolchest .tc-item:hover .tc-key{ color:#cfe0ff; opacity:.9; }
+
+.irix-textbar{ padding:3px; display:none; align-items:center; gap:2px; }
+.irix-textbar.show{ display:flex; }
+.irix-textbar .tb-btn{
+  width:22px;height:22px;
+  display:inline-flex;align-items:center;justify-content:center;
+  background:#a8a89c; cursor:pointer;
+  border:1px solid #fff; border-right-color:#3a3a36; border-bottom-color:#3a3a36;
+  background-repeat:no-repeat; background-size:14px 14px; background-position:center;
+  image-rendering:pixelated; image-rendering:crisp-edges;
+}
+.irix-textbar .tb-btn:active, .irix-textbar .tb-btn.on{
+  border:1px solid #3a3a36; border-right-color:#fff; border-bottom-color:#fff;
+  background-color:#8a8a80;
+}
+.irix-textbar .tb-sep{ width:1px; height:18px; background:#3a3a36;
+  box-shadow:1px 0 0 #fff; margin:0 3px; }
+.irix-textbar .tb-color{
+  width:22px;height:22px; padding:0; cursor:pointer;
+  border:1px solid #fff; border-right-color:#3a3a36; border-bottom-color:#3a3a36;
+  background:#fff;
+}
+.irix-textbar .tb-size{
+  width:36px; height:20px; font-family:inherit; font-size:10px; text-align:center;
+  background:#fff; color:#000; border:1px solid #3a3a36; border-right-color:#fff; border-bottom-color:#fff;
+  margin:0 1px;
+}
+</style>
+
+<div class="irix-toolchest" id="irixToolchest" role="menu" aria-label="Toolchest">
+  <div class="tc-title">Toolchest</div>
+</div>
+
+<div class="irix-textbar" id="irixTextbar" role="toolbar" aria-label="Text formatting"></div>
+
+<script>
+(function(){
+  const SIZE=12;
+  const PAL={X:'#ffb000', o:'#7e8aa8', '#':'#1a1f2e', '+':'#fff2c8', 'r':'#d44b3a', 'g':'#5fb86b', 'b':'#3a78ff', 'k':'#000000'};
+  function svgURL(g){
+    const rows=g.trim().split('\n').map(r=>r.padEnd(SIZE,'.').slice(0,SIZE));
+    while(rows.length<SIZE) rows.push('.'.repeat(SIZE));
+    let rects='';
+    for(let y=0;y<SIZE;y++) for(let x=0;x<SIZE;x++){
+      const f=PAL[rows[y][x]]; if(f) rects+=`<rect x="${x}" y="${y}" width="1" height="1" fill="${f}"/>`;
+    }
+    return 'url("data:image/svg+xml;utf8,'+encodeURIComponent(
+      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SIZE} ${SIZE}" shape-rendering="crispEdges">${rects}</svg>`
+    )+'")';
+  }
+
+  // ── Pixel glyphs for toolchest + text bar
+  const G = {
+    cut: `
+............
+.X........X.
+.XX......XX.
+..XX....XX..
+...XX..XX...
+....XXXX....
+.....XX.....
+....X##X....
+...X#oo#X...
+...#oooo#...
+...#oooo#...
+....####....`,
+    copy: `
+.#######....
+.#+++++#....
+.#+###+####.
+.#+#X#+#++#.
+.#+###+#X+#.
+.#+++++#X+#.
+.#######X+#.
+....#+#X+##.
+....#+#X+#..
+....#+####..
+....#+++#...
+....#####...`,
+    paste: `
+....####....
+...#XXXX#...
+.###XXXX###.
+.#oo####oo#.
+.#oooooooo#.
+.#oo####oo#.
+.#oo#XX#oo#.
+.#oo####oo#.
+.#oo#XX#oo#.
+.#oo####oo#.
+.#oooooooo#.
+.##########.`,
+    dup: `
+.#######....
+.#+++++#....
+.#+XXX+####.
+.#+++++#++#.
+.#+XXX+#X+#.
+.#+++++#++#.
+.#######X+#.
+....#+#++#..
+....#+#X+#..
+....#+####..
+....#+++#...
+....#####...`,
+    fwd: `
+....####....
+...#XXXX#...
+..#XXXXXX#..
+.#XXXXXXXX#.
+############
+.oo......oo.
+.oo......oo.
+.oo......oo.
+.oo......oo.
+.oo......oo.
+.oo......oo.
+.oooooooooo.`,
+    back: `
+.oooooooooo.
+.oo......oo.
+.oo......oo.
+.oo......oo.
+.oo......oo.
+.oo......oo.
+.oo......oo.
+############
+.#XXXXXXXX#.
+..#XXXXXX#..
+...#XXXX#...
+....####....`,
+    del2: `
+............
+...######...
+..#X+++X#...
+.##########.
+..#XXXXXX#..
+..#X#X#X##..
+..#X#X#X##..
+..#X#X#X##..
+..#X#X#X##..
+..#XXXXXX#..
+..##########
+............`,
+    bold: `
+.######.....
+.#XXXXX#....
+.#XXXX##....
+.#XXXX#.....
+.#XXXX##....
+.#XXXXX#....
+.#XXXXX#....
+.#XXXX##....
+.#XXXX#.....
+.#XXXX##....
+.#XXXXX#....
+.######.....`,
+    italic: `
+....######..
+.....X##....
+....X##.....
+....X##.....
+...X##......
+...X##......
+..X##.......
+..X##.......
+.X##........
+.X##........
+######......
+............`,
+    sizeUp: `
+....##......
+...####.....
+..##XX##....
+.##XXXX##...
+##XXXXXX##..
+....XX......
+....XX......
+....XX......
+.XX....XX...
+.XXX..XXX...
+.XX.XX.XX...
+.XX....XX...`,
+    sizeDown: `
+.XX....XX...
+.XXX..XXX...
+.XX.XX.XX...
+.XX....XX...
+....XX......
+....XX......
+....XX......
+##XXXXXX##..
+.##XXXX##...
+..##XX##....
+...####.....
+....##......`,
+    talignL: `
+XXXXXXXXXX..
+............
+XXXXXX......
+............
+XXXXXXXX....
+............
+XXXX........
+............
+XXXXXXXX....
+............
+XXXXX.......
+............`,
+    talignC: `
+XXXXXXXXXX..
+............
+..XXXXXX....
+............
+.XXXXXXXX...
+............
+...XXXX.....
+............
+.XXXXXXXX...
+............
+...XXXXX....
+............`,
+    talignR: `
+XXXXXXXXXX..
+............
+....XXXXXX..
+............
+..XXXXXXXX..
+............
+......XXXX..
+............
+..XXXXXXXX..
+............
+.....XXXXX..
+............`,
+    color: `
+....####....
+...#rrrr#...
+..#rrrrrr#..
+.#ggrrrrgg#.
+.#gggrrggg#.
+.#ggggggggg#
+.#ggbbbbggg#
+.#ggbbbbgg#.
+..#bbbbbb#..
+...#bbbb#...
+....####....
+............`,
+  };
+  const URL_={};
+  for(const k in G) URL_[k]=svgURL(G[k]);
+
+  // ===========================================================
+  // Helpers — bridge to existing editor globals
+  // ===========================================================
+  const W = window;
+  function activeText(){
+    if(!W.layers||!W.selectedIds) return null;
+    const ids=[...W.selectedIds]; if(ids.length!==1) return null;
+    const l=W.layers.find(x=>x.id===ids[0]);
+    return (l && l.type==='text') ? l : null;
+  }
+  function hasSelection(){ return W.selectedIds && W.selectedIds.size>0; }
+  function refresh(){
+    try{ W.updateLayersList && W.updateLayersList(); }catch(e){}
+    try{ W.updatePropsPanel && W.updatePropsPanel(); }catch(e){}
+  }
+
+  // Internal clipboard (mirrors duplicate)
+  let CLIP=null;
+  function doCopy(){
+    if(!hasSelection()) return;
+    const ids=[...W.selectedIds];
+    CLIP = ids.map(id=>{
+      const l=W.layers.find(x=>x.id===id); if(!l) return null;
+      const c={...l, fx:l.fx?{...l.fx}:undefined};
+      delete c.id; delete c._qbRefW; delete c._qbRefH; delete c._qbRefX; delete c._qbRefY;
+      return c;
+    }).filter(Boolean);
+  }
+  function doCut(){ doCopy(); doDelete(); }
+  function doPaste(){
+    if(!CLIP||!CLIP.length) return;
+    const newIds=new Set();
+    for(const c of CLIP){
+      const copy={...c, id: W.nextId++, x:(c.x||0)+20, y:(c.y||0)+20};
+      W.layers.push(copy); newIds.add(copy.id);
+    }
+    W.selectedIds=newIds; refresh();
+  }
+  function doDuplicate(){ if(W.qbDuplicate) W.qbDuplicate(); }
+  function doForward(){ if(W.qbLayerMove) W.qbLayerMove(1); }
+  function doBackward(){ if(W.qbLayerMove) W.qbLayerMove(-1); }
+  function doDelete(){
+    if(W.deleteSelected){ W.deleteSelected(); return; }
+    if(!hasSelection()) return;
+    const ids=new Set(W.selectedIds);
+    W.layers = W.layers.filter(l=>!ids.has(l.id));
+    W.selectedIds = new Set(); refresh();
+  }
+
+  // ===========================================================
+  // Toolchest
+  // ===========================================================
+  const TC = document.getElementById('irixToolchest');
+  function buildItem(label, key, fn, shortcut, disabled){
+    const it=document.createElement('div');
+    it.className='tc-item'+(disabled?' disabled':'');
+    it.setAttribute('role','menuitem');
+    const ic=document.createElement('div'); ic.className='tc-ico';
+    if(URL_[key]) ic.style.backgroundImage=URL_[key];
+    const tx=document.createElement('span'); tx.textContent=label;
+    it.appendChild(ic); it.appendChild(tx);
+    if(shortcut){ const k=document.createElement('span'); k.className='tc-key'; k.textContent=shortcut; it.appendChild(k); }
+    if(!disabled){
+      it.addEventListener('mousedown',e=>{e.preventDefault();e.stopPropagation();});
+      it.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();hideTC();try{fn();}catch(err){console.error(err);}});
+      // touch
+      it.addEventListener('touchend',e=>{e.preventDefault();e.stopPropagation();hideTC();try{fn();}catch(err){console.error(err);}},{passive:false});
+    }
+    return it;
+  }
+  function buildSep(){ const s=document.createElement('div'); s.className='tc-sep'; return s; }
+  function rebuildTC(){
+    TC.innerHTML='';
+    const t=document.createElement('div'); t.className='tc-title'; t.textContent='Toolchest'; TC.appendChild(t);
+    const sel=hasSelection(), canPaste=!!(CLIP&&CLIP.length);
+    TC.appendChild(buildItem('Cut',       'cut',   doCut,       '⌘X', !sel));
+    TC.appendChild(buildItem('Copy',      'copy',  doCopy,      '⌘C', !sel));
+    TC.appendChild(buildItem('Paste',     'paste', doPaste,     '⌘V', !canPaste));
+    TC.appendChild(buildItem('Duplicate', 'dup',   doDuplicate, '⌘D', !sel));
+    TC.appendChild(buildSep());
+    TC.appendChild(buildItem('Bring Forward','fwd', doForward, '⌘]', !sel));
+    TC.appendChild(buildItem('Send Back',    'back',doBackward,'⌘[', !sel));
+    TC.appendChild(buildSep());
+    TC.appendChild(buildItem('Delete', 'del2', doDelete, '⌫', !sel));
+  }
+  function showTC(x,y){
+    rebuildTC();
+    TC.style.display='block';
+    // Position; clamp inside viewport
+    const pad=4, vw=window.innerWidth, vh=window.innerHeight;
+    TC.style.left='0px'; TC.style.top='0px';
+    const r=TC.getBoundingClientRect();
+    const px=Math.min(Math.max(pad,x), vw-r.width-pad);
+    const py=Math.min(Math.max(pad,y), vh-r.height-pad);
+    TC.style.left=px+'px'; TC.style.top=py+'px';
+  }
+  function hideTC(){ TC.style.display='none'; }
+
+  // Bind to canvas: contextmenu (desktop) + long-press (touch)
+  function bindCanvas(){
+    const c = document.getElementById('mainCanvas') || document.querySelector('canvas');
+    if(!c){ setTimeout(bindCanvas,200); return; }
+    c.addEventListener('contextmenu', e=>{
+      e.preventDefault();
+      showTC(e.clientX,e.clientY);
+    });
+    let lpT=null, lpStart=null, lpMoved=false;
+    c.addEventListener('touchstart', e=>{
+      if(e.touches.length!==1) { clearTimeout(lpT); lpT=null; return; }
+      const t=e.touches[0]; lpStart={x:t.clientX,y:t.clientY}; lpMoved=false;
+      clearTimeout(lpT);
+      lpT=setTimeout(()=>{
+        if(!lpMoved && lpStart){
+          showTC(lpStart.x,lpStart.y);
+          // haptic-ish feedback
+          if(navigator.vibrate) try{navigator.vibrate(15);}catch(e){}
+        }
+      }, 520);
+    },{passive:true});
+    c.addEventListener('touchmove', e=>{
+      if(!lpStart) return;
+      const t=e.touches[0];
+      if(Math.hypot(t.clientX-lpStart.x,t.clientY-lpStart.y)>8){ lpMoved=true; clearTimeout(lpT); lpT=null; }
+    },{passive:true});
+    c.addEventListener('touchend',()=>{ clearTimeout(lpT); lpT=null; lpStart=null; },{passive:true});
+    c.addEventListener('touchcancel',()=>{ clearTimeout(lpT); lpT=null; lpStart=null; },{passive:true});
+  }
+  // Dismiss on outside click / scroll / resize / Esc
+  document.addEventListener('mousedown', e=>{ if(!TC.contains(e.target)) hideTC(); }, true);
+  document.addEventListener('touchstart', e=>{ if(!TC.contains(e.target)) hideTC(); }, true);
+  window.addEventListener('resize', hideTC);
+  window.addEventListener('scroll', hideTC, true);
+  document.addEventListener('keydown', e=>{
+    if(e.key==='Escape'){ hideTC(); hideTB(); return; }
+    // Shortcuts when not typing in an input
+    const tag=(e.target&&e.target.tagName)||''; const editing=/INPUT|TEXTAREA|SELECT/.test(tag) || (e.target&&e.target.isContentEditable);
+    if(editing) return;
+    const meta=e.metaKey||e.ctrlKey;
+    if(meta && e.key.toLowerCase()==='c'){ doCopy(); }
+    else if(meta && e.key.toLowerCase()==='x'){ doCut(); }
+    else if(meta && e.key.toLowerCase()==='v'){ doPaste(); }
+    else if(meta && e.key.toLowerCase()==='d'){ e.preventDefault(); doDuplicate(); }
+    else if(meta && e.key===']'){ e.preventDefault(); doForward(); }
+    else if(meta && e.key==='['){ e.preventDefault(); doBackward(); }
+  });
+
+  // ===========================================================
+  // Floating Text mini-toolbar
+  // ===========================================================
+  const TB = document.getElementById('irixTextbar');
+
+  function makeBtn(key,title,onClick){
+    const b=document.createElement('button'); b.type='button'; b.className='tb-btn'; b.title=title;
+    if(URL_[key]) b.style.backgroundImage=URL_[key];
+    b.addEventListener('mousedown',e=>e.preventDefault());
+    b.addEventListener('click',e=>{e.preventDefault();onClick(b);});
+    return b;
+  }
+  function makeSep(){ const s=document.createElement('div'); s.className='tb-sep'; return s; }
+
+  let bBold,bItalic,bAL,bAC,bAR,bSizeDown,bSizeUp,iColor,iSize;
+
+  function buildTB(){
+    TB.innerHTML='';
+    bBold = makeBtn('bold','Bold', ()=>{
+      const l=activeText(); if(!l) return; l.bold=!l.bold;
+      try{ if(W.txtCfg) W.txtCfg.bold=l.bold; }catch(e){}
+      syncTaStyle(); updateTBState(); refresh();
+    });
+    bItalic = makeBtn('italic','Italic', ()=>{
+      const l=activeText(); if(!l) return; l.italic=!l.italic;
+      try{ if(W.txtCfg) W.txtCfg.italic=l.italic; }catch(e){}
+      syncTaStyle(); updateTBState(); refresh();
+    });
+    TB.appendChild(bBold); TB.appendChild(bItalic);
+    TB.appendChild(makeSep());
+    bAL = makeBtn('talignL','Align Left',  ()=>setAlign('left'));
+    bAC = makeBtn('talignC','Align Center',()=>setAlign('center'));
+    bAR = makeBtn('talignR','Align Right', ()=>setAlign('right'));
+    TB.appendChild(bAL); TB.appendChild(bAC); TB.appendChild(bAR);
+    TB.appendChild(makeSep());
+    bSizeDown = makeBtn('sizeDown','Smaller',()=>changeSize(-2));
+    iSize = document.createElement('input');
+    iSize.type='number'; iSize.min='6'; iSize.max='400'; iSize.className='tb-size'; iSize.title='Font size';
+    iSize.addEventListener('input',()=>{
+      const l=activeText(); if(!l) return;
+      const v=Math.max(6,Math.min(400,parseInt(iSize.value)||l.size||40));
+      l.size=v;
+      try{ if(W.txtCfg) W.txtCfg.size=v; const sv=document.getElementById('txtSizeVal'); if(sv) sv.textContent=v+'px'; const sl=document.getElementById('txtSize'); if(sl) sl.value=v; }catch(e){}
+      syncTaStyle();
+    });
+    bSizeUp = makeBtn('sizeUp','Larger',()=>changeSize(+2));
+    TB.appendChild(bSizeDown); TB.appendChild(iSize); TB.appendChild(bSizeUp);
+    TB.appendChild(makeSep());
+    iColor = document.createElement('input');
+    iColor.type='color'; iColor.className='tb-color'; iColor.title='Color';
+    iColor.addEventListener('input',()=>{
+      const l=activeText(); if(!l) return; l.color=iColor.value;
+      try{ if(W.txtCfg) W.txtCfg.color=l.color; }catch(e){}
+      syncTaStyle(); refresh();
+    });
+    TB.appendChild(iColor);
+  }
+  function setAlign(a){
+    const l=activeText(); if(!l) return; l.align=a;
+    syncTaStyle(); updateTBState(); refresh();
+  }
+  function changeSize(d){
+    const l=activeText(); if(!l) return;
+    l.size=Math.max(6,Math.min(400,(l.size||40)+d));
+    try{ if(W.txtCfg) W.txtCfg.size=l.size; const sv=document.getElementById('txtSizeVal'); if(sv) sv.textContent=l.size+'px'; const sl=document.getElementById('txtSize'); if(sl) sl.value=l.size; }catch(e){}
+    if(iSize) iSize.value=l.size;
+    syncTaStyle();
+  }
+  function syncTaStyle(){
+    const ta=document.getElementById('inlineTextEditor'); const l=activeText();
+    if(ta && l){
+      ta.style.fontWeight=l.bold?'bold':'normal';
+      ta.style.fontStyle=l.italic?'italic':'normal';
+      ta.style.color=l.color||'#fff';
+      ta.style.textAlign=l.align||'left';
+      const z=(typeof W.zoom==='number')?W.zoom:1;
+      ta.style.fontSize=((l.size||40)*z)+'px';
+    }
+  }
+  function updateTBState(){
+    const l=activeText(); if(!l) return;
+    bBold && bBold.classList.toggle('on',!!l.bold);
+    bItalic && bItalic.classList.toggle('on',!!l.italic);
+    const a=l.align||'left';
+    bAL.classList.toggle('on',a==='left');
+    bAC.classList.toggle('on',a==='center');
+    bAR.classList.toggle('on',a==='right');
+    if(iColor) iColor.value=(l.color&&/^#/.test(l.color))?l.color:'#ffffff';
+    if(iSize) iSize.value=l.size||40;
+  }
+  function positionTB(){
+    const l=activeText(); if(!l){ hideTB(); return; }
+    const c=document.getElementById('mainCanvas')||document.querySelector('canvas');
+    if(!c){ hideTB(); return; }
+    const r=c.getBoundingClientRect();
+    const z=(typeof W.zoom==='number')?W.zoom:(r.width/(W.CW||r.width));
+    const left = r.left + (l.x*z);
+    const topAbove = r.top + (l.y*z) - 34;
+    const tbRect=TB.getBoundingClientRect();
+    const w = tbRect.width||260, h=tbRect.height||30;
+    let px=Math.max(4,Math.min(window.innerWidth-w-4,left));
+    let py=topAbove;
+    if(py<4) py = r.top + (l.y*z) + (l.h*z) + 6; // below if no room
+    py=Math.max(4,Math.min(window.innerHeight-h-4,py));
+    TB.style.left=px+'px'; TB.style.top=py+'px';
+  }
+  function showTB(){
+    const l=activeText();
+    if(!l){ hideTB(); return; }
+    if(!TB.firstChild) buildTB();
+    TB.classList.add('show');
+    updateTBState();
+    requestAnimationFrame(positionTB);
+  }
+  function hideTB(){ TB.classList.remove('show'); }
+
+  // Watch for selection changes by polling lightly (cheap; no editor-internal hook needed)
+  let lastKey='';
+  function tick(){
+    const l=activeText();
+    const z=(typeof W.zoom==='number')?W.zoom:1;
+    const key = l ? (l.id+':'+l.x+':'+l.y+':'+l.w+':'+l.h+':'+(l.size||0)+':'+(l.bold?1:0)+':'+(l.italic?1:0)+':'+(l.color||'')+':'+(l.align||'')+':'+z) : '';
+    if(key!==lastKey){
+      lastKey=key;
+      if(l){ showTB(); } else { hideTB(); }
+    } else if(l){
+      positionTB();
+    }
+    requestAnimationFrame(tick);
+  }
+
+  // boot
+  function boot(){ bindCanvas(); buildTB(); requestAnimationFrame(tick); }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot);
+  else boot();
+})();
 </script>
 </body>
 </html>
