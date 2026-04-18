@@ -655,6 +655,10 @@ input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:11px;hei
   radial-gradient(ellipse at 70% 70%,rgba(255,77,109,0.02) 0%,transparent 60%);pointer-events:none;}
 .canvas-outer{position:relative;border:1px solid rgba(255,255,255,0.1);box-shadow:0 0 0 1px rgba(255,255,255,0.03),0 24px 80px rgba(0,0,0,0.7);}
 #mainCanvas{display:block;cursor:default;}
+#canvasTextEditor{position:absolute;transform-origin:0 0;background:rgba(0,0,0,0.35);border:1px dashed #ffea00;
+  outline:none;resize:none;overflow:hidden;padding:4px;margin:0;box-sizing:border-box;
+  color:#fff;font-family:inherit;line-height:1.15;white-space:pre-wrap;word-break:break-word;
+  caret-color:#ffea00;z-index:50;}
 .sg-h,.sg-v{position:absolute;background:var(--snap-color);pointer-events:none;z-index:999;display:none;}
 .sg-h{height:1px;left:0;right:0;}.sg-v{width:1px;top:0;bottom:0;}
 #rubberBand{position:absolute;border:1.5px dashed rgba(200,245,90,0.7);background:rgba(200,245,90,0.05);display:none;pointer-events:none;z-index:900;}
@@ -1174,6 +1178,127 @@ input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:11px;hei
 </head>
 <body>
 
+<style>
+  @font-face{
+    font-family:"ScreenBold";
+    src:url("ScreenBold.ttf") format("truetype");
+    font-display:swap;
+  }
+  #omitsu-splash{
+    position:fixed; inset:0; z-index:99999;
+    background:#a59f80;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:24px;
+    font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;
+    color:#000;
+    transition:opacity .45s ease;
+    box-shadow: inset 0 1px 0 #cfc8a8, inset 0 -1px 0 #6f6a55;
+    overflow:hidden;
+  }
+  /* Subtle full-screen IRIX scanlines */
+  #omitsu-splash::before{
+    content:""; position:absolute; inset:0;
+    background-image: repeating-linear-gradient(
+      to bottom,
+      rgba(0,0,0,0.10) 0px,
+      rgba(0,0,0,0.10) 1px,
+      rgba(255,255,255,0.06) 1px,
+      rgba(255,255,255,0.06) 2px,
+      transparent 2px,
+      transparent 4px
+    );
+    pointer-events:none;
+    opacity:.55;
+  }
+  #omitsu-splash > *{ position:relative; z-index:1; }
+  /* Pinstripe plate behind the logo, like IRIX titlebar */
+  #omitsu-splash .splash-logo-wrap{
+    position:relative;
+    padding:22px 34px;
+    border:1px solid #000;
+    background:
+      repeating-linear-gradient(
+        to bottom,
+        rgba(0,0,0,0.18) 0px,
+        rgba(0,0,0,0.18) 1px,
+        rgba(255,255,255,0.10) 1px,
+        rgba(255,255,255,0.10) 2px,
+        transparent 2px,
+        transparent 3px
+      ),
+      linear-gradient(#b3ac8e,#968f73);
+    box-shadow: inset 1px 1px 0 #d8d1ae, inset -1px -1px 0 #6f6a55, 2px 2px 0 #000;
+  }
+  #omitsu-splash .splash-logo{
+    display:block;
+    width:180px; height:auto;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    filter: drop-shadow(2px 2px 0 rgba(0,0,0,.35));
+  }
+  #omitsu-splash .splash-title{
+    font-family:"ScreenBold","Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-size:24px;
+    font-weight:400;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    padding:6px 14px;
+    border:1px solid #000;
+    background:linear-gradient(#b8b094,#9a9478);
+    box-shadow: inset 1px 1px 0 #d8d1ae, inset -1px -1px 0 #6f6a55, 2px 2px 0 #000;
+  }
+  #omitsu-splash .splash-sub{
+    font-family:"ScreenBold","Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-size:12px;
+    letter-spacing:3px;
+    opacity:.85;
+    display:inline-flex; align-items:center;
+  }
+  #omitsu-splash .splash-cursor{
+    display:inline-block;
+    width:8px; height:12px;
+    margin-left:6px;
+    background:#000;
+    animation: omitsuBlink 1s steps(2, start) infinite;
+  }
+  @keyframes omitsuBlink{
+    0%, 50% { opacity:1; }
+    50.01%, 100% { opacity:0; }
+  }
+  #omitsu-splash.hide{ opacity:0; pointer-events:none; }
+  @media (max-width: 600px){
+    #omitsu-splash .splash-logo{ width:140px; }
+    #omitsu-splash .splash-logo-wrap{ padding:16px 24px; }
+    #omitsu-splash .splash-title{ font-size:18px; }
+  }
+</style>
+<div id="omitsu-splash" role="status" aria-label="Loading Omitsu Studio">
+  <div class="splash-logo-wrap">
+    <img class="splash-logo" src="splash-logo.png" alt="Omitsu Studio">
+  </div>
+  <div class="splash-title">Omitsu Studio&nbsp;|&nbsp;1.0</div>
+  <div class="splash-sub">LOADING<span class="splash-cursor"></span></div>
+</div>
+<script>
+(function(){
+  function hideSplash(){
+    var s = document.getElementById('omitsu-splash');
+    if (!s) return;
+    s.classList.add('hide');
+    setTimeout(function(){ if (s && s.parentNode) s.parentNode.removeChild(s); }, 600);
+  }
+  var minShown = new Promise(function(r){ setTimeout(r, 1100); });
+  var loaded = new Promise(function(r){
+    if (document.readyState === 'complete') r();
+    else window.addEventListener('load', r, { once: true });
+  });
+  Promise.all([minShown, loaded]).then(hideSplash);
+  // safety fallback
+  setTimeout(hideSplash, 6000);
+})();
+</script>
+
+
 <header>
   <div class="logo">OMITSU<span class="logo-dot"> ·</span> STUDIO</div>
   <div class="hdr-sep"></div>
@@ -1561,6 +1686,7 @@ input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:11px;hei
     <div class="canvas-bg-grad"></div>
     <div class="canvas-outer" id="canvasOuter">
       <canvas id="mainCanvas"></canvas>
+      <textarea id="canvasTextEditor" style="display:none" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off"></textarea>
       <div class="sg-h" id="guideH"></div>
       <div class="sg-v" id="guideV"></div>
       <div id="rubberBand"></div>
@@ -1834,6 +1960,7 @@ window.onload=()=>{
   canvas.addEventListener('mousedown',onMD);
   canvas.addEventListener('mousemove',onMM);
   canvas.addEventListener('mouseup',onMU);
+  canvas.addEventListener('dblclick',onCanvasDblClick);
   document.addEventListener('keydown',onKD);
   document.getElementById('tlTrack').addEventListener('mousedown',onTlMD);
   const area=document.getElementById('canvasArea');
@@ -1995,6 +2122,7 @@ function drawMedia(l){
   ctx.restore();
 }
 function drawTxt(l){
+  if(l._editing)return;
   const s=(l.italic?'italic ':'')+(l.bold?'bold ':'');
   ctx.font=`${s}${l.size}px ${l.font}`;ctx.fillStyle=l.color;ctx.textBaseline='top';
   if(l.shadow){ctx.shadowColor='rgba(0,0,0,0.75)';ctx.shadowBlur=l.size*.15;ctx.shadowOffsetX=2;ctx.shadowOffsetY=2;}
@@ -2018,7 +2146,7 @@ function drawR3(){ctx.strokeStyle='rgba(255,255,255,0.12)';ctx.lineWidth=1;ctx.s
 function drawSZ(){ctx.strokeStyle='rgba(200,245,90,0.2)';ctx.lineWidth=2;ctx.setLineDash([12,6]);ctx.strokeRect(90,90,CW-180,CH-180);ctx.setLineDash([]);}
 
 function updateResLabel(){const el=document.getElementById('canvasResLabel');if(el)el.textContent=CW+'×'+CH;}
-function applyZoom(){const o=document.getElementById('canvasOuter');const w=Math.round(CW*zoom),h=Math.round(CH*zoom);o.style.width=w+'px';o.style.height=h+'px';canvas.style.width=w+'px';canvas.style.height=h+'px';document.getElementById('zlabel').textContent=Math.round(zoom*100)+'%';}
+function applyZoom(){if(typeof endTextEdit==='function')endTextEdit();const o=document.getElementById('canvasOuter');const w=Math.round(CW*zoom),h=Math.round(CH*zoom);o.style.width=w+'px';o.style.height=h+'px';canvas.style.width=w+'px';canvas.style.height=h+'px';document.getElementById('zlabel').textContent=Math.round(zoom*100)+'%';}
 function zoomIn(){zoom=Math.min(zoom+0.1,3);applyZoom();}
 function zoomOut(){zoom=Math.max(zoom-0.1,0.05);applyZoom();}
 function zoomFit(){
@@ -2046,6 +2174,7 @@ function c2o(cx,cy){const r=document.getElementById('canvasOuter').getBoundingCl
 
 // MOUSE
 function onMD(e){
+  if(_editingLayerId!=null)endTextEdit();
   const pos=c2c(e.clientX,e.clientY);
   if(activeTool==='text'){addTextAt(pos.x,pos.y);setTool('select');return;}
   if(selectedIds.size===1){const l=layers.find(x=>x.id===[...selectedIds][0]);if(l){const h=hitH(pos,l);if(h){_pushUndo();isResizing=true;resizeHandle=h;dragStart=pos;layerStart={...l};return;}}}
@@ -2074,6 +2203,54 @@ function onMM(e){
   else if(!isDragging&&!isResizing)canvas.style.cursor='default';
 }
 function onMU(){if(isRubber)document.getElementById('rubberBand').style.display='none';isDragging=false;isResizing=false;isRubber=false;resizeHandle=null;hideGuides();}
+function onCanvasDblClick(e){
+  const pos=c2c(e.clientX,e.clientY);
+  for(let i=layers.length-1;i>=0;i--){
+    const l=layers[i];
+    if(l.type==='text'&&hitT(pos,l)){
+      selectedIds=new Set([l.id]);
+      updatePropsPanel();updateLayersList();
+      beginTextEdit(l);
+      return;
+    }
+  }
+}
+let _editingLayerId=null;
+function beginTextEdit(l){
+  if(!l||l.type!=='text')return;
+  endTextEdit();
+  _editingLayerId=l.id;
+  const ta=document.getElementById('canvasTextEditor');
+  // Position in CSS pixels relative to canvas-outer (which is sized CW*zoom × CH*zoom)
+  ta.style.display='block';
+  ta.style.left=(l.x*zoom)+'px';
+  ta.style.top=(l.y*zoom)+'px';
+  ta.style.width=(l.w*zoom)+'px';
+  ta.style.height=(l.h*zoom)+'px';
+  ta.style.fontFamily=l.font||'sans-serif';
+  ta.style.fontSize=((l.size||40)*zoom)+'px';
+  ta.style.fontWeight=l.bold?'bold':'normal';
+  ta.style.fontStyle=l.italic?'italic':'normal';
+  ta.style.color=l.color||'#fff';
+  ta.style.transform='rotate('+(l.rotation||0)+'deg)';
+  ta.value=l.text||'';
+  // Hide on-canvas text while editing to avoid double-render
+  l._editing=true;
+  ta.oninput=()=>{const lay=layers.find(x=>x.id===_editingLayerId);if(lay){lay.text=ta.value;}};
+  ta.onblur=endTextEdit;
+  ta.onkeydown=(ev)=>{
+    if(ev.key==='Escape'){ev.preventDefault();endTextEdit();}
+  };
+  setTimeout(()=>{ta.focus();ta.select();},0);
+}
+function endTextEdit(){
+  const ta=document.getElementById('canvasTextEditor');
+  if(!ta||ta.style.display==='none'){_editingLayerId=null;return;}
+  const lay=_editingLayerId!=null?layers.find(x=>x.id===_editingLayerId):null;
+  if(lay){lay.text=ta.value;delete lay._editing;}
+  ta.style.display='none';ta.value='';ta.oninput=null;ta.onblur=null;ta.onkeydown=null;
+  _editingLayerId=null;
+}
 function onKD(e){if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.tagName==='SELECT')return;const s=e.shiftKey?10:1;if(selectedIds.size&&(e.key==='ArrowLeft'||e.key==='ArrowRight'||e.key==='ArrowUp'||e.key==='ArrowDown'))_pushUndo();for(const id of selectedIds){const l=layers.find(x=>x.id===id);if(!l)continue;if(e.key==='ArrowLeft')l.x-=s;if(e.key==='ArrowRight')l.x+=s;if(e.key==='ArrowUp')l.y-=s;if(e.key==='ArrowDown')l.y+=s;}if((e.key==='Delete'||e.key==='Backspace')&&selectedIds.size){deleteSelected();return;}updatePropsPanel();}
 
 function doResize(pos){
@@ -2101,6 +2278,7 @@ function doResize(pos){
 
 // TOUCH
 function d2(t1,t2){return Math.hypot(t1.clientX-t2.clientX,t1.clientY-t2.clientY);}
+let _lastTapTime=0,_lastTapId=null;
 function onTS(e){
   e.preventDefault();
   if(e.touches.length===2){isPinching=true;isDragging=false;isResizing=false;isRubber=false;document.getElementById('rubberBand').style.display='none';pinchStartDist=d2(e.touches[0],e.touches[1]);pinchStartZoom=zoom;return;}
@@ -2109,6 +2287,18 @@ function onTS(e){
   if(activeTool==='text'){addTextAt(pos.x,pos.y);setTool('select');return;}
   if(selectedIds.size===1){const l=layers.find(x=>x.id===[...selectedIds][0]);if(l){const h=hitH(pos,l);if(h){_pushUndo();isResizing=true;resizeHandle=h;dragStart=pos;layerStart={...l};return;}}}
   let hit=null;for(let i=layers.length-1;i>=0;i--)if(hitT(pos,layers[i])){hit=layers[i];break;}
+  // Double-tap on text → enter edit mode
+  if(hit&&hit.type==='text'){
+    const now=Date.now();
+    if(_lastTapId===hit.id && (now-_lastTapTime)<350){
+      _lastTapTime=0;_lastTapId=null;
+      selectedIds=new Set([hit.id]);
+      updatePropsPanel();updateLayersList();
+      beginTextEdit(hit);
+      return;
+    }
+    _lastTapTime=now;_lastTapId=hit.id;
+  }
   if(hit){
     // Tap on already-selected (in multi-sel) keeps selection so user can drag the group
     if(!selectedIds.has(hit.id))selectedIds=new Set([hit.id]);
@@ -2383,6 +2573,31 @@ function updatePropsPanel(){
       setRng('pSat',l.saturation||0,'pSatVal','');
       const ib=document.getElementById('pInvBtn');if(ib)ib.classList.toggle('on',!!l.invert);
     }
+  }
+  // Sync text controls when a text layer is selected
+  if(l.type==='text'){
+    const fs=document.getElementById('fontSelect');
+    if(fs&&l.font){
+      let matched=false;
+      for(const o of fs.options){if(o.value===l.font){fs.value=l.font;matched=true;break;}}
+      if(!matched){
+        // Append a temp option so the dropdown reflects the layer's current font
+        const opt=document.createElement('option');opt.value=l.font;opt.textContent=(l.font.split(',')[0]||'Custom').replace(/['"]/g,'');opt.dataset.preview=opt.textContent;
+        fs.appendChild(opt);fs.value=l.font;
+      }
+      txtCfg.font=l.font;
+      if(typeof updateFontPreview==='function')updateFontPreview();
+    }
+    const ts=document.getElementById('txtSize'),tsv=document.getElementById('txtSizeVal');
+    if(ts&&document.activeElement!==ts){ts.value=l.size||40;}
+    if(tsv)tsv.textContent=(l.size||40)+'px';
+    txtCfg.size=l.size||40;
+    txtCfg.color=l.color||txtCfg.color;
+    txtCfg.bold=!!l.bold;txtCfg.italic=!!l.italic;txtCfg.shadow=!!l.shadow;
+    const bb=document.getElementById('boldBtn');if(bb)bb.classList.toggle('on',!!l.bold);
+    const ib=document.getElementById('italicBtn');if(ib)ib.classList.toggle('on',!!l.italic);
+    const sb=document.getElementById('shadowBtn');if(sb)sb.classList.toggle('on',!!l.shadow);
+    document.querySelectorAll('#txtSwatches .sw').forEach(s=>{s.classList.toggle('active',s.dataset.c===l.color);});
   }
   updateQuickBar();
 }
@@ -3108,12 +3323,95 @@ function deletePreset(idx){
     renderPresetsList();
   }catch(e){}
 }
+// Built-in factory presets (always available, not stored in localStorage)
+const BUILTIN_PRESETS = [
+  {
+    name:'Vx3',
+    bgColor:'#000000',
+    CW:1080, CH:1920,
+    layers:(function(){
+      // 3 rows. Each row: poster on left, 2 text blocks on right.
+      const margin=60;
+      const imgW=440, imgH=520;
+      const rowGap=80;
+      const totalH=3*imgH + 2*rowGap;
+      const startY=(1920-totalH)/2;
+      const arrow='\u2192';
+      const data=[
+        {title:'Athens Digital Arts Festival', date:'23.04 - 26.04 | Athens',
+         body:'Reality Looks Back\n> shown in VR\n> nominated'},
+        {title:'Lichter Filmfest', date:'28.04 - 03.05 | Frankfurt',
+         body:'Reality Looks Back\n> shown in VR\n> nominated'},
+        {title:'Academia Film Olomouc', date:'28.04 - 03.05 | Olomouc, Czech',
+         body:'Reality Looks Back\n> shown in VR\n> shown in Planetarium\n> nominated'},
+      ];
+      const out=[]; let id=1;
+      const textX=margin+imgW+50;
+      const textW=1080-textX-margin;
+      data.forEach((d,i)=>{
+        const y=startY+i*(imgH+rowGap);
+        // placeholder image layer filled with the generic tile (replaceable later via Replace Source)
+        const ph=new Image(); ph.src='placeholder-tile.png';
+        out.push({id:id++,type:'image',name:'Image '+(i+1),
+          img:ph,
+          x:margin,y:y,w:imgW,h:imgH,rotation:0,opacity:100,
+          frameMode:true,contentOffsetX:0,contentOffsetY:0,contentScale:1,
+          brightness:100,contrast:100,saturation:100,invert:0,aspectRatio:imgW/imgH});
+        // Title line with arrow
+        out.push({id:id++,type:'text',name:'Title '+(i+1),
+          text:arrow+'  '+d.title,font:'Helvetica',size:42,color:'#ffffff',
+          bold:false,italic:false,shadow:false,aspectRatio:null,
+          x:textX,y:y+30,w:textW,h:60,rotation:0,opacity:100});
+        // Date line
+        out.push({id:id++,type:'text',name:'Date '+(i+1),
+          text:d.date,font:'Helvetica',size:36,color:'#ffffff',
+          bold:false,italic:false,shadow:false,aspectRatio:null,
+          x:textX,y:y+100,w:textW,h:50,rotation:0,opacity:100});
+        // Body
+        const bodyLines=d.body.split('\n').length;
+        out.push({id:id++,type:'text',name:'Info '+(i+1),
+          text:d.body,font:'Helvetica',size:34,color:'#ffffff',
+          bold:false,italic:false,shadow:false,aspectRatio:null,
+          x:textX,y:y+200,w:textW,h:bodyLines*46,rotation:0,opacity:100});
+      });
+      return out;
+    })()
+  }
+];
+function loadBuiltinPreset(idx){
+  try{
+    const p=BUILTIN_PRESETS[idx];if(!p)return;
+    _pushUndo();
+    bgColor=p.bgColor||'#000000';
+    if(p.CW&&p.CH){CW=p.CW;CH=p.CH;canvas.width=CW;canvas.height=CH;}
+    layers=p.layers.map(l=>({...l}));
+    selectedIds=new Set();nextId=Math.max(...layers.map(l=>l.id||0),0)+1;
+    try{zoomFit();}catch(e){}
+    updateLayersList();updatePropsPanel();
+    showToast('Preset loaded: '+p.name);
+  }catch(e){alert('Error loading preset: '+e.message);}
+}
 function renderPresetsList(){
   const el=document.getElementById('presetsList');if(!el)return;
   try{
-    const stored=JSON.parse(localStorage.getItem('omitsuPresets')||'[]');
-    if(!stored.length){el.innerHTML='<div class="no-sel-msg" style="font-size:9px;padding:8px">No presets saved yet.</div>';return;}
     el.innerHTML='';
+    // Built-in presets first
+    BUILTIN_PRESETS.forEach((p,i)=>{
+      const row=document.createElement('div');
+      row.style.cssText='display:flex;align-items:center;gap:6px;margin-bottom:5px;';
+      const btn=document.createElement('button');
+      btn.className='style-btn';btn.style.flex='1';btn.textContent=p.name+'  \u2605';
+      btn.title='Built-in preset';
+      btn.onclick=()=>loadBuiltinPreset(i);
+      row.appendChild(btn);el.appendChild(row);
+    });
+    const stored=JSON.parse(localStorage.getItem('omitsuPresets')||'[]');
+    if(!stored.length){
+      const hint=document.createElement('div');
+      hint.className='no-sel-msg';hint.style.cssText='font-size:9px;padding:8px';
+      hint.textContent='No custom presets saved yet.';
+      el.appendChild(hint);return;
+    }
     stored.forEach((p,i)=>{
       const row=document.createElement('div');
       row.style.cssText='display:flex;align-items:center;gap:6px;margin-bottom:5px;';
