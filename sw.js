@@ -1,15 +1,13 @@
-/* SGI Imageworks service worker — offline cache for the standalone editor */
-const CACHE = 'sgi-imageworks-v1';
+/* Omitsu Studio service worker — offline cache for the standalone editor */
+const CACHE = 'omitsu-studio-v2';
+// Resolve assets relative to the SW's own scope so it works under any sub-path
 const SCOPE = self.registration ? self.registration.scope : (self.location.origin + '/');
 const ASSETS = [
-  'index.html',
+  'app.html',
   'manifest.webmanifest',
-  'ScreenBold.ttf',
   'pwa-icon-192.png',
   'pwa-icon-512.png',
   'apple-touch-icon.png',
-  'splash-logo.png',
-  'placeholder-tile.png',
   'favicon.ico'
 ].map((p) => new URL(p, SCOPE).toString());
 
@@ -41,7 +39,7 @@ self.addEventListener('fetch', (e) => {
         const copy = res.clone();
         caches.open(CACHE).then((c) => c.put(req, copy));
         return res;
-      }).catch(() => caches.match(req).then((r) => r || caches.match(new URL('index.html', SCOPE).toString())))
+      }).catch(() => caches.match(req).then((r) => r || caches.match(new URL('app.html', SCOPE).toString())))
     );
     return;
   }
