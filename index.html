@@ -3770,8 +3770,330 @@ function showToast(msg){
 }
 
 // ─────────────────────────────────────────────────────────
-// VIDEO EXPORT — fixed for iOS share + desktop download
+// VIDEO EXPORT — H.264/MP4 via WebCodecs (iOS hardware via VideoToolbox)
+// Falls back to MediaRecorder MP4 (Safari) → MediaRecorder WebM (other).
+// Always exports exactly DURATION (15 s) of the timeline, regardless of
+// how long source clips actually are.
 // ─────────────────────────────────────────────────────────
+
+// Lazy-load mp4-muxer (only when needed, only once)
+let _mp4MuxerLoaded=null;
+function _loadMp4Muxer(){
+  if(_mp4MuxerLoaded)return _mp4MuxerLoaded;
+  _mp4MuxerLoaded=new Promise((resolve,reject)=>{
+    if(window.Mp4Muxer)return resolve(window.Mp4Muxer);
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/mp4-muxer@5.1.5/build/mp4-muxer.min.js';
+    s.onload=()=>resolve(window.Mp4Muxer);
+    s.onerror=()=>reject(new Error('Failed to load mp4-muxer'));
+    document.head.appendChild(s);
+  });
+  return _mp4MuxerLoaded;
+}
+
+async function _saveBlob(blob,filename,mime,statusEl){
+  const url=URL.createObjectURL(blob);
+  // iOS / Android: prefer Web Share API so user can Save to Photos / Files
+  if(navigator.share&&typeof File!=='undefined'){
+    try{
+      const file=new File([blob],filename,{type:mime});
+      if(navigator.canShare&&navigator.canShare({files:[file]})){
+        await navigator.share({files:[file],title:'Omitsu Studio'});
+        statusEl.textContent='Shared ✓';
+        setTimeout(closeExport,1500);
+        URL.revokeObjectURL(url);
+        return;
+      }
+    }catch(err){
+      if(err.name==='AbortError'){setTimeout(closeExport,500);URL.revokeObjectURL(url);return;}
+      // fall through
+    }
+  }
+  const a=document.createElement('a');
+  a.href=url;a.download=filename;
+  document.body.appendChild(a);a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),10000);
+  const sizeMB=(blob.size/1024/1024).toFixed(1);
+  statusEl.textContent=`Saved ${filename} — ${sizeMB} MB`;
+  setTimeout(closeExport,2500);
+}
+
+// Pick a sane H.264 codec string for the canvas resolution.
+// avc1.42E0xx = Baseline; level depends on macroblocks/sec.
+function _pickAvcCodec(w,h,fps){
+  // Conservative: Baseline 4.2 covers up to 1080p60. 4.0 covers 1080p30.
+  // Use 4.2 broadly; iOS VideoToolbox accepts.
+  return 'avc1.42E02A'; // Baseline @ L4.2
+}
+
+// ─── AUDIO MIXING ───────────────────────────────────────
+// Render mixed audio of all video layers (0..DURATION s) into an AudioBuffer.
+// Each video layer contributes its own audio at playhead 0..DURATION.
+// Source clips longer than DURATION are truncated; shorter clips contribute silence after.
+async function _renderMixedAudioBuffer(sampleRate=48000,channels=2){
+  const vids=layers.filter(l=>l.type==='video'&&l.vid&&l.vid.src);
+  if(!vids.length) return null;
+  // Fetch + decode each video's audio track
+  const tmpCtx=new (window.OfflineAudioContext||window.webkitOfflineAudioContext)(channels,Math.ceil(sampleRate*DURATION),sampleRate);
+  const decoded=[];
+  for(const l of vids){
+    try{
+      const resp=await fetch(l.vid.src);
+      const ab=await resp.arrayBuffer();
+      // decodeAudioData on offline ctx works in modern browsers; Safari needs a regular AudioContext for decode
+      let buf;
+      try{ buf=await tmpCtx.decodeAudioData(ab.slice(0)); }
+      catch(e){
+        const dec=new (window.AudioContext||window.webkitAudioContext)();
+        buf=await new Promise((res,rej)=>dec.decodeAudioData(ab.slice(0),res,rej));
+        try{dec.close();}catch(_){}
+      }
+      if(buf && buf.length>0) decoded.push(buf);
+    }catch(e){
+      console.warn('Audio decode failed for video layer',l.id,e);
+    }
+  }
+  if(!decoded.length) return null;
+  // Mix into OfflineAudioContext
+  for(const buf of decoded){
+    const src=tmpCtx.createBufferSource();
+    src.buffer=buf;
+    src.connect(tmpCtx.destination);
+    src.start(0,0,Math.min(buf.duration,DURATION));
+  }
+  const mixed=await tmpCtx.startRendering();
+  return mixed;
+}
+
+// Encode an AudioBuffer with WebCodecs AudioEncoder (AAC) and feed to mp4 muxer.
+async function _encodeAndMuxAudio(muxer,audioBuf,sampleRate,channels){
+  if(!window.AudioEncoder||!window.AudioData) throw new Error('AudioEncoder unavailable');
+  const codec='mp4a.40.2'; // AAC-LC
+  const support=await AudioEncoder.isConfigSupported({codec,sampleRate,numberOfChannels:channels,bitrate:128_000});
+  if(!support||!support.supported) throw new Error('AAC encoder config not supported');
+  const enc=new AudioEncoder({
+    output:(chunk,meta)=>{ try{ muxer.addAudioChunk(chunk,meta); }catch(e){ console.warn('mux audio chunk',e); } },
+    error:(e)=>console.error('AudioEncoder error',e)
+  });
+  enc.configure({codec,sampleRate,numberOfChannels:channels,bitrate:128_000});
+  // Interleave channels into Float32 (planar -> interleaved as 'f32-planar' is supported)
+  // Use planar f32: AudioData expects each channel concatenated.
+  const totalFrames=audioBuf.length;
+  const planar=new Float32Array(totalFrames*channels);
+  for(let c=0;c<channels;c++){
+    const ch=audioBuf.numberOfChannels>c?audioBuf.getChannelData(c):audioBuf.getChannelData(0);
+    planar.set(ch,c*totalFrames);
+  }
+  // Slice into ~10ms chunks for safer encoding
+  const CHUNK_FRAMES=Math.round(sampleRate*0.02); // 20ms
+  let frameIdx=0;
+  while(frameIdx<totalFrames){
+    const n=Math.min(CHUNK_FRAMES,totalFrames-frameIdx);
+    const slice=new Float32Array(n*channels);
+    for(let c=0;c<channels;c++){
+      slice.set(planar.subarray(c*totalFrames+frameIdx,c*totalFrames+frameIdx+n),c*n);
+    }
+    const ad=new AudioData({
+      format:'f32-planar',
+      sampleRate,
+      numberOfFrames:n,
+      numberOfChannels:channels,
+      timestamp:Math.round(frameIdx/sampleRate*1_000_000),
+      data:slice
+    });
+    enc.encode(ad);
+    ad.close();
+    frameIdx+=n;
+    if(enc.encodeQueueSize>8){ while(enc.encodeQueueSize>4) await new Promise(r=>setTimeout(r,4)); }
+  }
+  await enc.flush();
+  enc.close();
+}
+
+async function _exportMp4_WebCodecs(pb,pl){
+  const Mux=await _loadMp4Muxer();
+  if(!Mux||!Mux.Muxer||!Mux.ArrayBufferTarget)throw new Error('mp4-muxer unavailable');
+  const FPS_OUT=exportFps||30;
+  const W=canvas.width, H=canvas.height;
+  const codec=_pickAvcCodec(W,H,FPS_OUT);
+
+  // Verify hardware/software support
+  const support=await VideoEncoder.isConfigSupported({
+    codec, width:W, height:H,
+    bitrate:8_000_000, framerate:FPS_OUT,
+    avc:{format:'avc'}
+  });
+  if(!support||!support.supported)throw new Error('H.264 encoder config not supported');
+
+  // Pre-render mixed audio (best-effort; export still succeeds without it)
+  let mixedAudio=null;
+  const AUDIO_SR=48000, AUDIO_CH=2;
+  try{
+    pl.textContent='Mixing audio…';
+    mixedAudio=await _renderMixedAudioBuffer(AUDIO_SR,AUDIO_CH);
+  }catch(e){ console.warn('Audio mix failed (continuing video-only):',e); mixedAudio=null; }
+
+  const target=new Mux.ArrayBufferTarget();
+  const muxerCfg={
+    target,
+    fastStart:'in-memory',
+    video:{codec:'avc',width:W,height:H,frameRate:FPS_OUT}
+  };
+  if(mixedAudio){
+    muxerCfg.audio={codec:'aac',sampleRate:AUDIO_SR,numberOfChannels:AUDIO_CH};
+  }
+  const muxer=new Mux.Muxer(muxerCfg);
+
+  const encoder=new VideoEncoder({
+    output:(chunk,meta)=>muxer.addVideoChunk(chunk,meta),
+    error:(e)=>{console.error('VideoEncoder error',e);}
+  });
+  encoder.configure({
+    codec, width:W, height:H,
+    bitrate:8_000_000, framerate:FPS_OUT,
+    avc:{format:'avc'}
+  });
+
+  const TOT=Math.round(DURATION*FPS_OUT);
+  const FRAME_US=Math.round(1_000_000/FPS_OUT);
+  const KEY_EVERY=FPS_OUT*2;
+
+  // Drive the timeline frame-by-frame and feed encoder
+  const savedPlayhead=playhead;
+  pauseTimeline();
+  // Mute video elements during export so on-device audio doesn't play
+  const wereMuted=new Map();
+  for(const l of layers){ if(l.type==='video'&&l.vid){ wereMuted.set(l.id,l.vid.muted); l.vid.muted=true; } }
+  playhead=0;syncVideosToPlayhead();render(true);
+  await new Promise(r=>setTimeout(r,250)); // let video elements seek
+
+  for(let f=0;f<TOT;f++){
+    playhead=Math.min(DURATION, f/FPS_OUT);
+    syncVideosToPlayhead();
+    // Allow any HTMLVideoElements to settle on the requested time
+    await new Promise(r=>setTimeout(r,Math.max(16,Math.round(700/FPS_OUT))));
+    render(true);
+    const vf=new VideoFrame(canvas,{timestamp:f*FRAME_US,duration:FRAME_US});
+    encoder.encode(vf,{keyFrame:(f%KEY_EVERY===0)});
+    vf.close();
+    // Backpressure
+    if(encoder.encodeQueueSize>4){
+      while(encoder.encodeQueueSize>2)await new Promise(r=>setTimeout(r,8));
+    }
+    const pct=Math.round((f+1)/TOT*100);
+    pb.style.width=pct+'%';
+    pl.textContent=`Encoding ${f+1}/${TOT} · H.264 MP4`;
+  }
+
+  await encoder.flush();
+  encoder.close();
+
+  // Encode + mux audio after video frames are in
+  if(mixedAudio){
+    try{
+      pl.textContent='Encoding audio (AAC)…';
+      await _encodeAndMuxAudio(muxer,mixedAudio,AUDIO_SR,AUDIO_CH);
+    }catch(e){ console.warn('Audio encode failed; finalizing video-only',e); }
+  }
+
+  muxer.finalize();
+  // Restore mute states
+  for(const l of layers){ if(l.type==='video'&&l.vid && wereMuted.has(l.id)){ l.vid.muted=wereMuted.get(l.id); } }
+  playhead=savedPlayhead;syncVideosToPlayhead();
+
+  return new Blob([target.buffer],{type:'video/mp4'});
+}
+
+async function _exportWith_MediaRecorder(pb,pl){
+  const FPS_OUT=exportFps||30;
+  // Prefer MP4 when Safari claims support
+  const candidates=[
+    'video/mp4;codecs=avc1.42E02A',
+    'video/mp4;codecs=avc1.42E01E',
+    'video/mp4;codecs=avc1',
+    'video/mp4',
+    'video/webm;codecs=vp9',
+    'video/webm;codecs=vp8',
+    'video/webm'
+  ];
+  let mimeType='video/webm';
+  for(const m of candidates){if(window.MediaRecorder&&MediaRecorder.isTypeSupported(m)){mimeType=m;break;}}
+  const isMP4=mimeType.startsWith('video/mp4');
+
+  // captureStream(0) means: frames only delivered when we ask for them via
+  // requestFrame(). This guarantees the resulting clip duration matches our
+  // explicit frame count (DURATION * FPS), not real-time wall clock.
+  let stream;
+  try{stream=canvas.captureStream(0);}
+  catch(e){throw new Error('captureStream not supported');}
+  const track=stream.getVideoTracks()[0];
+  const reqFrame=track&&typeof track.requestFrame==='function'?()=>{try{track.requestFrame();}catch(e){}}:()=>{};
+
+  // Pre-render mixed audio for fallback; play it through a MediaStreamDestination
+  let mixedAudio=null, audioCtx=null, audioDest=null, audioSrcNode=null;
+  try{
+    pl.textContent='Mixing audio…';
+    mixedAudio=await _renderMixedAudioBuffer(48000,2);
+  }catch(e){ console.warn('Audio mix failed:',e); mixedAudio=null; }
+  if(mixedAudio){
+    try{
+      audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+      audioDest=audioCtx.createMediaStreamDestination();
+      audioSrcNode=audioCtx.createBufferSource();
+      audioSrcNode.buffer=mixedAudio;
+      audioSrcNode.connect(audioDest);
+      const at=audioDest.stream.getAudioTracks()[0];
+      if(at) stream.addTrack(at);
+    }catch(e){ console.warn('Audio routing failed:',e); }
+  }
+
+  let rec;
+  try{rec=new MediaRecorder(stream,{mimeType,videoBitsPerSecond:8_000_000,audioBitsPerSecond:128_000});}
+  catch(e){try{rec=new MediaRecorder(stream,{mimeType});}catch(e2){rec=new MediaRecorder(stream);}}
+  const chunks=[];
+  rec.ondataavailable=(e)=>{if(e.data&&e.data.size>0)chunks.push(e.data);};
+
+  const savedPlayhead=playhead;
+  pauseTimeline();
+  // Mute on-device video audio during export
+  const wereMuted=new Map();
+  for(const l of layers){ if(l.type==='video'&&l.vid){ wereMuted.set(l.id,l.vid.muted); l.vid.muted=true; } }
+  playhead=0;syncVideosToPlayhead();render(true);
+  await new Promise(r=>setTimeout(r,250));
+
+  rec.start();
+  await new Promise(r=>setTimeout(r,60));
+  // Start audio playback in lockstep with the recording loop
+  if(audioSrcNode){ try{ audioSrcNode.start(0); }catch(_){} }
+
+  const TOT=Math.round(DURATION*FPS_OUT);
+  const frameMs=1000/FPS_OUT;
+  const t0=performance.now();
+  for(let f=0;f<TOT;f++){
+    playhead=Math.min(DURATION, f/FPS_OUT);
+    syncVideosToPlayhead();
+    await new Promise(r=>setTimeout(r,Math.max(16,Math.round(700/FPS_OUT))));
+    render(true);
+    reqFrame();
+    // Pace so MediaRecorder timestamps roughly match desired FPS
+    const expected=t0+(f+1)*frameMs;
+    const now=performance.now();
+    if(now<expected)await new Promise(r=>setTimeout(r,expected-now));
+    pb.style.width=Math.round((f+1)/TOT*100)+'%';
+    pl.textContent=`Encoding ${f+1}/${TOT} · ${isMP4?'MP4':'WebM'}`;
+  }
+  await new Promise(r=>setTimeout(r,200));
+  try{rec.requestData&&rec.requestData();}catch(e){}
+  await new Promise(resolve=>{rec.onstop=()=>resolve();rec.stop();});
+
+  if(audioSrcNode){ try{audioSrcNode.stop();}catch(_){} }
+  if(audioCtx){ try{audioCtx.close();}catch(_){} }
+  for(const l of layers){ if(l.type==='video'&&l.vid && wereMuted.has(l.id)){ l.vid.muted=wereMuted.get(l.id); } }
+  playhead=savedPlayhead;syncVideosToPlayhead();
+  return {blob:new Blob(chunks,{type:mimeType}),ext:isMP4?'mp4':'webm',mime:mimeType};
+}
+
 window.exportVid=async function(){
   const pw=document.getElementById('progWrap'),pb=document.getElementById('progBar'),pl=document.getElementById('progLbl');
   if(!pw||!pb||!pl)return;
@@ -3779,113 +4101,40 @@ window.exportVid=async function(){
 
   const pv=new Set(selectedIds);
   selectedIds.clear();
-  const FPS_OUT=exportFps||30;
 
-  // Pick best supported mimeType
-  const fmtCandidates=['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'];
-  let mimeType='video/webm';
-  for(const m of fmtCandidates){if(MediaRecorder.isTypeSupported(m)){mimeType=m;break;}}
-
-  // Capture stream from canvas
-  let stream;
-  try{stream=canvas.captureStream(FPS_OUT);}
-  catch(e){pl.textContent='captureStream not supported on this browser';selectedIds=pv;return;}
-  const track=stream.getVideoTracks()[0];
-  const reqFrame=track&&typeof track.requestFrame==='function'?()=>{try{track.requestFrame();}catch(e){}}:()=>{};
-
-  // Build recorder
-  const chunks=[];
-  let rec;
+  // Try WebCodecs H.264 → MP4 first (iOS 17+ Safari uses VideoToolbox)
+  const hasWebCodecs=(typeof window.VideoEncoder==='function' && typeof window.VideoFrame==='function');
   try{
-    rec=new MediaRecorder(stream,{mimeType,videoBitsPerSecond:8000000});
-  }catch(e){
-    try{rec=new MediaRecorder(stream);}
-    catch(e2){pl.textContent='MediaRecorder not available';selectedIds=pv;return;}
-  }
-  rec.ondataavailable=(e)=>{if(e.data&&e.data.size>0)chunks.push(e.data);};
-
-  // Seek all to start
-  const savedPlayhead=playhead;
-  pauseTimeline();
-  playhead=0;
-  syncVideosToPlayhead();
-  render(true);
-
-  // Wait for video elements to seek
-  await new Promise(r=>setTimeout(r,300));
-
-  // Start recorder with timeslice to force regular data delivery
-  rec.start(200);
-  await new Promise(r=>setTimeout(r,50));
-
-  // Encode frame by frame
-  const TOT=Math.round(DURATION*FPS_OUT);
-  for(let f=0;f<TOT;f++){
-    playhead=f/FPS_OUT;
-    syncVideosToPlayhead();
-    // Wait for video frame to settle (important for accuracy)
-    await new Promise(r=>setTimeout(r,Math.max(16,Math.round(800/FPS_OUT))));
-    render(true);
-    reqFrame();
-    const pct=Math.round((f+1)/TOT*100);
-    pb.style.width=pct+'%';
-    pl.textContent=`Encoding frame ${f+1} / ${TOT}`;
-  }
-
-  // Flush final frames
-  await new Promise(r=>setTimeout(r,300));
-  try{if(typeof rec.requestData==='function')rec.requestData();}catch(e){}
-  await new Promise(r=>setTimeout(r,200));
-
-  // Stop and wait for onstop
-  await new Promise(resolve=>{
-    rec.onstop=()=>resolve();
-    rec.stop();
-  });
-
-  // Restore state
-  playhead=savedPlayhead;
-  syncVideosToPlayhead();
-  selectedIds=pv;
-
-  // Build blob
-  const blob=new Blob(chunks,{type:mimeType});
-  if(blob.size<500){
-    pl.textContent='Export failed — no video data captured. Try a shorter clip or different browser.';
-    setTimeout(closeExport,4000);
-    return;
-  }
-
-  const sizeMB=(blob.size/1024/1024).toFixed(1);
-  pl.textContent=`Done! ${sizeMB} MB — saving…`;
-  const ext='webm';
-  const url=URL.createObjectURL(blob);
-
-  // iOS: try Web Share API (shows Save to Photos / Files)
-  if(navigator.share&&typeof File!=='undefined'){
-    try{
-      const file=new File([blob],`omitsu-studio.${ext}`,{type:mimeType});
-      if(navigator.canShare&&navigator.canShare({files:[file]})){
-        await navigator.share({files:[file],title:'Omitsu Studio'});
-        pl.textContent='Shared ✓';
-        setTimeout(closeExport,2000);
-        URL.revokeObjectURL(url);
+    if(hasWebCodecs){
+      pl.textContent='Encoding H.264 (hardware)…';
+      const blob=await _exportMp4_WebCodecs(pb,pl);
+      selectedIds=pv;
+      if(blob && blob.size>1024){
+        await _saveBlob(blob,'omitsu-studio.mp4','video/mp4',pl);
         return;
       }
-    }catch(err){
-      if(err.name==='AbortError'){setTimeout(closeExport,500);URL.revokeObjectURL(url);return;}
-      // Not supported or failed — fall through to download
+      throw new Error('Empty MP4 output');
+    }
+    throw new Error('WebCodecs not available');
+  }catch(err){
+    console.warn('WebCodecs export failed, falling back to MediaRecorder:',err);
+    pl.textContent='Falling back to MediaRecorder…';
+    try{
+      const {blob,ext,mime}=await _exportWith_MediaRecorder(pb,pl);
+      selectedIds=pv;
+      if(!blob || blob.size<500){
+        pl.textContent='Export failed — no video data captured.';
+        setTimeout(closeExport,3500);
+        return;
+      }
+      await _saveBlob(blob,`omitsu-studio.${ext}`,mime,pl);
+    }catch(e2){
+      console.error(e2);
+      selectedIds=pv;
+      pl.textContent='Export failed: '+(e2.message||e2);
+      setTimeout(closeExport,3500);
     }
   }
-
-  // Desktop: anchor download
-  const a=document.createElement('a');
-  a.href=url;a.download=`omitsu-studio.${ext}`;
-  document.body.appendChild(a);a.click();
-  document.body.removeChild(a);
-  setTimeout(()=>URL.revokeObjectURL(url),10000);
-  pl.textContent=`Saved as ${ext.toUpperCase()} — ${sizeMB} MB`;
-  setTimeout(closeExport,3000);
 };
 
 // ─────────────────────────────────────────────────────────
