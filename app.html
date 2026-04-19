@@ -4335,39 +4335,52 @@ function textEditZoomOut(){
 // Patch Props tab (desktop ptab) and mobile navProps button onclick directly
 (function(){
   function wirePropsPtab(){
-    // Desktop: left-panel ptab
+    // Helper: trigger props-style focus pan if a single layer is selected
+    function focusOnSelected(){
+      if(typeof selectedIds!=='undefined' && selectedIds.size===1) setTimeout(propsZoomIn,320);
+    }
+    // Desktop: left-panel ptab — wire BOTH "Props" and "Text" tabs to focus
     const tabs=document.querySelectorAll('.ptab');
     tabs.forEach(t=>{
-      if(t.textContent.trim()==='Props'){
+      const label=t.textContent.trim();
+      if(label==='Props'){
         t.onclick=function(){
           if(_propsZoomActive){propsZoomOut();return;}
           switchTab('props');
-          if(selectedIds.size===1)setTimeout(propsZoomIn,320);
+          focusOnSelected();
+        };
+      } else if(label==='Text'){
+        t.onclick=function(){
+          if(_propsZoomActive){propsZoomOut();return;}
+          switchTab('text');
+          focusOnSelected();
         };
       }
     });
-    // Mobile portrait: bottom-nav Props button
-    const navProps=document.getElementById('navProps');
-    if(navProps){
-      navProps.onclick=function(){
-        // If panel already open on Props tab → close and revert
+    // Mobile portrait: bottom-nav Props + Text buttons
+    function wireNav(id, tab){
+      const btn=document.getElementById(id);
+      if(!btn)return;
+      btn.onclick=function(){
         if(mobActiveSheet==='left'){
           const ct=document.querySelector('.ptab.active')?.textContent?.toLowerCase().trim();
-          if(ct==='props'){propsZoomOut();closeMobPanels();return;}
-          switchTab('props');setNavActive('navProps');
-          if(selectedIds.size===1)setTimeout(propsZoomIn,320);
+          if(ct===tab){propsZoomOut();closeMobPanels();return;}
+          switchTab(tab);setNavActive(id);
+          focusOnSelected();
         } else {
           closeMobPanels();
-          switchTab('props');
+          switchTab(tab);
           mobActiveSheet='left';
           document.getElementById('leftPanel').classList.add('mob-open');
           document.getElementById('sheetBackdrop').classList.add('show');
-          setNavActive('navProps');
+          setNavActive(id);
           _setSheetOpenClass();
-          if(selectedIds.size===1)setTimeout(propsZoomIn,320);
+          focusOnSelected();
         }
       };
     }
+    wireNav('navProps','props');
+    wireNav('navText','text');
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',wirePropsPtab);
   else wirePropsPtab();
@@ -4422,7 +4435,6 @@ body.theme-sgi-irix .tbtn[data-pix].icon-only::before{margin-right:0;}
     return 'url("data:image/svg+xml;utf8,'+encodeURIComponent(svg)+'")';
   }
 
-  // ── Glyph library (12×12). Visual goal: chunky SGI-IRIX desktop iconography.
   const G = {
     select: `
 ............
@@ -5208,44 +5220,53 @@ XXXXXXXXXX..
     }
     TC.appendChild(buildItem('Delete', 'del2', doDelete, '⌫', !sel));
   }
-  function showTC(x,y){
-    rebuildTC();
-    TC.style.display='block';
-    const pad=8, vw=window.innerWidth, vh=window.innerHeight;
-    TC.style.left='0px'; TC.style.top='0px';
-    const r=TC.getBoundingClientRect();
-    const px=Math.min(Math.max(pad,x), vw-r.width-pad);
-    const py=Math.min(Math.max(pad,y), vh-r.height-pad);
-    TC.style.left=px+'px'; TC.style.top=py+'px';
-  }
-  function hideTC(){ TC.style.display='none'; }
+  // Toolchest disabled per user request — keep code intact, but never show.
+  function showTC(){ /* disabled */ }
+  function hideTC(){ if(TC) TC.style.display='none'; }
 
-  // Bind long-press to the canvas AREA element (which receives all touches via onTS/onTM/onTE)
-  // We hook the area's touchstart/move/end directly — separate from the canvas's own handlers
+  // Long-press on a text layer (iOS) → enter MOVE mode instead of opening
+  // the textbox editor. Cancels any pending text-edit, starts a drag.
   function bindCanvas(){
     const area = document.getElementById('canvasArea');
     if(!area){ setTimeout(bindCanvas,200); return; }
 
-    // Desktop right-click
-    const c=document.getElementById('mainCanvas');
-    if(c) c.addEventListener('contextmenu',e=>{e.preventDefault();showTC(e.clientX,e.clientY);});
+    let lpT=null, lpStart=null, lpMoved=false;
 
-    let lpT=null, lpStart=null, lpMoved=false, lpShown=false;
+    function hitTextLayerAt(clientX, clientY){
+      try{
+        const pos = (typeof c2c==='function') ? c2c(clientX, clientY) : null;
+        if(!pos || !W.layers) return null;
+        for(let i=W.layers.length-1;i>=0;i--){
+          const l=W.layers[i];
+          if(l.type==='text' && typeof hitT==='function' && hitT(pos,l)) return l;
+        }
+      }catch(e){}
+      return null;
+    }
 
     area.addEventListener('touchstart',e=>{
-      lpShown=false;
       if(e.touches.length!==1){clearTimeout(lpT);lpT=null;return;}
       const t=e.touches[0];
       lpStart={x:t.clientX,y:t.clientY};
       lpMoved=false;
       clearTimeout(lpT);
       lpT=setTimeout(()=>{
-        if(!lpMoved&&lpStart){
-          lpShown=true;
-          showTC(lpStart.x,lpStart.y);
-          if(navigator.vibrate)try{navigator.vibrate(18);}catch(ex){}
-        }
-      },520);
+        if(lpMoved||!lpStart)return;
+        const lay = hitTextLayerAt(lpStart.x, lpStart.y);
+        if(!lay) return;
+        // Cancel any pending text-edit (set in onTS) and start a drag instead
+        try{ window._pendingTextEdit=null; }catch(e){}
+        try{ if(typeof endTextEdit==='function') endTextEdit(); }catch(e){}
+        try{ if(typeof _pushUndo==='function') _pushUndo(); }catch(e){}
+        W.selectedIds = new Set([lay.id]);
+        const pos = c2c(lpStart.x, lpStart.y);
+        window.isDragging = true;
+        window.dragStart = pos;
+        window.dragLayerStarts = [{id:lay.id, x:lay.x, y:lay.y}];
+        if(typeof updatePropsPanel==='function') updatePropsPanel();
+        if(typeof updateLayersList==='function') updateLayersList();
+        if(navigator.vibrate)try{navigator.vibrate(18);}catch(ex){}
+      },480);
     },{passive:true});
 
     area.addEventListener('touchmove',e=>{
