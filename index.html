@@ -1612,6 +1612,12 @@ input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:11px;hei
               <button class="style-btn" type="button" onclick="resetColor()">[ Reset ]</button>
             </div>
           </div>
+          <div class="pgrp" id="pAudioGrp" style="display:none">
+            <div class="plabel">Audio</div>
+            <div class="style-row" style="margin-top:4px">
+              <button class="style-btn" id="pMuteBtn" type="button" onclick="toggleClipMute()">[ Mute Clip ]</button>
+            </div>
+          </div>
         </div>
 
         <div class="divider"></div>
@@ -2350,16 +2356,20 @@ function beginTextEdit(l){
   _caretVisible=true;
   if(_caretInterval)clearInterval(_caretInterval);
   _caretInterval=setInterval(()=>{ _caretVisible=!_caretVisible; render&&render(); },530);
+
+  // Pan canvas to focus on the text being edited (mirrors props-tab focus).
+  try{ textEditZoomIn(l); }catch(e){}
 }
 function endTextEdit(){
   if(_caretInterval){clearInterval(_caretInterval);_caretInterval=null;}
   _caretVisible=false;
   const ta=document.getElementById('canvasTextEditor');
-  if(!ta||ta.style.display==='none'){_editingLayerId=null;return;}
+  if(!ta||ta.style.display==='none'){_editingLayerId=null;try{textEditZoomOut();}catch(e){}return;}
   const lay=_editingLayerId!=null?layers.find(x=>x.id===_editingLayerId):null;
   if(lay){lay.text=ta.value;delete lay._editing;}
   ta.style.display='none';ta.value='';ta.oninput=null;ta.onblur=null;ta.onkeydown=null;ta.onkeyup=null;
   _editingLayerId=null;
+  try{ textEditZoomOut(); }catch(e){}
   render&&render();
 }
 function onKD(e){if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.tagName==='SELECT')return;const s=e.shiftKey?10:1;if(selectedIds.size&&(e.key==='ArrowLeft'||e.key==='ArrowRight'||e.key==='ArrowUp'||e.key==='ArrowDown'))_pushUndo();for(const id of selectedIds){const l=layers.find(x=>x.id===id);if(!l)continue;if(e.key==='ArrowLeft')l.x-=s;if(e.key==='ArrowRight')l.x+=s;if(e.key==='ArrowUp')l.y-=s;if(e.key==='ArrowDown')l.y+=s;}if((e.key==='Delete'||e.key==='Backspace')&&selectedIds.size){deleteSelected();return;}updatePropsPanel();}
@@ -2691,6 +2701,9 @@ function updatePropsPanel(){
       setRng('pCon',l.contrast||0,'pConVal','');
       setRng('pSat',l.saturation||0,'pSatVal','');
       const ib=document.getElementById('pInvBtn');if(ib)ib.classList.toggle('on',!!l.invert);
+      const ag=document.getElementById('pAudioGrp');if(ag)ag.style.display=(l.type==='video')?'block':'none';
+      const mb=document.getElementById('pMuteBtn');
+      if(mb){ mb.classList.toggle('on',!!l.muted); mb.textContent=l.muted?'[ Unmute Clip ]':'[ Mute Clip ]'; }
     }
   }
   // Sync text controls when a text layer is selected
@@ -2745,6 +2758,13 @@ function resetColor(){
 function toggleInvert(){
   const l=layers.find(x=>x.id===[...selectedIds][0]); if(!l) return;
   _pushUndo(); l.invert=!l.invert; updatePropsPanel();
+}
+function toggleClipMute(){
+  const l=layers.find(x=>x.id===[...selectedIds][0]); if(!l||l.type!=='video') return;
+  _pushUndo();
+  l.muted=!l.muted;
+  if(l.vid){ try{ l.vid.muted = (l.muted || !isPlaying); }catch(e){} }
+  updatePropsPanel();
 }
 
 // ─── MOBILE QUICK BAR ───
@@ -3093,11 +3113,25 @@ function startTimeline(){
   const ic=document.getElementById('playIcon');
   ic.innerHTML='<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
   document.getElementById('playBtn')?.classList.add('playing');
-  // Play all video layers from current position
+  // Play all video layers from current position; honor per-clip mute.
+  // Must run synchronously inside the user gesture for iOS to allow audio.
   for(const l of layers){
     if(l.type==='video'&&l.vid){
-      l.vid.currentTime=playhead;
-      l.vid.play().catch(()=>{});
+      try{ l.vid.playsInline = true; l.vid.setAttribute('playsinline',''); }catch(e){}
+      try{ l.vid.muted = !!l.muted; }catch(e){}
+      try{ l.vid.currentTime=playhead; }catch(e){}
+      const v=l.vid;
+      const p=v.play();
+      if(p&&p.catch){
+        p.catch((err)=>{
+          console.warn('video.play() rejected for layer',l.id,err&&err.name,err&&err.message);
+          // Fallback: retry muted so visuals still play
+          if(!v.muted){
+            try{ v.muted=true; v.play().catch(()=>{}); }catch(_){}
+            try{ if(typeof toast==='function') toast('Audio blocked — tap play again to enable sound'); }catch(_){}
+          }
+        });
+      }
     }
   }
   tlLastTime=null;
@@ -3111,7 +3145,7 @@ function pauseTimeline(){
   ic.innerHTML='<path d="M5 3l14 9-14 9V3z"/>';
   document.getElementById('playBtn')?.classList.remove('playing');
   if(tlRaf)cancelAnimationFrame(tlRaf);
-  // Pause all video layers
+  // Pause all video layers (do NOT remute — keep user's per-clip preference)
   for(const l of layers){
     if(l.type==='video'&&l.vid){
       l.vid.pause();
@@ -3832,16 +3866,15 @@ function _pickAvcCodec(w,h,fps){
 // Each video layer contributes its own audio at playhead 0..DURATION.
 // Source clips longer than DURATION are truncated; shorter clips contribute silence after.
 async function _renderMixedAudioBuffer(sampleRate=48000,channels=2){
-  const vids=layers.filter(l=>l.type==='video'&&l.vid&&l.vid.src);
+  // Skip per-clip muted layers — they should not contribute to the mixdown.
+  const vids=layers.filter(l=>l.type==='video'&&l.vid&&l.vid.src&&!l.muted);
   if(!vids.length) return null;
-  // Fetch + decode each video's audio track
   const tmpCtx=new (window.OfflineAudioContext||window.webkitOfflineAudioContext)(channels,Math.ceil(sampleRate*DURATION),sampleRate);
   const decoded=[];
   for(const l of vids){
     try{
       const resp=await fetch(l.vid.src);
       const ab=await resp.arrayBuffer();
-      // decodeAudioData on offline ctx works in modern browsers; Safari needs a regular AudioContext for decode
       let buf;
       try{ buf=await tmpCtx.decodeAudioData(ab.slice(0)); }
       catch(e){
@@ -3849,18 +3882,21 @@ async function _renderMixedAudioBuffer(sampleRate=48000,channels=2){
         buf=await new Promise((res,rej)=>dec.decodeAudioData(ab.slice(0),res,rej));
         try{dec.close();}catch(_){}
       }
-      if(buf && buf.length>0) decoded.push(buf);
+      if(buf && buf.length>0) decoded.push({buf,layer:l});
     }catch(e){
       console.warn('Audio decode failed for video layer',l.id,e);
     }
   }
   if(!decoded.length) return null;
-  // Mix into OfflineAudioContext
-  for(const buf of decoded){
+  for(const {buf,layer} of decoded){
     const src=tmpCtx.createBufferSource();
     src.buffer=buf;
     src.connect(tmpCtx.destination);
-    src.start(0,0,Math.min(buf.duration,DURATION));
+    const trimIn=Math.max(0, layer.trimIn||0);
+    const startAt=Math.max(0, layer.tlStart||0);
+    const remaining=Math.max(0, DURATION-startAt);
+    const dur=Math.min(Math.max(0, buf.duration-trimIn), remaining);
+    if(dur>0) src.start(startAt, trimIn, dur);
   }
   const mixed=await tmpCtx.startRendering();
   return mixed;
@@ -4221,6 +4257,79 @@ function propsZoomOut(){
     setTimeout(()=>{if(o)o.style.transition='';},350);
   }
   setTimeout(zoomFit,20);
+}
+
+// ─────────────────────────────────────────────────────────
+// TEXT-EDIT FOCUS: pan canvas so the text layer being edited
+// sits centred above the iOS keyboard. Uses visualViewport to
+// detect the keyboard area, retries on viewport resize.
+// ─────────────────────────────────────────────────────────
+let _textEditZoomActive=false;
+let _textEditLayerId=null;
+let _textEditVVHandler=null;
+let _textEditRetryTO=null;
+
+function _applyTextEditPan(){
+  if(!_textEditZoomActive||_textEditLayerId==null)return;
+  const l=layers.find(x=>x.id===_textEditLayerId); if(!l)return;
+  const area=document.getElementById('canvasArea'); if(!area)return;
+  const areaRect=area.getBoundingClientRect();
+  // Available zone = top of canvasArea → top of keyboard (visualViewport bottom)
+  const vv=window.visualViewport;
+  const kbTop = vv ? (vv.offsetTop+vv.height) : window.innerHeight;
+  const zoneTop=Math.max(areaRect.top, vv?vv.offsetTop:0);
+  const zoneBottom=Math.min(areaRect.bottom, kbTop);
+  if(zoneBottom<=zoneTop)return;
+  const canvasH=CH*zoom;
+  const naturalCanvasScreenTop=areaRect.top+Math.max(0,(areaRect.height-canvasH)/2);
+  const assetScreenY=naturalCanvasScreenTop+(l.y+l.h/2)*zoom;
+  const zoneCentreY=(zoneTop+zoneBottom)/2;
+  const shiftY=zoneCentreY-assetScreenY;
+  const o=document.getElementById('canvasOuter'); if(!o)return;
+  o.style.transition='transform 0.3s cubic-bezier(0.4,0,0.2,1)';
+  o.style.transform=`translateY(${Math.round(shiftY)}px)`;
+  setTimeout(()=>{if(o&&_textEditZoomActive)o.style.transition='';},350);
+}
+
+function textEditZoomIn(l){
+  if(!l)return;
+  // If props zoom is also active, undo it first to avoid stacking transforms
+  if(_propsZoomActive){
+    _propsZoomActive=false;
+    const o0=document.getElementById('canvasOuter');
+    if(o0)o0.style.transform='';
+  }
+  _textEditZoomActive=true;
+  _textEditLayerId=l.id;
+  // Try a few times because iOS keyboard takes ~250-500ms to settle
+  if(_textEditRetryTO)clearTimeout(_textEditRetryTO);
+  const tries=[120,300,550,850];
+  tries.forEach(t=>setTimeout(_applyTextEditPan,t));
+  // Re-pan whenever the visual viewport changes (keyboard show/hide/resize)
+  if(window.visualViewport && !_textEditVVHandler){
+    _textEditVVHandler=()=>{ _applyTextEditPan(); };
+    window.visualViewport.addEventListener('resize',_textEditVVHandler);
+    window.visualViewport.addEventListener('scroll',_textEditVVHandler);
+  }
+}
+
+function textEditZoomOut(){
+  if(!_textEditZoomActive)return;
+  _textEditZoomActive=false;
+  _textEditLayerId=null;
+  if(_textEditRetryTO){clearTimeout(_textEditRetryTO);_textEditRetryTO=null;}
+  if(window.visualViewport && _textEditVVHandler){
+    window.visualViewport.removeEventListener('resize',_textEditVVHandler);
+    window.visualViewport.removeEventListener('scroll',_textEditVVHandler);
+    _textEditVVHandler=null;
+  }
+  const o=document.getElementById('canvasOuter');
+  if(o){
+    o.style.transition='transform 0.3s cubic-bezier(0.4,0,0.2,1)';
+    o.style.transform=_propsZoomActive?o.style.transform:'';
+    setTimeout(()=>{if(o)o.style.transition='';},350);
+  }
+  setTimeout(()=>{ if(!_propsZoomActive&&!_textEditZoomActive) try{zoomFit();}catch(e){} },360);
 }
 
 // Patch Props tab (desktop ptab) and mobile navProps button onclick directly
