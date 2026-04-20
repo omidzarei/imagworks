@@ -730,6 +730,14 @@ body.theme-sgi-irix .font-sample .fs-name{font-family:'ScreenBold','Chicago',mon
 .layer-vis{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:10px;padding:2px;
   -webkit-tap-highlight-color:transparent;touch-action:manipulation;}
 .layer-item:hover .layer-vis{opacity:1;}
+.layer-lock{background:none;border:1px solid transparent;color:var(--text-muted);cursor:pointer;font-size:8px;
+  padding:1px 3px;opacity:0;font-family:var(--font-mono);white-space:nowrap;border-radius:2px;
+  -webkit-tap-highlight-color:transparent;touch-action:manipulation;flex-shrink:0;}
+.layer-item:hover .layer-lock{opacity:1;}
+.layer-item.is-locked .layer-lock{opacity:1;color:#e05;border-color:currentColor;}
+.layer-item.is-locked{opacity:0.65;}
+body.theme-sgi-irix .layer-lock{font-family:'ScreenBold','Chicago',monospace;font-size:8px;}
+body.theme-sgi-irix .layer-item.is-locked .layer-lock{color:#c00;background:#cac4a4;border:1px inset #888;}
 .drag-handle{color:var(--text-muted);font-size:14px;cursor:grab;opacity:0.7;flex-shrink:0;
   width:18px;height:28px;display:flex;align-items:center;justify-content:center;user-select:none;-webkit-user-select:none;touch-action:none;}
 .drag-handle:hover{opacity:1;color:var(--accent);}
@@ -955,6 +963,7 @@ body.theme-sgi-irix .font-sample .fs-name{font-family:'ScreenBold','Chicago',mon
   .layer-thumb{width:32px;height:32px;border-radius:5px;}
   .layer-name{font-size:12px;}
   .layer-vis{opacity:1;font-size:18px;padding:6px;min-width:36px;min-height:36px;display:flex;align-items:center;justify-content:center;}
+  .layer-lock{opacity:1;font-size:14px;padding:6px;min-width:36px;min-height:36px;display:flex;align-items:center;justify-content:center;}
   .drag-handle{opacity:0.6;font-size:16px;}
   .layer-item.drag-over-top{border-top:3px solid var(--accent);}
   .layer-item.drag-over-bot{border-bottom:3px solid var(--accent);}
@@ -1009,6 +1018,24 @@ body.theme-sgi-irix .font-sample .fs-name{font-family:'ScreenBold','Chicago',mon
   }
   body::after{
     bottom:0;height:env(safe-area-inset-bottom,0px);
+  }
+  /* iPhone portrait only: cover the 50px gap below the toolbar with SGI scanlines.
+     z-index:601 sits above the toolbar (600) so nothing bleeds through.
+     pointer-events:auto blocks accidental taps on content underneath. */
+  @media (orientation: portrait) and (max-width: 430px){
+    body::after{
+      height:50px;
+      z-index:601;
+      pointer-events:auto;
+      background:#a59f80;
+    }
+    body.theme-sgi-irix::after{
+      background:
+        repeating-linear-gradient(0deg,
+          #b8b095 0px,#b8b095 1px,
+          #8e8770 1px,#8e8770 2px),
+        #a59f80;
+    }
   }
   body.theme-sgi-irix::before, body.theme-sgi-irix::after{
     background:
@@ -1840,10 +1867,14 @@ body.theme-sgi-irix .font-sample .fs-name{font-family:'ScreenBold','Chicago',mon
 
 <!-- Mobile contextual quick-bar (visible when a layer is selected) -->
 <div id="mobQuickBar" aria-label="Quick actions">
-  <button class="qb-btn" onclick="qbNudge(-10,0)" type="button" aria-label="Nudge left"><</button>
-  <button class="qb-btn" onclick="qbNudge(0,-10)" type="button" aria-label="Nudge up">^</button>
-  <button class="qb-btn" onclick="qbNudge(0,10)" type="button" aria-label="Nudge down">v</button>
-  <button class="qb-btn" onclick="qbNudge(10,0)" type="button" aria-label="Nudge right">></button>
+  <button class="qb-btn" type="button" aria-label="Nudge left"
+    onpointerdown="startNudgeRepeat(-10,0,this,event)" onpointerup="stopNudgeRepeat()" onpointercancel="stopNudgeRepeat()" oncontextmenu="return false"><</button>
+  <button class="qb-btn" type="button" aria-label="Nudge up"
+    onpointerdown="startNudgeRepeat(0,-10,this,event)" onpointerup="stopNudgeRepeat()" onpointercancel="stopNudgeRepeat()" oncontextmenu="return false">^</button>
+  <button class="qb-btn" type="button" aria-label="Nudge down"
+    onpointerdown="startNudgeRepeat(0,10,this,event)" onpointerup="stopNudgeRepeat()" onpointercancel="stopNudgeRepeat()" oncontextmenu="return false">v</button>
+  <button class="qb-btn" type="button" aria-label="Nudge right"
+    onpointerdown="startNudgeRepeat(10,0,this,event)" onpointerup="stopNudgeRepeat()" onpointercancel="stopNudgeRepeat()" oncontextmenu="return false">></button>
   <div class="qb-sep"></div>
   <button class="qb-btn" onclick="alignLayers('canvas-center-h')" type="button" aria-label="Center horizontally on canvas" title="Center H on canvas">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="2"/><rect x="8" y="9" width="8" height="6" rx="1" fill="currentColor" opacity=".35"/><line x1="12" y1="3" x2="12" y2="21" stroke-dasharray="2 2"/></svg>
@@ -2327,8 +2358,8 @@ function onMD(e){
     if(lay&&lay.type==='text'){selectedIds=new Set([lay.id]);updatePropsPanel();updateLayersList();beginTextEdit(lay);}
     return;
   }
-  if(selectedIds.size===1){const l=layers.find(x=>x.id===[...selectedIds][0]);if(l){const h=hitH(pos,l);if(h){_pushUndo();isResizing=true;resizeHandle=h;dragStart=pos;layerStart={...l};return;}}}
-  let hit=null;for(let i=layers.length-1;i>=0;i--)if(hitT(pos,layers[i])){hit=layers[i];break;}
+  if(selectedIds.size===1){const l=layers.find(x=>x.id===[...selectedIds][0]);if(l&&!l.locked){const h=hitH(pos,l);if(h){_pushUndo();isResizing=true;resizeHandle=h;dragStart=pos;layerStart={...l};return;}}}
+  let hit=null;for(let i=layers.length-1;i>=0;i--)if(!layers[i].locked&&hitT(pos,layers[i])){hit=layers[i];break;}
   if(hit){
     // Type tool: clicking a text layer enters edit mode immediately
     if(activeTool==='type' && hit.type==='text' && !e.shiftKey){
@@ -2349,7 +2380,7 @@ function onMD(e){
 }
 function onMM(e){
   const pos=c2c(e.clientX,e.clientY),op=c2o(e.clientX,e.clientY);
-  if(isRubber){const rb=document.getElementById('rubberBand');const rx=Math.min(op.x,rubStart.x),ry=Math.min(op.y,rubStart.y),rw=Math.abs(op.x-rubStart.x),rh=Math.abs(op.y-rubStart.y);rb.style.left=rx+'px';rb.style.top=ry+'px';rb.style.width=rw+'px';rb.style.height=rh+'px';const cx0=rx*(CW/(CW*zoom)),cy0=ry*(CH/(CH*zoom)),cx1=cx0+rw*(CW/(CW*zoom)),cy1=cy0+rh*(CH/(CH*zoom));selectedIds=new Set();for(const l of layers)if(l.x<cx1&&l.x+l.w>cx0&&l.y<cy1&&l.y+l.h>cy0)selectedIds.add(l.id);updateLayersList();return;}
+  if(isRubber){const rb=document.getElementById('rubberBand');const rx=Math.min(op.x,rubStart.x),ry=Math.min(op.y,rubStart.y),rw=Math.abs(op.x-rubStart.x),rh=Math.abs(op.y-rubStart.y);rb.style.left=rx+'px';rb.style.top=ry+'px';rb.style.width=rw+'px';rb.style.height=rh+'px';const cx0=rx*(CW/(CW*zoom)),cy0=ry*(CH/(CH*zoom)),cx1=cx0+rw*(CW/(CW*zoom)),cy1=cy0+rh*(CH/(CH*zoom));selectedIds=new Set();for(const l of layers)if(!l.locked&&l.x<cx1&&l.x+l.w>cx0&&l.y<cy1&&l.y+l.h>cy0)selectedIds.add(l.id);updateLayersList();return;}
   if(isDragging){const dx=pos.x-dragStart.x,dy=pos.y-dragStart.y;for(const s of dragLayerStarts){const l=layers.find(x=>x.id===s.id);if(!l)continue;let nx=s.x+dx,ny=s.y+dy;if(selectedIds.size===1){const sn=applySnap(nx,ny,l.w,l.h,l.id);nx=sn.x;ny=sn.y;}l.x=nx;l.y=ny;}updatePropsPanel();return;}
   if(isResizing)doResize(pos);
   if(selectedIds.size===1&&!isDragging&&!isResizing){const l=layers.find(x=>x.id===[...selectedIds][0]);if(l){const h=hitH(pos,l);canvas.style.cursor=h?getCurs(h):(hitT(pos,l)?'move':'default');}else canvas.style.cursor='default';}
@@ -2407,7 +2438,13 @@ function beginTextEdit(l){
 
   ta.oninput=()=>{
     const lay=layers.find(x=>x.id===_editingLayerId);
-    if(lay) lay.text=ta.value;
+    if(lay){
+      lay.text=ta.value;
+      // Resize layer to fit new content — anchor top-left so position stays stable
+      const {w,h}=measureTextBox(lay.text,lay.font,lay.size,lay.bold,lay.italic);
+      lay.w=w; lay.h=h;
+      updatePropsPanel();
+    }
     _caretPos=ta.selectionStart??ta.value.length;
     _caretVisible=true;
     render&&render();
@@ -2447,7 +2484,7 @@ function endTextEdit(){
   try{ textEditZoomOut(); }catch(e){}
   render&&render();
 }
-function onKD(e){if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.tagName==='SELECT')return;const s=e.shiftKey?10:1;if(selectedIds.size&&(e.key==='ArrowLeft'||e.key==='ArrowRight'||e.key==='ArrowUp'||e.key==='ArrowDown'))_pushUndo();for(const id of selectedIds){const l=layers.find(x=>x.id===id);if(!l)continue;if(e.key==='ArrowLeft')l.x-=s;if(e.key==='ArrowRight')l.x+=s;if(e.key==='ArrowUp')l.y-=s;if(e.key==='ArrowDown')l.y+=s;}if((e.key==='Delete'||e.key==='Backspace')&&selectedIds.size){deleteSelected();return;}updatePropsPanel();}
+function onKD(e){if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.tagName==='SELECT')return;const s=e.shiftKey?10:1;if(selectedIds.size&&(e.key==='ArrowLeft'||e.key==='ArrowRight'||e.key==='ArrowUp'||e.key==='ArrowDown'))_pushUndo();for(const id of selectedIds){const l=layers.find(x=>x.id===id);if(!l||l.locked)continue;if(e.key==='ArrowLeft')l.x-=s;if(e.key==='ArrowRight')l.x+=s;if(e.key==='ArrowUp')l.y-=s;if(e.key==='ArrowDown')l.y+=s;}if((e.key==='Delete'||e.key==='Backspace')&&selectedIds.size){deleteSelected();return;}updatePropsPanel();}
 
 function doResize(pos){
   const l=layers.find(x=>x.id===[...selectedIds][0]);if(!l)return;
@@ -2548,8 +2585,8 @@ function onTS(e){
     if(lay&&lay.type==='text'){selectedIds=new Set([lay.id]);updatePropsPanel();updateLayersList();beginTextEdit(lay);}
     return;
   }
-  if(selectedIds.size===1){const l=layers.find(x=>x.id===[...selectedIds][0]);if(l){const h=hitH(pos,l);if(h){_pushUndo();isResizing=true;resizeHandle=h;dragStart=pos;layerStart={...l};return;}}}
-  let hit=null;for(let i=layers.length-1;i>=0;i--)if(hitT(pos,layers[i])){hit=layers[i];break;}
+  if(selectedIds.size===1){const l=layers.find(x=>x.id===[...selectedIds][0]);if(l&&!l.locked){const h=hitH(pos,l);if(h){_pushUndo();isResizing=true;resizeHandle=h;dragStart=pos;layerStart={...l};return;}}}
+  let hit=null;for(let i=layers.length-1;i>=0;i--)if(!layers[i].locked&&hitT(pos,layers[i])){hit=layers[i];break;}
   // Type tool: tapping a text layer defers to touchend, then enters edit mode (iOS keyboard)
   if(hit&&hit.type==='text' && activeTool==='type'){
     selectedIds=new Set([hit.id]);
@@ -2590,7 +2627,7 @@ function onTM(e){
     const cx0=rx/zoom, cy0=ry/zoom, cx1=cx0+rw/zoom, cy1=cy0+rh/zoom;
     const ns=new Set();
     for(const l of layers){
-      if(l.x<cx1 && l.x+l.w>cx0 && l.y<cy1 && l.y+l.h>cy0) ns.add(l.id);
+      if(!l.locked&&l.x<cx1 && l.x+l.w>cx0 && l.y<cy1 && l.y+l.h>cy0) ns.add(l.id);
     }
     selectedIds=ns;
     updateLayersList();updatePropsPanel();
@@ -2668,15 +2705,47 @@ function addImageLayer(el,name,isVideo){
   let w=Math.min(700,CW*.65),h=w/ar;if(h>CH*.65){h=CH*.65;w=h*ar;}
   addLayer({id:nextId++,type:isVideo?'video':'image',name:name.substring(0,22),img:isVideo?null:el,vid:isVideo?el:null,aspectRatio:ar,x:(CW-w)/2,y:(CH-h)/2,w,h,rotation:0,opacity:100});
 }
+// Measure the exact bounding box a text layer needs to fit its content.
+// Uses the same word-wrap logic as drawTxt but in measure-only mode.
+// maxW: optional cap (defaults to CW-60). Returns {w, h}.
+function measureTextBox(text, font, size, bold, italic, maxW){
+  if(!text) text=' ';
+  maxW = maxW || (CW - 60);
+  const s=(italic?'italic ':'')+(bold?'bold ':'');
+  ctx.font=`${s}${size}px ${font}`;
+  // First pass: find the natural single-line width
+  const lines = text.split('\n');
+  let boxW = 0;
+  for(const line of lines){
+    const lw = ctx.measureText(line).width + 16; // 8px padding each side
+    if(lw > boxW) boxW = lw;
+  }
+  boxW = Math.min(Math.max(boxW, size * 2), maxW);
+  // Second pass: word-wrap at boxW to get actual height
+  let rows = 0;
+  for(const line of lines){
+    const words = line.split(' ');
+    let row = '';
+    for(let n = 0; n < words.length; n++){
+      const t = row + words[n] + ' ';
+      if(ctx.measureText(t).width > boxW - 16 && n > 0){ rows++; row = words[n] + ' '; }
+      else row = t;
+    }
+    rows++;
+  }
+  const boxH = rows * size * 1.2 + 8; // 4px top + 4px bottom padding
+  return { w: Math.round(boxW), h: Math.round(boxH) };
+}
+
 function addTextLayer(){
   const text=document.getElementById('txtContent').value||'Your Text',size=parseInt(document.getElementById('txtSize').value);
-  const w=Math.min(900,CW-60),h=size*3;
+  const {w,h}=measureTextBox(text,txtCfg.font,size,txtCfg.bold,txtCfg.italic);
   addLayer({id:nextId++,type:'text',name:text.substring(0,18),text,font:txtCfg.font,size,color:txtCfg.color,bold:txtCfg.bold,italic:txtCfg.italic,shadow:txtCfg.shadow,align:txtCfg.align||'left',aspectRatio:null,x:(CW-w)/2,y:(CH-h)/2,w,h,rotation:0,opacity:100});
   if(isMob()){switchTab('props');openMobPanel('left');}
 }
 function addTextAt(cx,cy){
   const text=document.getElementById('txtContent').value||'Your Text',size=parseInt(document.getElementById('txtSize').value);
-  const w=Math.min(900,CW-60),h=size*3;
+  const {w,h}=measureTextBox(text,txtCfg.font,size,txtCfg.bold,txtCfg.italic);
   addLayer({id:nextId++,type:'text',name:text.substring(0,18),text,font:txtCfg.font,size,color:txtCfg.color,bold:txtCfg.bold,italic:txtCfg.italic,shadow:txtCfg.shadow,align:txtCfg.align||'left',aspectRatio:null,x:cx-w/2,y:cy-h/2,w,h,rotation:0,opacity:100});
 }
 function deleteSelected(){
@@ -2686,7 +2755,10 @@ function deleteSelected(){
     const sel=document.getElementById('bgGraphicSelect');if(sel)sel.value='';
     const prev=document.getElementById('bgGraphicPreview');if(prev){prev.style.display='none';prev.style.backgroundImage='';}
   }
-  layers=layers.filter(l=>!selectedIds.has(l.id));selectedIds.clear();updateLayersList();updatePropsPanel();
+  // Never delete locked layers
+  layers=layers.filter(l=>!selectedIds.has(l.id)||l.locked);
+  selectedIds=new Set([...selectedIds].filter(id=>layers.find(l=>l.id===id)));
+  updateLayersList();updatePropsPanel();
 }
 
 function updateLayersList(){
@@ -2695,10 +2767,11 @@ function updateLayersList(){
   list.innerHTML='';
   for(let i=layers.length-1;i>=0;i--){
     const l=layers[i];const item=document.createElement('div');
-    item.className='layer-item'+(selectedIds.has(l.id)?selectedIds.size>1?' multi-sel':' selected':'');
-    item.dataset.id=l.id;item.dataset.idx=i;item.draggable=true;
+    item.className='layer-item'+(selectedIds.has(l.id)?selectedIds.size>1?' multi-sel':' selected':'')+(l.locked?' is-locked':'');
+    item.dataset.id=l.id;item.dataset.idx=i;item.draggable=!l.locked;
     const dh=document.createElement('span');dh.className='drag-handle';dh.textContent='⠿';
-    dh.title='Drag up/down to reorder';
+    dh.title=l.locked?'Unlock to reorder':'Drag up/down to reorder';
+    if(l.locked)dh.style.opacity='0.2';
     item.appendChild(dh);
     const th=document.createElement('div');th.className='layer-thumb';
     if(l.type==='image'&&l.img){const im=document.createElement('img');im.src=l.img.src;th.appendChild(im);}
@@ -2708,9 +2781,14 @@ function updateLayersList(){
     const nm=document.createElement('div');nm.className='layer-name';nm.textContent=(l._isBgGraphic?'[BG] ':'')+( l.name||'Layer');item.appendChild(nm);
     const vb=document.createElement('button');vb.className='layer-vis';vb.type='button';vb.textContent=l.hidden?'[ ]':'[x]';
     vb.onclick=(e)=>{e.stopPropagation();l.hidden=!l.hidden;updateLayersList();};item.appendChild(vb);
+    const lb=document.createElement('button');lb.className='layer-lock';lb.type='button';
+    lb.textContent=l.locked?'[LK]':'[__]';lb.title=l.locked?'Unlock layer':'Lock layer';
+    lb.onclick=(e)=>{e.stopPropagation();l.locked=!l.locked;if(l.locked){selectedIds.delete(l.id);updatePropsPanel();}updateLayersList();};
+    item.appendChild(lb);
     let itemTouched=0;
     item.addEventListener('click',(e)=>{
-      if(e.target===vb||e.target===dh)return;
+      if(e.target===vb||e.target===dh||e.target===lb)return;
+      if(l.locked)return;
       if(Date.now()-itemTouched<600)return; // suppress synthesized click after touchend
       if(e.shiftKey){if(selectedIds.has(l.id))selectedIds.delete(l.id);else selectedIds.add(l.id);}
       else selectedIds=new Set([l.id]);
@@ -2719,7 +2797,8 @@ function updateLayersList(){
     });
     // Touch tap for layer selection
     item.addEventListener('touchend',(e)=>{
-      if(e.target===vb||e.target===dh)return;
+      if(e.target===vb||e.target===dh||e.target===lb)return;
+      if(l.locked)return;
       e.preventDefault();
       itemTouched=Date.now();
       selectedIds=new Set([l.id]);
@@ -2936,6 +3015,30 @@ function updateQuickBar(){
   }
   const op=document.getElementById('qbOp');
   if(op&&document.activeElement!==op)op.value=l.opacity??100;
+}
+var _nudgeTimer=null, _nudgeRAF=null;
+function startNudgeRepeat(dx,dy,btn,e){
+  stopNudgeRepeat(); // clear any previous
+  // Capture pointer so pointerup fires even if finger slides off the button
+  if(btn&&e&&e.pointerId!=null){
+    try{btn.setPointerCapture(e.pointerId);}catch(_){}
+  }
+  // Fire once immediately
+  qbNudge(dx,dy);
+  render&&render();
+  // After 400ms initial delay, repeat at ~60fps
+  _nudgeTimer=setTimeout(function(){
+    function tick(){
+      qbNudge(dx,dy);
+      render&&render();
+      _nudgeRAF=requestAnimationFrame(tick);
+    }
+    _nudgeRAF=requestAnimationFrame(tick);
+  },400);
+}
+function stopNudgeRepeat(){
+  if(_nudgeTimer){clearTimeout(_nudgeTimer);_nudgeTimer=null;}
+  if(_nudgeRAF){cancelAnimationFrame(_nudgeRAF);_nudgeRAF=null;}
 }
 function qbNudge(dx,dy){
   _pushUndo();
@@ -5658,19 +5761,34 @@ XXXXXXXXXX..
 </script>
 
 <script>
-const CANVAS_GRAPHICS=[{name:"Gradient 1",src:"assets/asset_png_019.png"},{name:"Gradient 2",src:"assets/asset_png_020.png"},{name:"Noise 1",src:"assets/asset_png_021.png"},{name:"Noise 2",src:"assets/asset_png_022.png"},{name:"Noise 3",src:"assets/asset_png_023.png"},{name:"Spotlight 1",src:"assets/asset_png_024.png"}];
+// CANVAS_GRAPHICS is embedded at deploy time by scanning the Graphics/ folder.
+// To update: upload a new zip built via Claude (it rescans Graphics/ automatically).
+// The refresh button (↺) repopulates the dropdown from this same list.
+var CANVAS_GRAPHICS = [{"name":"Carpaint Blue","src":"Graphics/carpaint_blue.jpg"},{"name":"Dither H","src":"Graphics/dither_h.jpg"},{"name":"Dither V","src":"Graphics/dither_v.jpg"},{"name":"Gradient 1","src":"Graphics/gradient_1.png"},{"name":"Gradient 2","src":"Graphics/gradient_2.png"},{"name":"Gradient Blue","src":"Graphics/gradient_blue.jpg"},{"name":"Gradient Pink","src":"Graphics/gradient_pink.png"},{"name":"Green Leak Soft","src":"Graphics/green_leak_soft.png"},{"name":"Ice","src":"Graphics/ice.jpg"},{"name":"Light Ramp","src":"Graphics/light_ramp.png"},{"name":"Noise 1","src":"Graphics/noise_1.png"},{"name":"Noise 2","src":"Graphics/noise_2.png"},{"name":"Noise 3","src":"Graphics/noise_3.png"},{"name":"Noise Pink","src":"Graphics/noise_pink.jpg"},{"name":"Red Dotted","src":"Graphics/red_dotted.png"},{"name":"Scanline Glitch","src":"Graphics/scanline_glitch.jpg"},{"name":"Spotlight 1","src":"Graphics/spotlight_1.png"}];
 
-// Populate the bg graphic dropdown on load
-window.addEventListener('load', function() {
+function populateBgGraphicsDropdown(graphics) {
+  CANVAS_GRAPHICS = graphics;
   var sel = document.getElementById('bgGraphicSelect');
   if (!sel) return;
-  CANVAS_GRAPHICS.forEach(function(g, i) {
+  var prev = sel.value;
+  while (sel.options.length > 1) sel.remove(1);
+  graphics.forEach(function(g, i) {
     var opt = document.createElement('option');
     opt.value = i;
     opt.textContent = g.name;
     sel.appendChild(opt);
   });
-});
+  if (prev !== '' && graphics[parseInt(prev)]) sel.value = prev;
+}
+
+function scanGraphicsFolder() {
+  // List is baked in at deploy time — just repopulate the dropdown
+  populateBgGraphicsDropdown(CANVAS_GRAPHICS);
+  if (typeof showToast === 'function')
+    showToast(CANVAS_GRAPHICS.length + ' graphic' + (CANVAS_GRAPHICS.length !== 1 ? 's' : '') + ' loaded');
+}
+
+window.addEventListener('load', scanGraphicsFolder);
 
 var _bgGraphicImg = null;
 var _bgGraphicLayerId = null; // tracks the layer we inserted so we can replace/remove it
@@ -5705,6 +5823,7 @@ function applyBgGraphic(val) {
       type: 'image',
       name: g.name,
       _isBgGraphic: true,   // marker so we can find it easily
+      locked: true,
       img: img,
       vid: null,
       aspectRatio: ar,

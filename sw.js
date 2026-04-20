@@ -1,5 +1,5 @@
 /* Omitsu Studio service worker — offline cache for the standalone editor */
-const CACHE = 'omitsu-studio-v2';
+const CACHE = 'omitsu-studio-v3';
 // Resolve assets relative to the SW's own scope so it works under any sub-path
 const SCOPE = self.registration ? self.registration.scope : (self.location.origin + '/');
 const ASSETS = [
