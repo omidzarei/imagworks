@@ -2,7 +2,7 @@
 <html lang="en"><head>
 <meta http-equiv="content-type" content="text/html; charset=UTF-8">
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Omitsu Studio</title>
 <link rel="manifest" href="https://8183b9c4-70e5-497c-b41c-47e99f8b7291.lovableproject.com/manifest.webmanifest">
 <meta name="theme-color" content="#a59f80">
@@ -1010,7 +1010,7 @@ body.theme-sgi-irix .layer-item.is-locked .layer-lock{color:#c00;background:#cac
   /* solid IRIX-pinstripe band behind the curved safe-area on top + bottom */
   body::before, body::after{
     content:"";position:fixed;left:0;right:0;
-    z-index:9999;pointer-events:none;
+    z-index:599;pointer-events:none;
     background:#a59f80;
   }
   body::before{
@@ -1019,10 +1019,13 @@ body.theme-sgi-irix .layer-item.is-locked .layer-lock{color:#c00;background:#cac
   body::after{
     bottom:0;height:env(safe-area-inset-bottom,0px);
   }
-  /* iPhone portrait only: cover the gap below the bottom toolbar with SGI scanlines. */
+  /* iPhone portrait only: cover the 50px gap below the toolbar with SGI scanlines.
+     z-index:601 sits above the toolbar (600) so nothing bleeds through.
+     pointer-events:auto blocks accidental taps on content underneath. */
   @media (orientation: portrait) and (max-width: 430px){
     body::after{
-      height:max(env(safe-area-inset-bottom,34px),34px);
+      height:50px;
+      z-index:601;
       pointer-events:auto;
       background:#a59f80;
     }
@@ -1041,12 +1044,11 @@ body.theme-sgi-irix .layer-item.is-locked .layer-lock{color:#c00;background:#cac
         #8e8770 1px,#8e8770 2px),
       #a59f80;
   }
-  /* Top scanline strip: sits above EVERYTHING (z-index 9999), covers the
-     entire status-bar / Dynamic Island / notch area in the iOS PWA safe zone.
-     viewport-fit=cover lets env(safe-area-inset-top) be non-zero (~59px on
-     iPhone 15 Pro Max). The header's own padding-top pushes its buttons
-     below this strip, so they never overlap. */
+  /* Force the top scanline strip above the header so it visibly covers
+     the area under the iPhone notch / Dynamic Island, matching the
+     bottom toolbar's scanline band. */
   body.theme-sgi-irix::before{
+    z-index:701;
     border-bottom:1px solid var(--border2);
   }
   .mob-nav-btn{
@@ -2172,75 +2174,32 @@ function render(ex=false){
 const _fxCanvas=document.createElement('canvas');
 const _fxCtx=_fxCanvas.getContext('2d',{willReadFrequently:true});
 function clamp255(v){return v<0?0:v>255?255:v;}
-// Software box blur — works on iOS Safari where ctx.filter is unsupported.
-// For performance on large images, operates on a downscaled version.
-function _softwareBlur(data,w,h,radius){
-  const r=Math.min(Math.round(radius),64);
-  if(r<1)return;
-  const len=w*h*4;
-  const tmp=new Uint8ClampedArray(len);
-  const div=2*r+1;
-  // Horizontal pass: data → tmp
-  for(let y=0;y<h;y++){
-    let rS=0,gS=0,bS=0,aS=0;
-    for(let i=-r;i<=r;i++){const xi=Math.max(0,Math.min(w-1,i)),idx=(y*w+xi)*4;rS+=data[idx];gS+=data[idx+1];bS+=data[idx+2];aS+=data[idx+3];}
-    for(let x=0;x<w;x++){
-      const out=(y*w+x)*4;
-      tmp[out]=rS/div|0;tmp[out+1]=gS/div|0;tmp[out+2]=bS/div|0;tmp[out+3]=aS/div|0;
-      const ax=Math.min(x+r+1,w-1),rx=Math.max(x-r,0);
-      const ai=(y*w+ax)*4,ri=(y*w+rx)*4;
-      rS+=data[ai]-data[ri];gS+=data[ai+1]-data[ri+1];bS+=data[ai+2]-data[ri+2];aS+=data[ai+3]-data[ri+3];
-    }
-  }
-  // Vertical pass: tmp → data
-  for(let x=0;x<w;x++){
-    let rS=0,gS=0,bS=0,aS=0;
-    for(let i=-r;i<=r;i++){const yi=Math.max(0,Math.min(h-1,i)),idx=(yi*w+x)*4;rS+=tmp[idx];gS+=tmp[idx+1];bS+=tmp[idx+2];aS+=tmp[idx+3];}
-    for(let y=0;y<h;y++){
-      const out=(y*w+x)*4;
-      data[out]=rS/div|0;data[out+1]=gS/div|0;data[out+2]=bS/div|0;data[out+3]=aS/div|0;
-      const ay=Math.min(y+r+1,h-1),ry=Math.max(y-r,0);
-      const ai=(ay*w+x)*4,ri=(ry*w+x)*4;
-      rS+=tmp[ai]-tmp[ri];gS+=tmp[ai+1]-tmp[ri+1];bS+=tmp[ai+2]-tmp[ri+2];aS+=tmp[ai+3]-tmp[ri+3];
-    }
-  }
-}
 function bakeMediaFx(src,sw,sh,brightness,contrast,invert,saturation,blur){
   if(_fxCanvas.width!==sw)_fxCanvas.width=sw;
   if(_fxCanvas.height!==sh)_fxCanvas.height=sh;
   _fxCtx.clearRect(0,0,sw,sh);
-  const sat=saturation===undefined?1:saturation;
   const blurPx=Math.max(0,Number(blur)||0);
-  const needPixelWork=blurPx>0||brightness!==1||contrast!==1||invert||sat!==1;
-  if(!needPixelWork){ _fxCtx.drawImage(src,0,0,sw,sh); return _fxCanvas; }
-
   if(blurPx>0){
-    // Downsample → software blur → draw back up (fast on iPhone, looks great)
-    const MAX=512;
-    const scale=Math.min(1,MAX/Math.max(sw,sh));
-    const bw=Math.max(1,Math.round(sw*scale)), bh=Math.max(1,Math.round(sh*scale));
-    const bc=document.createElement('canvas'); bc.width=bw; bc.height=bh;
-    const bx=bc.getContext('2d',{willReadFrequently:true});
-    bx.drawImage(src,0,0,bw,bh);
-    let bData;
-    try{ bData=bx.getImageData(0,0,bw,bh); } catch(e){ _fxCtx.drawImage(src,0,0,sw,sh); }
-    if(bData){
-      // Scale radius proportionally to the downscale
-      const scaledR=Math.max(1,Math.round(blurPx*scale));
-      _softwareBlur(bData.data,bw,bh,scaledR);
-      bx.putImageData(bData,0,0);
-      // Draw blurred (small) canvas scaled back up to full size
-      _fxCtx.drawImage(bc,0,0,sw,sh);
-    }
+    try{ _fxCtx.save(); _fxCtx.filter='blur('+blurPx+'px)'; _fxCtx.drawImage(src,0,0,sw,sh); _fxCtx.restore(); _fxCtx.filter='none'; }
+    catch(_e){ _fxCtx.drawImage(src,0,0,sw,sh); }
   } else {
     _fxCtx.drawImage(src,0,0,sw,sh);
   }
-
-  // Apply brightness/contrast/saturation/invert via pixel math
-  if(brightness===1&&contrast===1&&!invert&&sat===1) return _fxCanvas;
+  const sat=saturation===undefined?1:saturation;
+  if(brightness===1&&contrast===1&&!invert&&sat===1)return _fxCanvas;
   let imgData;
   try{ imgData=_fxCtx.getImageData(0,0,sw,sh); }
-  catch(e){ return _fxCanvas; }
+  catch(e){
+    try{
+      _fxCtx.clearRect(0,0,sw,sh);
+      _fxCtx.save();
+      _fxCtx.filter=`brightness(${brightness}) contrast(${contrast}) saturate(${sat})${blurPx>0?' blur('+blurPx+'px)':''}${invert?' invert(1)':''}`;
+      _fxCtx.drawImage(src,0,0,sw,sh);
+      _fxCtx.restore();
+      _fxCtx.filter='none';
+    }catch(_e){}
+    return _fxCanvas;
+  }
   const d=imgData.data;
   for(let i=0;i<d.length;i+=4){
     let r=d[i],g=d[i+1],b=d[i+2];
