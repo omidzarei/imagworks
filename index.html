@@ -6266,28 +6266,30 @@ function clearBgGraphic() {
     });
   }
 
-  // ── Render slats centred on currentIdx ───────────────────────
+  // ── Render slats — context-aware: font mode when text selected ─
   function renderTicks(){
     if(!ticksEl || !trackEl) return;
     ticksEl.innerHTML = '';
-    var n = sortedGraphics.length;
-    if(!n) return;
+
+    var inFontMode = !!getSelectedTextLayer();
+    var activeIdx  = inFontMode ? fontIdx         : currentIdx;
+    var listLen    = inFontMode ? fontList.length  : sortedGraphics.length;
+    if(!listLen) return;
 
     var trackH  = trackEl.clientHeight || 300;
     var visible = Math.ceil(trackH / SLAT_H) + 6;
     var half    = Math.floor(visible / 2);
-    var start   = currentIdx - half;
+    var start   = activeIdx - half;
 
     for(var i = 0; i < visible; i++){
       var di  = start + i;
       var div = document.createElement('div');
       div.className = 'irix-tick';
       if(((di % 5) + 5) % 5 === 0) div.classList.add('irix-tick-major');
-      if(di === currentIdx)          div.classList.add('irix-tick-active');
+      if(di === activeIdx)           div.classList.add('irix-tick-active');
       ticksEl.appendChild(div);
     }
 
-    // Centre active slat in track
     var centreOff = (trackH / 2) - (half * SLAT_H) - (SLAT_H / 2);
     ticksEl.style.transform = 'translateY(' + centreOff + 'px)';
   }
@@ -6344,10 +6346,14 @@ function clearBgGraphic() {
     collapsed = !collapsed;
     scaleEl.classList.toggle('irix-collapsed', collapsed);
     btnEl.classList.toggle('is-open', !collapsed);
-    if(!collapsed) renderTicks();
+    if(!collapsed){
+      // Sync font index in case selection changed while wheel was closed
+      if(getSelectedTextLayer()) syncFontIdx();
+      renderTicks();
+    }
   }
 
-  // ── WHEEL: vertical drag on track ────────────────────────────
+  // ── WHEEL: vertical drag — font mode if text selected, else graphic ──
   var _wLastY  = 0;
   var _wAccum  = 0;
   var _wActive = false;
@@ -6356,20 +6362,39 @@ function clearBgGraphic() {
     _wLastY  = e.touches[0].clientY;
     _wAccum  = 0;
     _wActive = true;
+    // Sync fontIdx to the selected layer's current font before dragging
+    if(getSelectedTextLayer()) syncFontIdx();
+    // Show label immediately on touch so user knows which mode is active
+    var inFontMode = !!getSelectedTextLayer();
+    if(inFontMode){
+      var f = fontList[fontIdx];
+      if(f) showLabel(f.name, true);
+    } else {
+      var g = sortedGraphics[currentIdx];
+      if(g) showLabel(g.name, true);
+    }
   }
   function onTrackTM(e){
     if(!_wActive) return;
     e.preventDefault();
-    var dy   = _wLastY - e.touches[0].clientY; // up = positive = next
-    _wLastY  = e.touches[0].clientY;
-    _wAccum += dy;
+    var dy    = _wLastY - e.touches[0].clientY; // up = positive = next
+    _wLastY   = e.touches[0].clientY;
+    _wAccum  += dy;
     var steps = Math.trunc(_wAccum / DRAG_PER);
-    if(steps){
-      _wAccum -= steps * DRAG_PER;
+    if(!steps) return;
+    _wAccum -= steps * DRAG_PER;
+
+    if(getSelectedTextLayer()){
+      applyFontAtIdx(fontIdx + steps);
+    } else {
       applyAtIndex(currentIdx + steps);
     }
   }
-  function onTrackTE(){ _wActive = false; _wAccum = 0; }
+  function onTrackTE(){
+    _wActive = false;
+    _wAccum  = 0;
+    hideLabel();
+  }
 
   // ── CANVAS LONG-PRESS SWIPE ───────────────────────────────────
   // Two modes share the same long-press mechanism:
@@ -6473,9 +6498,8 @@ function clearBgGraphic() {
     idx = Math.max(0, Math.min(fontList.length - 1, idx));
     if(idx === fontIdx) return;
     fontIdx = idx;
-    var f   = fontList[idx];
+    var f = fontList[idx];
     if(!f) return;
-    // Apply via the existing applyFontFromSample if available, else do it manually
     if(typeof applyFontFromSample === 'function'){
       applyFontFromSample(f.value);
     } else {
@@ -6486,7 +6510,8 @@ function clearBgGraphic() {
       if(tl) tl.font = f.value;
       if(typeof updateFontPreview === 'function') updateFontPreview();
     }
-    showLabel(f.name, true);
+    renderTicks();
+    showLabel(f.name, true); // persist while finger is down; onTrackTE hides it
     if(navigator.vibrate) navigator.vibrate(5);
   }
 
