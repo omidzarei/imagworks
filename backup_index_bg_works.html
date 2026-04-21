@@ -1229,22 +1229,20 @@ body.theme-sgi-irix .layer-item.is-locked .layer-lock{color:#c00;background:#cac
    ══════════════════════════════════════════════════════════════ */
 #irixScale{ display:none; }
 
-/* ── Canvas-swipe / wheel graphic name label ── */
-/* Sits centered below canvas, just above the mob nav stack.
-   Styled exactly like the SGI IRIX bevel widget. */
+/* ── Canvas-swipe graphic name label (shown during long-press swipe + wheel drag) ── */
 #irixGraphicLabel{
   display:none;
   position:fixed;
   left:50%;
   transform:translateX(-50%);
-  bottom:104px;   /* just above: 50px band + 48px nav + 6px gap */
+  /* vertical pos set dynamically by JS, but default below canvas above nav */
   background:#a59f80;
   border:1px solid #000;
   box-shadow:
     inset  1px  1px 0 #d4cdb0,
     inset -1px -1px 0 #6f6a55,
     2px 2px 0 #1a1a1a;
-  padding:3px 12px 4px;
+  padding:3px 10px 4px;
   font-size:10px;
   font-weight:700;
   color:#000;
@@ -1252,13 +1250,10 @@ body.theme-sgi-irix .layer-item.is-locked .layer-lock{color:#c00;background:#cac
   pointer-events:none;
   z-index:700;
   font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;
-  letter-spacing:0.04em;
+  letter-spacing:0.03em;
   border-radius:0;
-  max-width:calc(100vw - 80px);
-  overflow:hidden;
-  text-overflow:ellipsis;
-  text-align:center;
 }
+/* dark-theme version */
 body:not(.theme-sgi-irix) #irixGraphicLabel{
   background:var(--surface2);
   border-color:var(--border2);
@@ -1266,7 +1261,7 @@ body:not(.theme-sgi-irix) #irixGraphicLabel{
   box-shadow:0 2px 10px rgba(0,0,0,0.7);
 }
 
-/* ── Canvas swipe mode: red outline on canvas-outer ── */
+/* ── Canvas swipe mode: pulsing ring on the canvas-outer during active swipe ── */
 #canvasOuter.irix-swipe-active{
   outline:2px solid #a52a2a;
   outline-offset:-2px;
@@ -1277,7 +1272,7 @@ body:not(.theme-sgi-irix) #canvasOuter.irix-swipe-active{
 
 @media (max-width:430px) and (orientation:portrait){
 
-  /* ── Outer column: right edge, full height between timeline and nav ── */
+  /* ── Outer wrapper: right-edge column ── */
   #irixScale{
     display:flex;
     flex-direction:column;
@@ -1286,7 +1281,7 @@ body:not(.theme-sgi-irix) #canvasOuter.irix-swipe-active{
     right:0;
     top:calc(46px + 42px + env(safe-area-inset-top,0px));
     bottom:98px;
-    width:22px;
+    width:26px;         /* narrow */
     z-index:602;
     pointer-events:auto;
     user-select:none;
@@ -1294,10 +1289,10 @@ body:not(.theme-sgi-irix) #canvasOuter.irix-swipe-active{
     box-sizing:border-box;
   }
 
-  /* ── Toggle button — nested-square widget from the PNG ── */
+  /* ── Toggle button — the nested-square widget from the PNG ── */
   #irixScaleButton{
-    width:22px;
-    height:22px;
+    width:26px;
+    height:26px;
     flex-shrink:0;
     cursor:pointer;
     -webkit-tap-highlight-color:transparent;
@@ -1308,6 +1303,9 @@ body:not(.theme-sgi-irix) #canvasOuter.irix-swipe-active{
     box-shadow:
       inset  2px  2px 0 #d4cdb0,
       inset -2px -2px 0 #6f6a55;
+    display:flex;
+    align-items:center;
+    justify-content:center;
     position:relative;
   }
   /* Middle ring */
@@ -1325,8 +1323,9 @@ body:not(.theme-sgi-irix) #canvasOuter.irix-swipe-active{
   #irixScaleButton::after{
     content:"";
     position:absolute;
-    inset:7px;
+    inset:8px;
     background:#1a1a1a;
+    border:1px solid #000;
   }
   #irixScaleButton:active,
   #irixScaleButton.is-open{
@@ -1335,10 +1334,10 @@ body:not(.theme-sgi-irix) #canvasOuter.irix-swipe-active{
       inset -2px -2px 0 #d4cdb0;
   }
 
-  /* ── Wheel trough: fills remaining vertical space, HIDDEN until toggled ── */
+  /* ── The wheel trough: fills remaining vertical space, HIDDEN until toggled ── */
   #irixScaleTrack{
     flex:1;
-    width:22px;
+    width:26px;
     min-height:0;
     position:relative;
     overflow:hidden;
@@ -1347,10 +1346,12 @@ body:not(.theme-sgi-irix) #canvasOuter.irix-swipe-active{
     border-left:1px solid #000;
     box-shadow:
       inset  2px  0 0 #d4cdb0,
-      inset -1px  0 0 #6f6a55;
+      inset -2px  0 0 #6f6a55;
     touch-action:none;
+    /* Hidden by default */
     display:none;
   }
+  /* Show when not collapsed */
   #irixScale:not(.irix-collapsed) #irixScaleTrack{
     display:flex;
   }
@@ -1378,10 +1379,10 @@ body:not(.theme-sgi-irix) #canvasOuter.irix-swipe-active{
     z-index:1;
   }
 
-  /* Each slat */
+  /* Each slat — raised rectangular tile with top-light, bottom-shadow */
   .irix-tick{
     width:100%;
-    height:10px;
+    height:11px;
     flex-shrink:0;
     box-sizing:border-box;
     background:linear-gradient(180deg,
@@ -1397,10 +1398,11 @@ body:not(.theme-sgi-irix) #canvasOuter.irix-swipe-active{
     margin-bottom:2px;
   }
   .irix-tick.irix-tick-major{
+    height:11px;
     background:linear-gradient(180deg,
       #e4ddc8 0%,
       #d8d2b8 20%,
-      #c4bea8 55%,
+      #c4be a8 55%,
       #a09880 85%,
       #8a846b 100%);
     margin-bottom:3px;
@@ -1412,7 +1414,7 @@ body:not(.theme-sgi-irix) #canvasOuter.irix-swipe-active{
       #d4cebc 60%,
       #c0baa2 100%);
     border-left:2px solid #a52a2a;
-    box-shadow:inset -1px 0 0 #6f6a55;
+    box-shadow: inset -1px 0 0 #6f6a55;
   }
 
   /* Non-SGI fallback */
@@ -1428,6 +1430,7 @@ body:not(.theme-sgi-irix) #canvasOuter.irix-swipe-active{
   }
   body:not(.theme-sgi-irix) #irixScaleButton::after{
     background:var(--accent);
+    border-color:transparent;
   }
   body:not(.theme-sgi-irix) #irixScaleTrack{
     background:var(--surface2);
@@ -6293,17 +6296,9 @@ function clearBgGraphic() {
   }
 
   // ── Apply graphic at index ────────────────────────────────────
-  function applyAtIndex(idx, forceLabelOnly){
+  function applyAtIndex(idx){
     if(!sortedGraphics.length) return;
     idx = Math.max(0, Math.min(sortedGraphics.length - 1, idx));
-
-    // forceLabelOnly: just show label for current, don't re-apply
-    if(forceLabelOnly){
-      var g0 = sortedGraphics[currentIdx];
-      if(g0) showLabel(g0.name, true);
-      return;
-    }
-
     if(idx === currentIdx) return;
     currentIdx = idx;
 
@@ -6325,10 +6320,19 @@ function clearBgGraphic() {
 
   // ── Shared label: shown below canvas, above toolbar ───────────
   var _labelTimer;
+  function positionLabel(){
+    if(!labelEl) return;
+    // Place it just above the nav zone
+    // On portrait iPhone: bottom of screen = 0, nav at 98px from bottom
+    var bottom = 98 + 6; // just above the mob nav stack
+    labelEl.style.bottom = bottom + 'px';
+    labelEl.style.top    = 'auto';
+  }
   function showLabel(name, persist){
     if(!labelEl) return;
     labelEl.textContent = name;
     labelEl.style.display = 'block';
+    positionLabel();
     clearTimeout(_labelTimer);
     if(!persist){
       _labelTimer = setTimeout(function(){ labelEl.style.display = 'none'; }, 1800);
@@ -6372,56 +6376,12 @@ function clearBgGraphic() {
   function onTrackTE(){ _wActive = false; _wAccum = 0; }
 
   // ── CANVAS LONG-PRESS SWIPE ───────────────────────────────────
-  // Two modes share the same long-press mechanism:
-  //   'graphic' — horizontal swipe cycles bg graphics (when locked bg layer exists)
-  //   'font'    — vertical swipe cycles fonts for the selected text layer
-  // ─────────────────────────────────────────────────────────────
-
-  var _lpTimer    = null;
+  var _lpTimer    = null;   // long-press countdown
   var _lpStartX   = 0;
   var _lpStartY   = 0;
-  // 'off' | 'graphic' | 'font'
-  var _swipeMode  = 'off';
+  var _swipeMode  = false;  // currently in swipe-to-browse mode
   var _swLastX    = 0;
-  var _swLastY    = 0;
   var _swAccum    = 0;
-
-  // Font list — built from #fontSelect options at boot
-  var fontList    = [];   // [{value, name}]
-  var fontIdx     = 0;   // current index into fontList
-
-  function buildFontList(){
-    var sel = document.getElementById('fontSelect');
-    if(!sel) return;
-    fontList = [];
-    for(var i = 0; i < sel.options.length; i++){
-      var o = sel.options[i];
-      if(!o.value) continue;
-      fontList.push({ value: o.value, name: o.dataset.preview || o.textContent.trim() });
-    }
-  }
-
-  function syncFontIdx(){
-    // Set fontIdx to match selected text layer's current font
-    var sel = document.getElementById('fontSelect');
-    var curVal = sel ? sel.value : '';
-    if(!curVal){
-      var tl = getSelectedTextLayer();
-      if(tl) curVal = tl.font || '';
-    }
-    for(var i = 0; i < fontList.length; i++){
-      if(fontList[i].value === curVal){ fontIdx = i; return; }
-    }
-    fontIdx = 0;
-  }
-
-  function getSelectedTextLayer(){
-    if(typeof selectedIds === 'undefined' || typeof layers === 'undefined') return null;
-    if(selectedIds.size !== 1) return null;
-    var id = [...selectedIds][0];
-    var l = layers.find(function(x){ return x.id === id && x.type === 'text'; });
-    return l || null;
-  }
 
   function hasBgGraphicLocked(){
     if(typeof layers === 'undefined') return false;
@@ -6435,59 +6395,25 @@ function clearBgGraphic() {
     return window.innerWidth <= 430 && window.innerHeight > window.innerWidth;
   }
 
-  // ── Activate ──────────────────────────────────────────────────
-  function activateGraphicSwipe(startX){
-    _swipeMode = 'graphic';
+  function activateSwipeMode(startX){
+    _swipeMode = true;
     _swLastX   = startX;
     _swAccum   = 0;
+    // Visual cue: red outline on canvas
     var co = document.getElementById('canvasOuter');
     if(co) co.classList.add('irix-swipe-active');
-    applyAtIndex(currentIdx, true);  // show label for current graphic
+    // Show label with current graphic name (persistent while swiping)
+    var g = sortedGraphics[currentIdx];
+    if(g) showLabel(g.name, true);
     if(navigator.vibrate) navigator.vibrate([20, 10, 20]);
   }
 
-  function activateFontSwipe(startY){
-    _swipeMode = 'font';
-    _swLastY   = startY;
-    _swAccum   = 0;
-    syncFontIdx();
-    var co = document.getElementById('canvasOuter');
-    if(co) co.classList.add('irix-swipe-active');
-    // Show current font name
-    var f = fontList[fontIdx];
-    if(f) showLabel(f.name, true);
-    if(navigator.vibrate) navigator.vibrate([20, 10, 20]);
-  }
-
-  function deactivateSwipe(){
-    _swipeMode = 'off';
+  function deactivateSwipeMode(){
+    _swipeMode = false;
     _swAccum   = 0;
     var co = document.getElementById('canvasOuter');
     if(co) co.classList.remove('irix-swipe-active');
     hideLabel();
-  }
-
-  // ── Apply font at index ───────────────────────────────────────
-  function applyFontAtIdx(idx){
-    if(!fontList.length) return;
-    idx = Math.max(0, Math.min(fontList.length - 1, idx));
-    if(idx === fontIdx) return;
-    fontIdx = idx;
-    var f   = fontList[idx];
-    if(!f) return;
-    // Apply via the existing applyFontFromSample if available, else do it manually
-    if(typeof applyFontFromSample === 'function'){
-      applyFontFromSample(f.value);
-    } else {
-      var sel = document.getElementById('fontSelect');
-      if(sel) sel.value = f.value;
-      if(typeof txtCfg !== 'undefined') txtCfg.font = f.value;
-      var tl = getSelectedTextLayer();
-      if(tl) tl.font = f.value;
-      if(typeof updateFontPreview === 'function') updateFontPreview();
-    }
-    showLabel(f.name, true);
-    if(navigator.vibrate) navigator.vibrate(5);
   }
 
   function cancelLongPress(){
@@ -6495,40 +6421,15 @@ function clearBgGraphic() {
     _lpTimer = null;
   }
 
-  // ── Determine which mode to activate on long-press ───────────
-  function resolveLongPressMode(clientX, clientY){
-    if(typeof layers === 'undefined') return null;
-
-    // Check if the press point hits any unlocked layer
-    var pos = (typeof c2c === 'function') ? c2c(clientX, clientY) : null;
-    var hitUnlocked = false;
-    if(pos){
-      for(var i = layers.length - 1; i >= 0; i--){
-        var l = layers[i];
-        if(!l.locked && typeof hitT === 'function' && hitT(pos, l)){
-          hitUnlocked = true; break;
-        }
-      }
-    }
-    if(hitUnlocked) return null;  // pressed on a real layer — don't steal
-
-    // Font mode: one text layer selected
-    if(getSelectedTextLayer() && fontList.length) return 'font';
-
-    // Graphic mode: locked bg graphic exists
-    if(hasBgGraphicLocked()) return 'graphic';
-
-    return null;
-  }
-
-  // ── Patch canvas touch ────────────────────────────────────────
+  // Patch into the existing canvasArea touch listeners
   function patchCanvasTouch(){
     var area = document.getElementById('canvasArea');
     if(!area) return;
 
     area.addEventListener('touchstart', function(e){
       if(!isPortraitPhone()) return;
-      if(e.touches.length !== 1){ cancelLongPress(); return; }
+      if(e.touches.length !== 1) { cancelLongPress(); return; }
+      if(!hasBgGraphicLocked()) return;
 
       var t = e.touches[0];
       _lpStartX = t.clientX;
@@ -6537,59 +6438,65 @@ function clearBgGraphic() {
       cancelLongPress();
       _lpTimer = setTimeout(function(){
         _lpTimer = null;
-        var mode = resolveLongPressMode(_lpStartX, _lpStartY);
-        if(mode === 'graphic') activateGraphicSwipe(_lpStartX);
-        else if(mode === 'font') activateFontSwipe(_lpStartY);
+        // Only activate if we're NOT hitting any unlocked layer
+        // (i.e. the tap would land on empty canvas / bg)
+        if(typeof layers !== 'undefined'){
+          var hitUnlocked = false;
+          // Use the existing c2c coordinate conversion if available
+          var pos = (typeof c2c === 'function') ? c2c(_lpStartX, _lpStartY) : null;
+          if(pos){
+            for(var i = layers.length - 1; i >= 0; i--){
+              var l = layers[i];
+              if(!l.locked && typeof hitT === 'function' && hitT(pos, l)){
+                hitUnlocked = true; break;
+              }
+            }
+          }
+          if(hitUnlocked) return;
+        }
+        activateSwipeMode(_lpStartX);
       }, LONG_MS);
     }, {passive: true, capture: true});
 
     area.addEventListener('touchmove', function(e){
       if(!isPortraitPhone()) return;
-      if(e.touches.length !== 1){ cancelLongPress(); return; }
-
+      if(e.touches.length !== 1) { cancelLongPress(); return; }
       var t  = e.touches[0];
       var dx = t.clientX - _lpStartX;
       var dy = t.clientY - _lpStartY;
 
-      // Cancel long-press if finger moved too much before it fires
+      // Cancel long-press if finger moved too much before timeout fires
       if(_lpTimer && Math.hypot(dx, dy) > MOVE_CANCEL){
         cancelLongPress();
         return;
       }
 
-      if(_swipeMode === 'graphic'){
+      // During swipe mode: handle horizontal scroll
+      if(_swipeMode){
         e.preventDefault();
-        var deltaX  = _swLastX - t.clientX;  // right = next graphic
-        _swLastX    = t.clientX;
-        _swAccum   += deltaX;
-        var steps   = Math.trunc(_swAccum / DRAG_PER);
+        var delta = _swLastX - t.clientX; // positive = right = next
+        _swLastX   = t.clientX;
+        _swAccum  += delta;
+        var steps = Math.trunc(_swAccum / DRAG_PER);
         if(steps){
           _swAccum -= steps * DRAG_PER;
+          var oldIdx = currentIdx;
           applyAtIndex(currentIdx + steps);
+          // Keep label visible while swiping
           var g = sortedGraphics[currentIdx];
           if(g) showLabel(g.name, true);
-        }
-      } else if(_swipeMode === 'font'){
-        e.preventDefault();
-        var deltaY  = _swLastY - t.clientY;  // up = next font
-        _swLastY    = t.clientY;
-        _swAccum   += deltaY;
-        var fsteps  = Math.trunc(_swAccum / DRAG_PER);
-        if(fsteps){
-          _swAccum -= fsteps * DRAG_PER;
-          applyFontAtIdx(fontIdx + fsteps);
         }
       }
     }, {passive: false, capture: true});
 
     area.addEventListener('touchend', function(e){
       cancelLongPress();
-      if(_swipeMode !== 'off') deactivateSwipe();
+      if(_swipeMode) deactivateSwipeMode();
     }, {passive: true, capture: true});
 
     area.addEventListener('touchcancel', function(e){
       cancelLongPress();
-      if(_swipeMode !== 'off') deactivateSwipe();
+      if(_swipeMode) deactivateSwipeMode();
     }, {passive: true, capture: true});
   }
 
@@ -6604,7 +6511,6 @@ function clearBgGraphic() {
     if(!scaleEl) return;
 
     sortedGraphics = buildSortedList();
-    buildFontList();
 
     // Sync to dropdown
     var sel    = document.getElementById('bgGraphicSelect');
@@ -6651,9 +6557,6 @@ function clearBgGraphic() {
     window.addEventListener('resize', function(){
       if(!collapsed) renderTicks();
     });
-    // Rebuild font list if user uploads a custom font (fontSelect changes)
-    var fsEl = document.getElementById('fontSelect');
-    if(fsEl) fsEl.addEventListener('change', function(){ buildFontList(); });
   }
 
   if(document.readyState === 'loading'){
