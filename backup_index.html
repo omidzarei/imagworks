@@ -1224,51 +1224,10 @@ body.theme-sgi-irix .layer-item.is-locked .layer-lock{color:#c00;background:#cac
 /* ══════════════════════════════════════════════════════════════
    SGI IRIX Scale — Canvas Graphic Selector
    Vertical strip on the RIGHT edge, portrait iPhone only.
-   Hidden by default; button tap reveals/hides the wheel.
-   Width: 26px (narrow).
+   Positioned between timeline bottom (~88px from top) and
+   the bottom nav top (~98px from bottom).
    ══════════════════════════════════════════════════════════════ */
 #irixScale{ display:none; }
-
-/* ── Canvas-swipe graphic name label (shown during long-press swipe + wheel drag) ── */
-#irixGraphicLabel{
-  display:none;
-  position:fixed;
-  left:50%;
-  transform:translateX(-50%);
-  /* vertical pos set dynamically by JS, but default below canvas above nav */
-  background:#a59f80;
-  border:1px solid #000;
-  box-shadow:
-    inset  1px  1px 0 #d4cdb0,
-    inset -1px -1px 0 #6f6a55,
-    2px 2px 0 #1a1a1a;
-  padding:3px 10px 4px;
-  font-size:10px;
-  font-weight:700;
-  color:#000;
-  white-space:nowrap;
-  pointer-events:none;
-  z-index:700;
-  font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;
-  letter-spacing:0.03em;
-  border-radius:0;
-}
-/* dark-theme version */
-body:not(.theme-sgi-irix) #irixGraphicLabel{
-  background:var(--surface2);
-  border-color:var(--border2);
-  color:var(--text);
-  box-shadow:0 2px 10px rgba(0,0,0,0.7);
-}
-
-/* ── Canvas swipe mode: pulsing ring on the canvas-outer during active swipe ── */
-#canvasOuter.irix-swipe-active{
-  outline:2px solid #a52a2a;
-  outline-offset:-2px;
-}
-body:not(.theme-sgi-irix) #canvasOuter.irix-swipe-active{
-  outline:2px solid var(--accent);
-}
 
 @media (max-width:430px) and (orientation:portrait){
 
@@ -1279,27 +1238,31 @@ body:not(.theme-sgi-irix) #canvasOuter.irix-swipe-active{
     align-items:center;
     position:fixed;
     right:0;
-    top:calc(46px + 42px + env(safe-area-inset-top,0px));
-    bottom:98px;
-    width:26px;         /* narrow */
+    top:calc(46px + 42px + env(safe-area-inset-top,0px)); /* header + timeline */
+    bottom:98px; /* scanline-band(50) + mobNav(48) */
+    width:36px;
     z-index:602;
     pointer-events:auto;
     user-select:none;
     -webkit-user-select:none;
     box-sizing:border-box;
+    gap:0;
   }
 
-  /* ── Toggle button — the nested-square widget from the PNG ── */
+  /* ── Toggle button (the nested-square widget from the PNG) ── */
+  /* Sits at the TOP of the column */
   #irixScaleButton{
-    width:26px;
-    height:26px;
+    width:36px;
+    height:36px;
     flex-shrink:0;
     cursor:pointer;
     -webkit-tap-highlight-color:transparent;
     touch-action:manipulation;
+    /* Outer raised bevel — exact match to reference PNG right widget */
     background:#b8b3a0;
     border-left:1px solid #000;
     border-bottom:1px solid #000;
+    /* Chiseled bevel: light top-left, dark bottom-right */
     box-shadow:
       inset  2px  2px 0 #d4cdb0,
       inset -2px -2px 0 #6f6a55;
@@ -1312,7 +1275,7 @@ body:not(.theme-sgi-irix) #canvasOuter.irix-swipe-active{
   #irixScaleButton::before{
     content:"";
     position:absolute;
-    inset:3px;
+    inset:4px;
     background:#9a9480;
     border:1px solid #000;
     box-shadow:
@@ -1323,55 +1286,50 @@ body:not(.theme-sgi-irix) #canvasOuter.irix-swipe-active{
   #irixScaleButton::after{
     content:"";
     position:absolute;
-    inset:8px;
+    inset:10px;
     background:#1a1a1a;
     border:1px solid #000;
+    box-shadow:inset 1px 1px 0 #3a3a3a;
   }
-  #irixScaleButton:active,
-  #irixScaleButton.is-open{
+  #irixScaleButton:active{
     box-shadow:
       inset  2px  2px 0 #6f6a55,
       inset -2px -2px 0 #d4cdb0;
   }
 
-  /* ── The wheel trough: fills remaining vertical space, HIDDEN until toggled ── */
+  /* ── The wheel trough: fills remaining vertical space below button ── */
   #irixScaleTrack{
     flex:1;
-    width:26px;
+    width:36px;
     min-height:0;
     position:relative;
     overflow:hidden;
     cursor:ns-resize;
+    /* Outer raised frame matching PNG long trough */
     background:#a59f80;
     border-left:1px solid #000;
     box-shadow:
       inset  2px  0 0 #d4cdb0,
       inset -2px  0 0 #6f6a55;
     touch-action:none;
-    /* Hidden by default */
-    display:none;
-  }
-  /* Show when not collapsed */
-  #irixScale:not(.irix-collapsed) #irixScaleTrack{
-    display:flex;
   }
 
-  /* Inner dark recess */
+  /* Inner sunken recess (the dark groove the slats sit in) */
   #irixScaleTrack::before{
     content:"";
     position:absolute;
-    inset:0 3px;
+    inset:0 4px;
     background:#2a2520;
     box-shadow:
       inset  1px  1px 0 #0a0a08,
-      inset -1px -1px 0 #504840;
+      inset -1px -1px 0 #5a5448;
     z-index:0;
   }
 
-  /* Scrolling slat strip */
+  /* The scrolling slat strip */
   #irixScaleTicks{
     position:absolute;
-    left:3px; right:3px;
+    left:4px; right:4px;
     top:0;
     display:flex;
     flex-direction:column;
@@ -1379,45 +1337,78 @@ body:not(.theme-sgi-irix) #canvasOuter.irix-swipe-active{
     z-index:1;
   }
 
-  /* Each slat — raised rectangular tile with top-light, bottom-shadow */
+  /* Each slat = one raised rectangular tile, like the PNG */
   .irix-tick{
     width:100%;
-    height:11px;
+    height:13px;
     flex-shrink:0;
     box-sizing:border-box;
+    /* Raised tile: left-edge highlight, right-edge shadow, top light, bottom dark */
     background:linear-gradient(180deg,
-      #d4cdb0 0%,
-      #c4bea0 20%,
-      #b0aa90 55%,
-      #8a8470 85%,
-      #706a58 100%);
+      #d0cbb0 0%,
+      #c4bea0 18%,
+      #b8b395 55%,
+      #9a9478 85%,
+      #7a7460 100%);
     border-top:1px solid #000;
     box-shadow:
-      inset  1px 0 0 #d4cdb0,
-      inset -1px 0 0 #6f6a55;
-    margin-bottom:2px;
+      inset  1px  0 0 #d4cdb0,
+      inset -1px  0 0 #6f6a55;
+    margin-bottom:2px; /* black gap between slats */
   }
+  /* Every 5th slat is taller/brighter (major division) */
   .irix-tick.irix-tick-major{
-    height:11px;
+    height:13px;
     background:linear-gradient(180deg,
-      #e4ddc8 0%,
-      #d8d2b8 20%,
-      #c4be a8 55%,
-      #a09880 85%,
+      #e0dcc4 0%,
+      #d4cdb0 20%,
+      #c8c2a8 55%,
+      #aaa490 85%,
       #8a846b 100%);
     margin-bottom:3px;
   }
+  /* The currently-selected slat — brighter + red left border */
   .irix-tick.irix-tick-active{
     background:linear-gradient(180deg,
-      #f4f0e4 0%,
-      #e8e2cc 25%,
-      #d4cebc 60%,
-      #c0baa2 100%);
+      #f0ece0 0%,
+      #e4dfc8 25%,
+      #d0cab2 60%,
+      #b8b295 100%);
     border-left:2px solid #a52a2a;
-    box-shadow: inset -1px 0 0 #6f6a55;
+    box-shadow:
+      inset -1px  0 0 #6f6a55;
   }
 
-  /* Non-SGI fallback */
+  /* ── Tooltip: graphic name, appears left of the wheel on drag ── */
+  #irixScaleLabel{
+    display:none;
+    position:fixed;
+    right:40px;
+    top:50%;
+    transform:translateY(-50%);
+    background:#a59f80;
+    border:1px solid #000;
+    box-shadow:
+      inset  1px  1px 0 #d4cdb0,
+      inset -1px -1px 0 #6f6a55,
+      -2px 2px 0 #2a2a2a;
+    padding:3px 7px;
+    font-size:10px;
+    font-weight:700;
+    color:#000;
+    white-space:nowrap;
+    pointer-events:none;
+    z-index:800;
+    font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;
+    letter-spacing:0.01em;
+  }
+
+  /* ── Collapsed state: only the button shows, track hidden ── */
+  #irixScale.irix-collapsed #irixScaleTrack{
+    display:none;
+  }
+
+  /* ── Non-SGI-theme fallback (dark UI) ── */
   body:not(.theme-sgi-irix) #irixScaleButton{
     background:var(--surface3);
     border-color:var(--border2);
@@ -1431,6 +1422,7 @@ body:not(.theme-sgi-irix) #canvasOuter.irix-swipe-active{
   body:not(.theme-sgi-irix) #irixScaleButton::after{
     background:var(--accent);
     border-color:transparent;
+    box-shadow:none;
   }
   body:not(.theme-sgi-irix) #irixScaleTrack{
     background:var(--surface2);
@@ -1445,11 +1437,18 @@ body:not(.theme-sgi-irix) #canvasOuter.irix-swipe-active{
     background:var(--surface3);
     border-color:var(--border);
     box-shadow:none;
+    margin-bottom:2px;
   }
   body:not(.theme-sgi-irix) .irix-tick-active{
     background:var(--accent-dim);
     border-left:2px solid var(--accent);
     box-shadow:none;
+  }
+  body:not(.theme-sgi-irix) #irixScaleLabel{
+    background:var(--surface2);
+    border-color:var(--border2);
+    color:var(--text);
+    box-shadow:0 2px 8px rgba(0,0,0,0.6);
   }
 }
 </style>
@@ -2130,17 +2129,15 @@ body:not(.theme-sgi-irix) #canvasOuter.irix-swipe-active{
 <!-- ═══════════════════════════════════════════════════
      SGI IRIX Scale — Canvas Graphic Selector
      Vertical strip, right edge, iPhone portrait only.
-     Starts COLLAPSED (wheel hidden). Button toggles it.
+     Button at top toggles wheel open/closed.
      ═══════════════════════════════════════════════════ -->
-<div id="irixScale" class="irix-collapsed" aria-label="Canvas Graphic Scale">
+<div id="irixScale" aria-label="Canvas Graphic Scale">
   <div id="irixScaleButton" aria-label="Toggle graphic wheel"></div>
   <div id="irixScaleTrack" aria-label="Drag to scroll graphics">
     <div id="irixScaleTicks"></div>
   </div>
+  <div id="irixScaleLabel"></div>
 </div>
-
-<!-- Shared graphic name label — shown during wheel drag AND canvas long-press swipe -->
-<div id="irixGraphicLabel"></div>
 
 <div id="mobNav">
   <button class="mob-nav-btn" id="navMedia" onclick="mobNavTap('media')" type="button">
@@ -6228,40 +6225,24 @@ function clearBgGraphic() {
 </script>
 
 <script>
-// ═══════════════════════════════════════════════════════════════
-// SGI IRIX Scale — Canvas Graphic Wheel + Canvas Long-Press Swipe
-//
-// WHEEL (right-edge vertical strip):
-//   • Starts hidden (collapsed). Tap button to reveal/hide.
-//   • Drag up/down on the trough to scroll CANVAS_GRAPHICS alpha.
-//
-// CANVAS LONG-PRESS SWIPE (portrait iPhone only):
-//   • Hard press-and-hold (600ms) on the *empty* canvas area
-//     while the bg graphic layer is locked → activates swipe mode.
-//   • While active, horizontal swipe anywhere on canvas scrolls graphics.
-//   • Release finger to exit swipe mode.
-//
-// LABEL: shared SGI-styled chip below the canvas, above the toolbar.
-//   Shows the current graphic name whenever either control is active.
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════
+// SGI IRIX Scale — Canvas Graphic Selector (iPhone portrait)
+// Vertical wheel on the right edge.
+// • Square button at top: tap to show/hide the wheel.
+// • Drag up/down on the trough to scroll through CANVAS_GRAPHICS
+//   alphabetically and apply as background.
+// ═══════════════════════════════════════════════════════════
 (function(){
   'use strict';
 
-  // ── Constants ────────────────────────────────────────────────
-  var SLAT_H      = 13;   // px: slat height + gap
-  var DRAG_PER    = 16;   // px finger travel per one step
-  var LONG_MS     = 600;  // ms hold before swipe mode activates
-  var MOVE_CANCEL = 8;    // px movement cancels the long-press timer
+  var SLAT_H      = 15;  // px height of each slat (slat + gap combined)
+  var DRAG_PER    = 18;  // px of finger travel per one graphic step
 
-  // ── State ─────────────────────────────────────────────────────
+  var scaleEl, btnEl, trackEl, ticksEl, labelEl;
   var sortedGraphics = [];
   var currentIdx     = 0;
-  var collapsed      = true;   // wheel starts hidden
+  var collapsed      = false;
 
-  // Elements (resolved in boot)
-  var scaleEl, btnEl, trackEl, ticksEl, labelEl;
-
-  // ── Build sorted list ─────────────────────────────────────────
   function buildSortedList(){
     if(typeof CANVAS_GRAPHICS === 'undefined') return [];
     return CANVAS_GRAPHICS.slice().sort(function(a,b){
@@ -6269,40 +6250,48 @@ function clearBgGraphic() {
     });
   }
 
-  // ── Render slats centred on currentIdx ───────────────────────
+  function getElements(){
+    scaleEl  = document.getElementById('irixScale');
+    btnEl    = document.getElementById('irixScaleButton');
+    trackEl  = document.getElementById('irixScaleTrack');
+    ticksEl  = document.getElementById('irixScaleTicks');
+    labelEl  = document.getElementById('irixScaleLabel');
+  }
+
+  // ── Render slats centred on currentIdx ─────────────────────
   function renderTicks(){
     if(!ticksEl || !trackEl) return;
     ticksEl.innerHTML = '';
     var n = sortedGraphics.length;
-    if(!n) return;
+    if(n === 0) return;
 
-    var trackH  = trackEl.clientHeight || 300;
-    var visible = Math.ceil(trackH / SLAT_H) + 6;
-    var half    = Math.floor(visible / 2);
-    var start   = currentIdx - half;
+    var trackH   = trackEl.clientHeight || 200;
+    var visible  = Math.ceil(trackH / SLAT_H) + 4;
+    var half     = Math.floor(visible / 2);
+    var startIdx = currentIdx - half;
 
     for(var i = 0; i < visible; i++){
-      var di  = start + i;
+      var dataIdx = startIdx + i;
       var div = document.createElement('div');
       div.className = 'irix-tick';
-      if(((di % 5) + 5) % 5 === 0) div.classList.add('irix-tick-major');
-      if(di === currentIdx)          div.classList.add('irix-tick-active');
+      if(((dataIdx % 5) + 5) % 5 === 0) div.classList.add('irix-tick-major');
+      if(dataIdx === currentIdx)          div.classList.add('irix-tick-active');
       ticksEl.appendChild(div);
     }
 
-    // Centre active slat in track
-    var centreOff = (trackH / 2) - (half * SLAT_H) - (SLAT_H / 2);
-    ticksEl.style.transform = 'translateY(' + centreOff + 'px)';
+    // Offset so the active slat is at the vertical centre of the track
+    var activePos = half * SLAT_H;
+    var centreOffset = (trackH / 2) - activePos - (SLAT_H / 2);
+    ticksEl.style.transform = 'translateY(' + centreOffset + 'px)';
   }
 
-  // ── Apply graphic at index ────────────────────────────────────
+  // ── Apply graphic ──────────────────────────────────────────
   function applyAtIndex(idx){
     if(!sortedGraphics.length) return;
     idx = Math.max(0, Math.min(sortedGraphics.length - 1, idx));
-    if(idx === currentIdx) return;
     currentIdx = idx;
 
-    var g       = sortedGraphics[idx];
+    var g = sortedGraphics[idx];
     var origIdx = -1;
     for(var i = 0; i < CANVAS_GRAPHICS.length; i++){
       if(CANVAS_GRAPHICS[i].src === g.src){ origIdx = i; break; }
@@ -6315,204 +6304,69 @@ function clearBgGraphic() {
 
     renderTicks();
     showLabel(g.name);
-    if(navigator.vibrate) navigator.vibrate(5);
   }
 
-  // ── Shared label: shown below canvas, above toolbar ───────────
+  // ── Tooltip ────────────────────────────────────────────────
   var _labelTimer;
-  function positionLabel(){
-    if(!labelEl) return;
-    // Place it just above the nav zone
-    // On portrait iPhone: bottom of screen = 0, nav at 98px from bottom
-    var bottom = 98 + 6; // just above the mob nav stack
-    labelEl.style.bottom = bottom + 'px';
-    labelEl.style.top    = 'auto';
-  }
-  function showLabel(name, persist){
+  function showLabel(name){
     if(!labelEl) return;
     labelEl.textContent = name;
     labelEl.style.display = 'block';
-    positionLabel();
     clearTimeout(_labelTimer);
-    if(!persist){
-      _labelTimer = setTimeout(function(){ labelEl.style.display = 'none'; }, 1800);
-    }
-  }
-  function hideLabel(){
-    clearTimeout(_labelTimer);
-    if(labelEl) labelEl.style.display = 'none';
+    _labelTimer = setTimeout(function(){ labelEl.style.display = 'none'; }, 1600);
   }
 
-  // ── Toggle wheel open/closed ──────────────────────────────────
+  // ── Toggle collapsed/expanded ──────────────────────────────
   function toggleCollapsed(){
     collapsed = !collapsed;
-    scaleEl.classList.toggle('irix-collapsed', collapsed);
-    btnEl.classList.toggle('is-open', !collapsed);
-    if(!collapsed) renderTicks();
+    if(scaleEl) scaleEl.classList.toggle('irix-collapsed', collapsed);
   }
 
-  // ── WHEEL: vertical drag on track ────────────────────────────
-  var _wLastY  = 0;
-  var _wAccum  = 0;
-  var _wActive = false;
+  // ── Touch handling — vertical drag ────────────────────────
+  var touchLastY  = 0;
+  var accumulated = 0;
+  var dragging    = false;
 
-  function onTrackTS(e){
-    _wLastY  = e.touches[0].clientY;
-    _wAccum  = 0;
-    _wActive = true;
+  function onTrackTouchStart(e){
+    touchLastY  = e.touches[0].clientY;
+    accumulated = 0;
+    dragging    = true;
   }
-  function onTrackTM(e){
-    if(!_wActive) return;
+  function onTrackTouchMove(e){
+    if(!dragging) return;
     e.preventDefault();
-    var dy   = _wLastY - e.touches[0].clientY; // up = positive = next
-    _wLastY  = e.touches[0].clientY;
-    _wAccum += dy;
-    var steps = Math.trunc(_wAccum / DRAG_PER);
-    if(steps){
-      _wAccum -= steps * DRAG_PER;
-      applyAtIndex(currentIdx + steps);
+    var y     = e.touches[0].clientY;
+    var delta = touchLastY - y;  // positive = drag up = next (alphabetically higher)
+    touchLastY = y;
+    accumulated += delta;
+
+    var steps = Math.trunc(accumulated / DRAG_PER);
+    if(steps !== 0){
+      accumulated -= steps * DRAG_PER;
+      var newIdx = Math.max(0, Math.min(sortedGraphics.length - 1, currentIdx + steps));
+      if(newIdx !== currentIdx){
+        applyAtIndex(newIdx);
+        if(navigator.vibrate) navigator.vibrate(5);
+      }
     }
   }
-  function onTrackTE(){ _wActive = false; _wAccum = 0; }
-
-  // ── CANVAS LONG-PRESS SWIPE ───────────────────────────────────
-  var _lpTimer    = null;   // long-press countdown
-  var _lpStartX   = 0;
-  var _lpStartY   = 0;
-  var _swipeMode  = false;  // currently in swipe-to-browse mode
-  var _swLastX    = 0;
-  var _swAccum    = 0;
-
-  function hasBgGraphicLocked(){
-    if(typeof layers === 'undefined') return false;
-    for(var i = 0; i < layers.length; i++){
-      if(layers[i]._isBgGraphic && layers[i].locked) return true;
-    }
-    return false;
+  function onTrackTouchEnd(){
+    dragging    = false;
+    accumulated = 0;
   }
 
   function isPortraitPhone(){
     return window.innerWidth <= 430 && window.innerHeight > window.innerWidth;
   }
 
-  function activateSwipeMode(startX){
-    _swipeMode = true;
-    _swLastX   = startX;
-    _swAccum   = 0;
-    // Visual cue: red outline on canvas
-    var co = document.getElementById('canvasOuter');
-    if(co) co.classList.add('irix-swipe-active');
-    // Show label with current graphic name (persistent while swiping)
-    var g = sortedGraphics[currentIdx];
-    if(g) showLabel(g.name, true);
-    if(navigator.vibrate) navigator.vibrate([20, 10, 20]);
-  }
-
-  function deactivateSwipeMode(){
-    _swipeMode = false;
-    _swAccum   = 0;
-    var co = document.getElementById('canvasOuter');
-    if(co) co.classList.remove('irix-swipe-active');
-    hideLabel();
-  }
-
-  function cancelLongPress(){
-    clearTimeout(_lpTimer);
-    _lpTimer = null;
-  }
-
-  // Patch into the existing canvasArea touch listeners
-  function patchCanvasTouch(){
-    var area = document.getElementById('canvasArea');
-    if(!area) return;
-
-    area.addEventListener('touchstart', function(e){
-      if(!isPortraitPhone()) return;
-      if(e.touches.length !== 1) { cancelLongPress(); return; }
-      if(!hasBgGraphicLocked()) return;
-
-      var t = e.touches[0];
-      _lpStartX = t.clientX;
-      _lpStartY = t.clientY;
-
-      cancelLongPress();
-      _lpTimer = setTimeout(function(){
-        _lpTimer = null;
-        // Only activate if we're NOT hitting any unlocked layer
-        // (i.e. the tap would land on empty canvas / bg)
-        if(typeof layers !== 'undefined'){
-          var hitUnlocked = false;
-          // Use the existing c2c coordinate conversion if available
-          var pos = (typeof c2c === 'function') ? c2c(_lpStartX, _lpStartY) : null;
-          if(pos){
-            for(var i = layers.length - 1; i >= 0; i--){
-              var l = layers[i];
-              if(!l.locked && typeof hitT === 'function' && hitT(pos, l)){
-                hitUnlocked = true; break;
-              }
-            }
-          }
-          if(hitUnlocked) return;
-        }
-        activateSwipeMode(_lpStartX);
-      }, LONG_MS);
-    }, {passive: true, capture: true});
-
-    area.addEventListener('touchmove', function(e){
-      if(!isPortraitPhone()) return;
-      if(e.touches.length !== 1) { cancelLongPress(); return; }
-      var t  = e.touches[0];
-      var dx = t.clientX - _lpStartX;
-      var dy = t.clientY - _lpStartY;
-
-      // Cancel long-press if finger moved too much before timeout fires
-      if(_lpTimer && Math.hypot(dx, dy) > MOVE_CANCEL){
-        cancelLongPress();
-        return;
-      }
-
-      // During swipe mode: handle horizontal scroll
-      if(_swipeMode){
-        e.preventDefault();
-        var delta = _swLastX - t.clientX; // positive = right = next
-        _swLastX   = t.clientX;
-        _swAccum  += delta;
-        var steps = Math.trunc(_swAccum / DRAG_PER);
-        if(steps){
-          _swAccum -= steps * DRAG_PER;
-          var oldIdx = currentIdx;
-          applyAtIndex(currentIdx + steps);
-          // Keep label visible while swiping
-          var g = sortedGraphics[currentIdx];
-          if(g) showLabel(g.name, true);
-        }
-      }
-    }, {passive: false, capture: true});
-
-    area.addEventListener('touchend', function(e){
-      cancelLongPress();
-      if(_swipeMode) deactivateSwipeMode();
-    }, {passive: true, capture: true});
-
-    area.addEventListener('touchcancel', function(e){
-      cancelLongPress();
-      if(_swipeMode) deactivateSwipeMode();
-    }, {passive: true, capture: true});
-  }
-
-  // ── Boot ──────────────────────────────────────────────────────
+  // ── Boot ──────────────────────────────────────────────────
   function boot(){
-    scaleEl = document.getElementById('irixScale');
-    btnEl   = document.getElementById('irixScaleButton');
-    trackEl = document.getElementById('irixScaleTrack');
-    ticksEl = document.getElementById('irixScaleTicks');
-    labelEl = document.getElementById('irixGraphicLabel');
-
+    getElements();
     if(!scaleEl) return;
 
     sortedGraphics = buildSortedList();
 
-    // Sync to dropdown
+    // Sync initial index to whatever the dropdown shows
     var sel    = document.getElementById('bgGraphicSelect');
     var selVal = sel ? parseInt(sel.value) : -1;
     if(selVal >= 0 && CANVAS_GRAPHICS[selVal]){
@@ -6522,26 +6376,25 @@ function clearBgGraphic() {
       }
     }
 
-    // Start collapsed (wheel hidden)
-    scaleEl.classList.add('irix-collapsed');
-    collapsed = true;
+    renderTicks();
 
-    // Button toggles wheel
+    // Button: toggle show/hide
     btnEl.addEventListener('click', function(e){
       e.stopPropagation();
       toggleCollapsed();
     });
 
-    // Wheel track touch
-    trackEl.addEventListener('touchstart', onTrackTS, {passive: true});
-    trackEl.addEventListener('touchmove',  onTrackTM, {passive: false});
-    trackEl.addEventListener('touchend',   onTrackTE, {passive: true});
-    trackEl.addEventListener('touchcancel',onTrackTE, {passive: true});
+    // Track: vertical drag
+    trackEl.addEventListener('touchstart', onTrackTouchStart, {passive:true});
+    trackEl.addEventListener('touchmove',  onTrackTouchMove,  {passive:false});
+    trackEl.addEventListener('touchend',   onTrackTouchEnd,   {passive:true});
 
-    // Canvas long-press swipe
-    patchCanvasTouch();
+    // Re-render on resize (track height changes)
+    window.addEventListener('resize', function(){
+      if(!collapsed) renderTicks();
+    });
 
-    // Keep in sync with dropdown
+    // Keep in sync with dropdown changes elsewhere
     if(sel){
       sel.addEventListener('change', function(){
         var v = parseInt(sel.value);
@@ -6550,19 +6403,15 @@ function clearBgGraphic() {
         for(var i = 0; i < sortedGraphics.length; i++){
           if(sortedGraphics[i].src === src){ currentIdx = i; break; }
         }
-        if(!collapsed) renderTicks();
+        renderTicks();
       });
     }
-
-    window.addEventListener('resize', function(){
-      if(!collapsed) renderTicks();
-    });
   }
 
   if(document.readyState === 'loading'){
     document.addEventListener('DOMContentLoaded', boot);
   } else {
-    setTimeout(boot, 150);
+    setTimeout(boot, 120);
   }
 })();
 </script>
