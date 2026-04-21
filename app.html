@@ -999,7 +999,9 @@ body.theme-sgi-irix .layer-item.is-locked .layer-lock{color:#c00;background:#cac
   /* ─ BOTTOM NAV (compact) ─ */
   #mobNav{
     display:flex;
-    position:fixed;bottom:50px;left:0;right:0;
+    position:fixed;
+    bottom:calc(50px + env(safe-area-inset-bottom,0px));
+    left:0;right:0;
     height:var(--mob-nav-h);
     padding-bottom:0;
     padding-left:env(safe-area-inset-left,0px);
@@ -1022,12 +1024,12 @@ body.theme-sgi-irix .layer-item.is-locked .layer-lock{color:#c00;background:#cac
   body::after{
     bottom:0;height:env(safe-area-inset-bottom,0px);
   }
-  /* iPhone portrait only: cover the 50px gap below the toolbar with SGI scanlines.
-     z-index:601 sits above the toolbar (600) so nothing bleeds through.
-     pointer-events:auto blocks accidental taps on content underneath. */
+  /* iPhone portrait only: cover the 50px gap below the toolbar PLUS the home-indicator
+     safe-area inset so the app reaches the very bottom edge of the screen in PWA mode.
+     z-index:601 sits above the toolbar (600) so nothing bleeds through. */
   @media (orientation: portrait) and (max-width: 430px){
     body::after{
-      height:50px;
+      height:calc(50px + env(safe-area-inset-bottom,0px));
       z-index:601;
       pointer-events:auto;
       background:#a59f80;
@@ -2181,12 +2183,19 @@ function drawMedia(l){
   // If this image layer is an animated GIF, swap src to the current frame canvas.
   if(l.type==='image' && l.gif && l.gif.frames && l.gif.frames.length){
     const g=l.gif;
-    // When timeline is playing or exporting, drive by playhead. Otherwise wallclock.
-    const tMs=(isPlaying||window._gifExportMode)?(playhead*1000):performance.now();
-    const phase=((tMs%g.totalMs)+g.totalMs)%g.totalMs;
-    let acc=0,frame=g.frames[0];
-    for(const f of g.frames){ acc+=f.delayMs; if(phase<acc){frame=f;break;} }
-    src=frame.canvas;
+    // Always use wallclock for live playback so GIFs animate at native speed
+    // whether the timeline is paused or playing. Only the GIF export pipeline
+    // needs deterministic playhead-driven frames (handled via _gifExportMode).
+    const tMs = window._gifExportMode ? (playhead*1000) : performance.now();
+    const total = g.totalMs || 1;
+    const phase = ((tMs % total) + total) % total;
+    let acc=0, frame=g.frames[0];
+    for(const f of g.frames){
+      const d = f.delayMs > 0 ? f.delayMs : 20;
+      acc += d;
+      if(phase < acc){ frame = f; break; }
+    }
+    src = frame.canvas;
   }
   const sw=src.naturalWidth||src.videoWidth||src.width||0;
   const sh=src.naturalHeight||src.videoHeight||src.height||0;
@@ -3218,26 +3227,25 @@ function handleFiles(files){
     } else if(isGif){
       // Animated GIF: load as <img> for thumbnail/native preview, AND decode frames for canvas animation
       const img=new Image();
+      let added=false;
+      const addOnce=()=>{
+        if(added)return;added=true;
+        const idx=mediaItems.length;
+        mediaItems.push({url,name,isVideo:false,el:img});
+        addMThumb(url,name,false,img,idx);
+      };
       img.src=url;
       img.onload=async()=>{
         try{
           const gifData=await decodeAnimatedGif(f);
           if(gifData && gifData.frames.length>1){
             img.gif=gifData;
-            // Override naturalWidth/Height fallbacks via gif data
           }
         }catch(e){console.warn('GIF decode failed:',e);}
-        const idx=mediaItems.length;
-        mediaItems.push({url,name,isVideo:false,el:img});
-        addMThumb(url,name,false,img,idx);
+        addOnce();
       };
-      setTimeout(()=>{
-        if(!mediaItems.find(m=>m.url===url)){
-          const idx=mediaItems.length;
-          mediaItems.push({url,name,isVideo:false,el:img});
-          addMThumb(url,name,false,img,idx);
-        }
-      },5000);
+      // Safety net: if decode hangs, still surface the static image after 5s
+      setTimeout(addOnce,5000);
     } else {
       const img=new Image();
       img.src=url;
