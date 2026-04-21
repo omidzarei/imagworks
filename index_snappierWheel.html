@@ -2905,97 +2905,53 @@ function onTS(e){
   // If tapping directly on the text editor textarea, let it handle its own touches
   if(e.target&&e.target.id==='canvasTextEditor')return;
 
-  // TYPE MODE + active edit: tapping on the same text layer repositions caret
+  // TYPE MODE + active edit: tapping on the same text layer should reposition the
+  // caret, not end the edit. Ending the edit blurs the hidden textarea which
+  // dismisses the iOS keyboard, making it impossible to move the caret on mobile.
   if(_editingLayerId!=null && activeTool==='type' && e.touches.length===1){
     const t0=e.touches[0];
     const pos0=c2c(t0.clientX,t0.clientY);
     let hitLayer=null;for(let i=layers.length-1;i>=0;i--)if(hitT(pos0,layers[i])){hitLayer=layers[i];break;}
     if(hitLayer&&hitLayer.id===_editingLayerId){
+      // Stay in edit — just update the caret position to the tap location
       e.preventDefault();
       const ta=document.getElementById('canvasTextEditor');
       if(ta&&ta.style.display!=='none'){
         const l=layers.find(x=>x.id===_editingLayerId);
         if(l){
-          // ── Caret placement: mirrors drawTxt exactly ────────────────
-          // 1. Rotate tap point into the layer's local coordinate space
-          const cx0=l.x+l.w/2, cy0=l.y+l.h/2;
-          const ang=-(l.rotation||0)*Math.PI/180;
-          const dx0=pos0.x-cx0, dy0=pos0.y-cy0;
-          const lx=(dx0*Math.cos(ang)-dy0*Math.sin(ang)) + l.w/2;
-          const ly=(dx0*Math.sin(ang)+dy0*Math.cos(ang)) + l.h/2;
-
-          // 2. Rebuild rowData exactly as drawTxt does
+          // Estimate character offset from tap position using canvas text metrics
+          const lx=pos0.x-l.x, ly=pos0.y-l.y;
           const s=(l.italic?'italic ':'')+(l.bold?'bold ':'');
           ctx.font=`${s}${l.size}px ${l.font}`;
-          const align=l.align||'left';
-          const xAnchor=align==='center'?l.w/2:(align==='right'?l.w-8:8);
-          const lineH=l.size*1.2;
-          const wrapW=l.w-16;
-          const rowData=[];
-          let charIdx=0, y=4;
-          for(const line of l.text.split('\n')){
-            const words=line.split(' ');
-            let row='',rowStart=charIdx;
+          const lines=l.text.split('\n');
+          let charIdx=0,best=0,bestDist=Infinity;
+          let rowY=4;
+          for(const line of lines){
+            const words=line.split(' ');let row='';let rowStart=charIdx;
+            const rows=[];
             for(let n=0;n<words.length;n++){
-              const t2=row+words[n]+' ';
-              if(ctx.measureText(t2).width>wrapW&&n>0){
-                rowData.push({text:row,y,startIdx:rowStart});
-                rowStart+=row.length;charIdx=rowStart;
-                row=words[n]+' ';y+=lineH;
-              }else row=t2;
+              const t=row+words[n]+' ';
+              if(ctx.measureText(t).width>l.w-16&&n>0){rows.push({text:row,y:rowY,startIdx:rowStart});rowStart+=row.length;row=words[n]+' ';rowY+=l.size*1.2;}
+              else row=t;
             }
-            rowData.push({text:row,y,startIdx:rowStart});
-            charIdx+=row.length;
-            y+=lineH;
-            charIdx++; // newline char
-          }
-
-          // 3. Find the closest row by vertical overlap (top baseline, height = lineH)
-          //    Use the row whose vertical band [r.y .. r.y+lineH] contains ly,
-          //    or fall back to nearest row centre if tap is between rows.
-          let bestRow=rowData[0];
-          let bestDist=Infinity;
-          for(const r of rowData){
-            // Distance: 0 if inside the row band, else distance to nearest edge
-            const topD=ly-r.y, botD=ly-(r.y+lineH);
-            const d=topD>=0&&botD<=0 ? 0 : Math.min(Math.abs(topD),Math.abs(botD));
-            if(d<bestDist){bestDist=d;bestRow=r;}
-          }
-
-          // 4. Find the best character offset in that row using midpoint snapping:
-          //    tap on right half of char c → place caret after char c
-          const rowText=bestRow.text;
-          let bestCharOff=0;
-          let bestX=Infinity;
-          // Compute x-origin of this row (mirrors drawTxt caret logic)
-          const rowW=ctx.measureText(rowText.trimEnd()).width;
-          const xOrigin=align==='center'?xAnchor-rowW/2:(align==='right'?xAnchor-rowW:xAnchor);
-
-          // Walk every inter-character boundary and find midpoints
-          let prevBoundX=xOrigin;
-          for(let c=0;c<=rowText.length;c++){
-            const boundX=xOrigin+ctx.measureText(rowText.slice(0,c)).width;
-            // Midpoint between previous boundary and this one
-            const midX=(prevBoundX+boundX)/2;
-            // At c=0 there's no previous mid — use left edge
-            const testX=(c===0)?boundX:midX;
-            if(Math.abs(lx-testX)<Math.abs(lx-bestX)){
-              bestX=testX;
-              // Snap rule: if tap is past midpoint, caret goes after the char
-              bestCharOff=(lx>=midX)?c:(c>0?c-1:0);
+            rows.push({text:row,y:rowY,startIdx:rowStart});rowY+=l.size*1.2;charIdx+=line.length+1;
+            for(const r of rows){
+              const dist=Math.abs(ly-(r.y+l.size*0.5));
+              if(dist<bestDist){
+                bestDist=dist;
+                // Binary search for closest char offset in this row
+                let lo=0,hi=r.text.length,bc=hi;
+                for(let c=0;c<=r.text.length;c++){
+                  const tw=ctx.measureText(r.text.slice(0,c)).width;
+                  const align=l.align||'left';
+                  const xOff=align==='center'?l.w/2-ctx.measureText(r.text.trimEnd()).width/2:align==='right'?l.w-8-ctx.measureText(r.text.trimEnd()).width:8;
+                  if(Math.abs(lx-(xOff+tw))<Math.abs(lx-(xOff+ctx.measureText(r.text.slice(0,bc)).width))){bc=c;}
+                }
+                best=r.startIdx+bc;
+              }
             }
-            prevBoundX=boundX;
           }
-          // Final pass: use simple closest-boundary to double-check
-          let closestOff=0, closestDist2=Infinity;
-          for(let c=0;c<=rowText.length;c++){
-            const bx=xOrigin+ctx.measureText(rowText.slice(0,c)).width;
-            if(Math.abs(lx-bx)<closestDist2){closestDist2=Math.abs(lx-bx);closestOff=c;}
-          }
-          // Use closest-boundary result (more precise for small chars)
-          const finalOff=closestOff;
-
-          _caretPos=Math.max(0,Math.min(ta.value.length,bestRow.startIdx+finalOff));
+          _caretPos=Math.max(0,Math.min(ta.value.length,best));
           try{ta.setSelectionRange(_caretPos,_caretPos);}catch(_){}
           _caretVisible=true;
           render&&render();
