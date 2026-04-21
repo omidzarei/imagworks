@@ -1036,8 +1036,7 @@ body.theme-sgi-irix .layer-item.is-locked .layer-lock{color:#c00;background:#cac
           #8e8770 1px,#8e8770 2px),
         #a59f80;
     }
-    /* Push --mob-nav-h up by 36px to account for the IRIX scale widget above the nav */
-    :root{ --mob-nav-h: 84px; }
+    /* IRIX scale is now a vertical strip on the right edge — no nav-height adjustment needed */
   }
   body.theme-sgi-irix::before, body.theme-sgi-irix::after{
     background:
@@ -1224,142 +1223,232 @@ body.theme-sgi-irix .layer-item.is-locked .layer-lock{color:#c00;background:#cac
 
 /* ══════════════════════════════════════════════════════════════
    SGI IRIX Scale — Canvas Graphic Selector
-   Only shown on iPhone portrait (≤430px, portrait orientation)
+   Vertical strip on the RIGHT edge, portrait iPhone only.
+   Positioned between timeline bottom (~88px from top) and
+   the bottom nav top (~98px from bottom).
    ══════════════════════════════════════════════════════════════ */
-#irixScale{
-  display:none; /* hidden by default; shown only via media query below */
-}
+#irixScale{ display:none; }
+
 @media (max-width:430px) and (orientation:portrait){
+
+  /* ── Outer wrapper: right-edge column ── */
   #irixScale{
     display:flex;
+    flex-direction:column;
     align-items:center;
     position:fixed;
-    bottom:98px; /* 50px scanline band + 48px mobNav */
-    left:0;right:0;
-    height:36px;
-    z-index:602; /* above body::after scanline band (601) and mobNav (600) */
-    background:#a59f80;
-    border-top:1px solid #000;
-    border-bottom:1px solid #6f6a55;
-    box-shadow:inset 0 1px 0 #d4cdb0, inset 0 -1px 0 #6f6a55, 0 -2px 6px rgba(0,0,0,0.3);
-    padding:0 4px 0 4px;
-    gap:4px;
+    right:0;
+    top:calc(46px + 42px + env(safe-area-inset-top,0px)); /* header + timeline */
+    bottom:98px; /* scanline-band(50) + mobNav(48) */
+    width:36px;
+    z-index:602;
+    pointer-events:auto;
     user-select:none;
     -webkit-user-select:none;
-    touch-action:pan-x;
-    cursor:ew-resize;
     box-sizing:border-box;
-    font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;
+    gap:0;
   }
-  /* The long sliding-scale trough */
-  #irixScaleTrack{
-    flex:1;
-    height:22px;
-    background:#8a846b;
-    border:1px solid #000;
-    border-radius:0;
-    box-shadow:inset 1px 1px 0 #6f6a55, inset -1px -1px 0 #c4bea0;
-    overflow:hidden;
-    position:relative;
-  }
-  /* The tick marks inside the trough */
-  #irixScaleTicks{
-    position:absolute;
-    top:0;bottom:0;
-    display:flex;
-    align-items:stretch;
-    /* width & transform driven by JS */
-    will-change:transform;
-    transition:transform 0.12s cubic-bezier(0.25,0.46,0.45,0.94);
-  }
-  .irix-tick{
-    width:14px;
-    flex-shrink:0;
-    border-right:1px solid rgba(0,0,0,0.35);
-    background:linear-gradient(180deg, #b0a98a 0%, #9a9474 40%, #8a846b 100%);
-    box-sizing:border-box;
-  }
-  .irix-tick.irix-tick-major{
-    border-right:1px solid #000;
-    background:linear-gradient(180deg,#c4bea0 0%,#a59f80 40%,#8a846b 100%);
-  }
-  .irix-tick.irix-tick-active{
-    background:linear-gradient(180deg,#d4cdb0 0%,#c0b890 40%,#a59f80 100%);
-    border-right:2px solid #a52a2a;
-  }
-  /* The square button at the right end (like the PNG's small square widget) */
+
+  /* ── Toggle button (the nested-square widget from the PNG) ── */
+  /* Sits at the TOP of the column */
   #irixScaleButton{
-    width:28px;height:28px;
+    width:36px;
+    height:36px;
     flex-shrink:0;
-    background:#a59f80;
-    border:1px solid #000;
-    border-radius:0;
-    box-shadow:inset 1px 1px 0 #d4cdb0, inset -1px -1px 0 #6f6a55;
-    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;
+    /* Outer raised bevel — exact match to reference PNG right widget */
+    background:#b8b3a0;
+    border-left:1px solid #000;
+    border-bottom:1px solid #000;
+    /* Chiseled bevel: light top-left, dark bottom-right */
+    box-shadow:
+      inset  2px  2px 0 #d4cdb0,
+      inset -2px -2px 0 #6f6a55;
+    display:flex;
+    align-items:center;
+    justify-content:center;
     position:relative;
   }
-  /* Inner square (like the reference image) */
+  /* Middle ring */
   #irixScaleButton::before{
     content:"";
-    display:block;
-    width:10px;height:10px;
-    background:#6f6a55;
+    position:absolute;
+    inset:4px;
+    background:#9a9480;
     border:1px solid #000;
-    box-shadow:inset 1px 1px 0 #8a846b;
+    box-shadow:
+      inset  1px  1px 0 #6f6a55,
+      inset -1px -1px 0 #c4bea0;
   }
-  /* Label floating above (shows current graphic name) */
+  /* Inner black square */
+  #irixScaleButton::after{
+    content:"";
+    position:absolute;
+    inset:10px;
+    background:#1a1a1a;
+    border:1px solid #000;
+    box-shadow:inset 1px 1px 0 #3a3a3a;
+  }
+  #irixScaleButton:active{
+    box-shadow:
+      inset  2px  2px 0 #6f6a55,
+      inset -2px -2px 0 #d4cdb0;
+  }
+
+  /* ── The wheel trough: fills remaining vertical space below button ── */
+  #irixScaleTrack{
+    flex:1;
+    width:36px;
+    min-height:0;
+    position:relative;
+    overflow:hidden;
+    cursor:ns-resize;
+    /* Outer raised frame matching PNG long trough */
+    background:#a59f80;
+    border-left:1px solid #000;
+    box-shadow:
+      inset  2px  0 0 #d4cdb0,
+      inset -2px  0 0 #6f6a55;
+    touch-action:none;
+  }
+
+  /* Inner sunken recess (the dark groove the slats sit in) */
+  #irixScaleTrack::before{
+    content:"";
+    position:absolute;
+    inset:0 4px;
+    background:#2a2520;
+    box-shadow:
+      inset  1px  1px 0 #0a0a08,
+      inset -1px -1px 0 #5a5448;
+    z-index:0;
+  }
+
+  /* The scrolling slat strip */
+  #irixScaleTicks{
+    position:absolute;
+    left:4px; right:4px;
+    top:0;
+    display:flex;
+    flex-direction:column;
+    will-change:transform;
+    z-index:1;
+  }
+
+  /* Each slat = one raised rectangular tile, like the PNG */
+  .irix-tick{
+    width:100%;
+    height:13px;
+    flex-shrink:0;
+    box-sizing:border-box;
+    /* Raised tile: left-edge highlight, right-edge shadow, top light, bottom dark */
+    background:linear-gradient(180deg,
+      #d0cbb0 0%,
+      #c4bea0 18%,
+      #b8b395 55%,
+      #9a9478 85%,
+      #7a7460 100%);
+    border-top:1px solid #000;
+    box-shadow:
+      inset  1px  0 0 #d4cdb0,
+      inset -1px  0 0 #6f6a55;
+    margin-bottom:2px; /* black gap between slats */
+  }
+  /* Every 5th slat is taller/brighter (major division) */
+  .irix-tick.irix-tick-major{
+    height:13px;
+    background:linear-gradient(180deg,
+      #e0dcc4 0%,
+      #d4cdb0 20%,
+      #c8c2a8 55%,
+      #aaa490 85%,
+      #8a846b 100%);
+    margin-bottom:3px;
+  }
+  /* The currently-selected slat — brighter + red left border */
+  .irix-tick.irix-tick-active{
+    background:linear-gradient(180deg,
+      #f0ece0 0%,
+      #e4dfc8 25%,
+      #d0cab2 60%,
+      #b8b295 100%);
+    border-left:2px solid #a52a2a;
+    box-shadow:
+      inset -1px  0 0 #6f6a55;
+  }
+
+  /* ── Tooltip: graphic name, appears left of the wheel on drag ── */
   #irixScaleLabel{
-    display:none; /* shown during drag */
+    display:none;
     position:fixed;
-    bottom:136px; /* 98px scale bottom + 38px scale height */
-    left:50%;
-    transform:translateX(-50%);
+    right:40px;
+    top:50%;
+    transform:translateY(-50%);
     background:#a59f80;
     border:1px solid #000;
-    box-shadow:inset 1px 1px 0 #d4cdb0, inset -1px -1px 0 #6f6a55, 2px 2px 0 #2a2a2a;
-    padding:3px 8px;
+    box-shadow:
+      inset  1px  1px 0 #d4cdb0,
+      inset -1px -1px 0 #6f6a55,
+      -2px 2px 0 #2a2a2a;
+    padding:3px 7px;
     font-size:10px;
     font-weight:700;
     color:#000;
     white-space:nowrap;
     pointer-events:none;
-    z-index:700;
+    z-index:800;
     font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;
+    letter-spacing:0.01em;
   }
-  /* Dark theme override — keep SGI look in non-IRIX themes too but subdued */
-  body:not(.theme-sgi-irix) #irixScale{
-    background:var(--surface2);
-    border-color:var(--border2);
-    box-shadow:none;
+
+  /* ── Collapsed state: only the button shows, track hidden ── */
+  #irixScale.irix-collapsed #irixScaleTrack{
+    display:none;
   }
-  body:not(.theme-sgi-irix) #irixScaleTrack{
-    background:var(--surface3);
-    border-color:var(--border2);
-    box-shadow:none;
-  }
-  body:not(.theme-sgi-irix) .irix-tick{
-    background:var(--surface2);
-    border-color:var(--border);
-  }
-  body:not(.theme-sgi-irix) .irix-tick-active{
-    background:var(--accent-dim);
-    border-color:var(--accent);
-  }
+
+  /* ── Non-SGI-theme fallback (dark UI) ── */
   body:not(.theme-sgi-irix) #irixScaleButton{
     background:var(--surface3);
     border-color:var(--border2);
     box-shadow:none;
   }
   body:not(.theme-sgi-irix) #irixScaleButton::before{
-    background:var(--accent);
+    background:var(--surface2);
     border-color:var(--border2);
+    box-shadow:none;
+  }
+  body:not(.theme-sgi-irix) #irixScaleButton::after{
+    background:var(--accent);
+    border-color:transparent;
+    box-shadow:none;
+  }
+  body:not(.theme-sgi-irix) #irixScaleTrack{
+    background:var(--surface2);
+    border-color:var(--border2);
+    box-shadow:none;
+  }
+  body:not(.theme-sgi-irix) #irixScaleTrack::before{
+    background:var(--bg);
+    box-shadow:none;
+  }
+  body:not(.theme-sgi-irix) .irix-tick{
+    background:var(--surface3);
+    border-color:var(--border);
+    box-shadow:none;
+    margin-bottom:2px;
+  }
+  body:not(.theme-sgi-irix) .irix-tick-active{
+    background:var(--accent-dim);
+    border-left:2px solid var(--accent);
     box-shadow:none;
   }
   body:not(.theme-sgi-irix) #irixScaleLabel{
     background:var(--surface2);
     border-color:var(--border2);
     color:var(--text);
-    box-shadow:0 2px 8px rgba(0,0,0,0.5);
+    box-shadow:0 2px 8px rgba(0,0,0,0.6);
   }
 }
 </style>
@@ -2039,14 +2128,14 @@ body.theme-sgi-irix .layer-item.is-locked .layer-lock{color:#c00;background:#cac
 
 <!-- ═══════════════════════════════════════════════════
      SGI IRIX Scale — Canvas Graphic Selector
-     Only visible on iPhone portrait (max-width:430px, portrait)
-     Sits above #mobNav, full width, compact height
+     Vertical strip, right edge, iPhone portrait only.
+     Button at top toggles wheel open/closed.
      ═══════════════════════════════════════════════════ -->
 <div id="irixScale" aria-label="Canvas Graphic Scale">
-  <div id="irixScaleTrack">
+  <div id="irixScaleButton" aria-label="Toggle graphic wheel"></div>
+  <div id="irixScaleTrack" aria-label="Drag to scroll graphics">
     <div id="irixScaleTicks"></div>
   </div>
-  <div id="irixScaleButton"></div>
   <div id="irixScaleLabel"></div>
 </div>
 
@@ -6138,132 +6227,131 @@ function clearBgGraphic() {
 <script>
 // ═══════════════════════════════════════════════════════════
 // SGI IRIX Scale — Canvas Graphic Selector (iPhone portrait)
-// Swipe left/right on the scale to cycle through CANVAS_GRAPHICS
-// alphabetically and apply as background graphic.
+// Vertical wheel on the right edge.
+// • Square button at top: tap to show/hide the wheel.
+// • Drag up/down on the trough to scroll through CANVAS_GRAPHICS
+//   alphabetically and apply as background.
 // ═══════════════════════════════════════════════════════════
 (function(){
   'use strict';
 
-  var TICK_W = 14;          // px per tick (matches CSS)
-  var TICKS_VISIBLE = 21;   // how many ticks we render in the strip
+  var SLAT_H      = 15;  // px height of each slat (slat + gap combined)
+  var DRAG_PER    = 18;  // px of finger travel per one graphic step
 
-  var scaleEl, trackEl, ticksEl, labelEl;
-  var sortedGraphics = [];  // alphabetically sorted list
-  var currentIdx = -1;      // index into sortedGraphics (-1 = none)
+  var scaleEl, btnEl, trackEl, ticksEl, labelEl;
+  var sortedGraphics = [];
+  var currentIdx     = 0;
+  var collapsed      = false;
 
-  // Build the sorted list from CANVAS_GRAPHICS (wait until it's defined)
   function buildSortedList(){
     if(typeof CANVAS_GRAPHICS === 'undefined') return [];
-    var list = CANVAS_GRAPHICS.slice().sort(function(a,b){
+    return CANVAS_GRAPHICS.slice().sort(function(a,b){
       return a.name.localeCompare(b.name);
     });
-    return list;
   }
 
   function getElements(){
     scaleEl  = document.getElementById('irixScale');
+    btnEl    = document.getElementById('irixScaleButton');
     trackEl  = document.getElementById('irixScaleTrack');
     ticksEl  = document.getElementById('irixScaleTicks');
     labelEl  = document.getElementById('irixScaleLabel');
   }
 
-  // Render tick marks centred on currentIdx
+  // ── Render slats centred on currentIdx ─────────────────────
   function renderTicks(){
-    if(!ticksEl) return;
+    if(!ticksEl || !trackEl) return;
     ticksEl.innerHTML = '';
     var n = sortedGraphics.length;
     if(n === 0) return;
 
-    // We show a window of TICKS_VISIBLE ticks, centred on currentIdx
-    var half = Math.floor(TICKS_VISIBLE / 2);
+    var trackH   = trackEl.clientHeight || 200;
+    var visible  = Math.ceil(trackH / SLAT_H) + 4;
+    var half     = Math.floor(visible / 2);
     var startIdx = currentIdx - half;
 
-    for(var i = 0; i < TICKS_VISIBLE; i++){
+    for(var i = 0; i < visible; i++){
       var dataIdx = startIdx + i;
       var div = document.createElement('div');
       div.className = 'irix-tick';
-      // Major tick every 5
       if(((dataIdx % 5) + 5) % 5 === 0) div.classList.add('irix-tick-major');
-      // Active tick = the selected one
-      if(dataIdx === currentIdx) div.classList.add('irix-tick-active');
+      if(dataIdx === currentIdx)          div.classList.add('irix-tick-active');
       ticksEl.appendChild(div);
     }
 
-    // Centre the strip: offset so the active tick (half position) is in the track centre
-    // The ticks are already centred by construction; no transform needed.
-    ticksEl.style.transform = 'translateX(0)';
+    // Offset so the active slat is at the vertical centre of the track
+    var activePos = half * SLAT_H;
+    var centreOffset = (trackH / 2) - activePos - (SLAT_H / 2);
+    ticksEl.style.transform = 'translateY(' + centreOffset + 'px)';
   }
 
-  // Apply the graphic at sortedIdx to the canvas
+  // ── Apply graphic ──────────────────────────────────────────
   function applyAtIndex(idx){
-    if(sortedGraphics.length === 0) return;
-    // Clamp
+    if(!sortedGraphics.length) return;
     idx = Math.max(0, Math.min(sortedGraphics.length - 1, idx));
     currentIdx = idx;
 
     var g = sortedGraphics[idx];
-    // Find this graphic's index in the original CANVAS_GRAPHICS array
     var origIdx = -1;
     for(var i = 0; i < CANVAS_GRAPHICS.length; i++){
       if(CANVAS_GRAPHICS[i].src === g.src){ origIdx = i; break; }
     }
-    if(origIdx === -1) return;
+    if(origIdx < 0) return;
 
-    // Update the dropdown if it exists (keeps UI in sync)
     var sel = document.getElementById('bgGraphicSelect');
-    if(sel){ sel.value = String(origIdx); }
-
-    // Apply via the existing global function
+    if(sel) sel.value = String(origIdx);
     if(typeof applyBgGraphic === 'function') applyBgGraphic(origIdx);
 
     renderTicks();
     showLabel(g.name);
   }
 
-  // Show / hide the floating name label
+  // ── Tooltip ────────────────────────────────────────────────
   var _labelTimer;
   function showLabel(name){
     if(!labelEl) return;
     labelEl.textContent = name;
     labelEl.style.display = 'block';
     clearTimeout(_labelTimer);
-    _labelTimer = setTimeout(function(){ labelEl.style.display='none'; }, 1400);
+    _labelTimer = setTimeout(function(){ labelEl.style.display = 'none'; }, 1600);
   }
 
-  // ─── Touch handling ────────────────────────────────────────
-  var touchStartX = 0;
-  var touchLastX  = 0;
-  var accumulated = 0;  // sub-tick accumulation
-  var DRAG_PER_TICK = 22; // px of drag = 1 graphic step
+  // ── Toggle collapsed/expanded ──────────────────────────────
+  function toggleCollapsed(){
+    collapsed = !collapsed;
+    if(scaleEl) scaleEl.classList.toggle('irix-collapsed', collapsed);
+  }
 
-  function onTouchStart(e){
-    if(!isPortraitPhone()) return;
-    touchStartX = e.touches[0].clientX;
-    touchLastX  = touchStartX;
+  // ── Touch handling — vertical drag ────────────────────────
+  var touchLastY  = 0;
+  var accumulated = 0;
+  var dragging    = false;
+
+  function onTrackTouchStart(e){
+    touchLastY  = e.touches[0].clientY;
     accumulated = 0;
+    dragging    = true;
   }
-
-  function onTouchMove(e){
-    if(!isPortraitPhone()) return;
+  function onTrackTouchMove(e){
+    if(!dragging) return;
     e.preventDefault();
-    var x = e.touches[0].clientX;
-    var delta = touchLastX - x;  // positive = dragging left = go forward alphabetically
-    touchLastX = x;
+    var y     = e.touches[0].clientY;
+    var delta = touchLastY - y;  // positive = drag up = next (alphabetically higher)
+    touchLastY = y;
     accumulated += delta;
 
-    var steps = Math.round(accumulated / DRAG_PER_TICK);
+    var steps = Math.trunc(accumulated / DRAG_PER);
     if(steps !== 0){
-      accumulated -= steps * DRAG_PER_TICK;
+      accumulated -= steps * DRAG_PER;
       var newIdx = Math.max(0, Math.min(sortedGraphics.length - 1, currentIdx + steps));
       if(newIdx !== currentIdx){
         applyAtIndex(newIdx);
-        // Haptic feedback if available
-        if(navigator.vibrate) navigator.vibrate(6);
+        if(navigator.vibrate) navigator.vibrate(5);
       }
     }
   }
-
-  function onTouchEnd(){
+  function onTrackTouchEnd(){
+    dragging    = false;
     accumulated = 0;
   }
 
@@ -6271,37 +6359,42 @@ function clearBgGraphic() {
     return window.innerWidth <= 430 && window.innerHeight > window.innerWidth;
   }
 
-  // ─── Boot ─────────────────────────────────────────────────
+  // ── Boot ──────────────────────────────────────────────────
   function boot(){
     getElements();
     if(!scaleEl) return;
 
     sortedGraphics = buildSortedList();
 
-    // Determine initial currentIdx: sync with whatever bgGraphicSelect shows
-    var sel = document.getElementById('bgGraphicSelect');
+    // Sync initial index to whatever the dropdown shows
+    var sel    = document.getElementById('bgGraphicSelect');
     var selVal = sel ? parseInt(sel.value) : -1;
     if(selVal >= 0 && CANVAS_GRAPHICS[selVal]){
-      var selSrc = CANVAS_GRAPHICS[selVal].src;
+      var src = CANVAS_GRAPHICS[selVal].src;
       for(var i = 0; i < sortedGraphics.length; i++){
-        if(sortedGraphics[i].src === selSrc){ currentIdx = i; break; }
+        if(sortedGraphics[i].src === src){ currentIdx = i; break; }
       }
     }
-    if(currentIdx < 0 && sortedGraphics.length > 0) currentIdx = 0;
 
     renderTicks();
 
-    // Attach touch listeners on the track
-    trackEl.addEventListener('touchstart', onTouchStart, {passive:true});
-    trackEl.addEventListener('touchmove',  onTouchMove,  {passive:false});
-    trackEl.addEventListener('touchend',   onTouchEnd,   {passive:true});
+    // Button: toggle show/hide
+    btnEl.addEventListener('click', function(e){
+      e.stopPropagation();
+      toggleCollapsed();
+    });
 
-    // Also listen on the outer scale element for wider hit area
-    scaleEl.addEventListener('touchstart', onTouchStart, {passive:true});
-    scaleEl.addEventListener('touchmove',  onTouchMove,  {passive:false});
-    scaleEl.addEventListener('touchend',   onTouchEnd,   {passive:true});
+    // Track: vertical drag
+    trackEl.addEventListener('touchstart', onTrackTouchStart, {passive:true});
+    trackEl.addEventListener('touchmove',  onTrackTouchMove,  {passive:false});
+    trackEl.addEventListener('touchend',   onTrackTouchEnd,   {passive:true});
 
-    // Keep in sync if user uses the dropdown elsewhere
+    // Re-render on resize (track height changes)
+    window.addEventListener('resize', function(){
+      if(!collapsed) renderTicks();
+    });
+
+    // Keep in sync with dropdown changes elsewhere
     if(sel){
       sel.addEventListener('change', function(){
         var v = parseInt(sel.value);
@@ -6318,8 +6411,7 @@ function clearBgGraphic() {
   if(document.readyState === 'loading'){
     document.addEventListener('DOMContentLoaded', boot);
   } else {
-    // Defer slightly so CANVAS_GRAPHICS is guaranteed to be defined
-    setTimeout(boot, 100);
+    setTimeout(boot, 120);
   }
 })();
 </script>
