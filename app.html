@@ -513,10 +513,8 @@ body.theme-warm{
 }
 
 *{margin:0;padding:0;box-sizing:border-box;}
-html{height:100%;width:100%;background:var(--bg);}
 body{font-family:'DM Mono',monospace;background:var(--bg);color:var(--text);
-  position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;
-  display:flex;flex-direction:column;overflow:hidden;user-select:none;-webkit-user-select:none;
+  height:100dvh;display:flex;flex-direction:column;overflow:hidden;user-select:none;-webkit-user-select:none;
   -webkit-tap-highlight-color:transparent;transition:background .3s,color .3s;
   -webkit-touch-callout:none;overscroll-behavior:none;}
 /* Allow text entry/selection in form fields on iOS */
@@ -1025,7 +1023,7 @@ body.theme-sgi-irix .layer-item.is-locked .layer-lock{color:#c00;background:#cac
     top:0;height:env(safe-area-inset-top,0px);
   }
   body::after{
-    bottom:0;height:env(safe-area-inset-bottom,0px);
+    bottom:0;height:0;
   }
   body.theme-sgi-irix::before, body.theme-sgi-irix::after{
     background:
@@ -1041,9 +1039,6 @@ body.theme-sgi-irix .layer-item.is-locked .layer-lock{color:#c00;background:#cac
      below this strip, so they never overlap. */
   body.theme-sgi-irix::before{
     border-bottom:1px solid var(--border2);
-  }
-  body.theme-sgi-irix::after{
-    border-top:1px solid var(--border2);
   }
   .mob-nav-btn{
     flex:1;display:flex;flex-direction:column;align-items:center;
@@ -1246,16 +1241,128 @@ body.theme-sgi-irix .tbtn[data-pix="dist_v"]::before,body.theme-sgi-irix .abtn[d
 body.theme-sgi-irix .tbtn[data-pix="canvas_h"]::before,body.theme-sgi-irix .abtn[data-pix="canvas_h"]::before{background-image:url("data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2012%2012%22%20shape-rendering%3D%22crispEdges%22%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%221%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%228%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%229%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%221%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%221%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%228%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%229%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%228%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%229%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%228%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%229%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%227%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%227%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%228%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%228%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%229%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%229%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%221%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%228%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%229%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3C%2Fsvg%3E");}
 body.theme-sgi-irix .tbtn[data-pix="canvas_v"]::before,body.theme-sgi-irix .abtn[data-pix="canvas_v"]::before{background-image:url("data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2012%2012%22%20shape-rendering%3D%22crispEdges%22%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%221%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%228%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%229%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%221%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%221%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%221%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%227%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%227%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%227%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%227%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%227%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%227%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%227%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%228%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%228%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%228%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%229%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%229%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%229%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%221%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%228%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%229%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3C%2Fsvg%3E");}
 body.theme-sgi-irix .tbtn[data-pix="timeline"]::before,body.theme-sgi-irix .abtn[data-pix="timeline"]::before{background-image:url("data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2012%2012%22%20shape-rendering%3D%22crispEdges%22%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%221%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%228%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%229%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%221%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%221%22%20y%3D%221%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%221%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%221%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%221%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%221%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%221%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%221%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%228%22%20y%3D%221%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%229%22%20y%3D%221%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%221%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%221%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%221%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%228%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%229%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%221%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%229%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%221%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%229%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%221%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%229%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%227%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%227%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%228%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%228%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%228%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%228%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%229%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%229%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3C%2Fsvg%3E");}
-</style></head>
-<body class="theme-sgi-irix">
+</style><script>
+// ── INLINE GIF DECODER (gifuct-js compatible API) ──
+(function(root){
+'use strict';
+function parseGIF(buf){
+  const d=new DataView(buf instanceof ArrayBuffer?buf:buf.buffer);
+  let p=0;
+  const r8=()=>{const v=d.getUint8(p);p++;return v;};
+  const r16=()=>{const v=d.getUint16(p,true);p+=2;return v;};
+  const rStr=(n)=>{let s='';for(let i=0;i<n;i++)s+=String.fromCharCode(r8());return s;};
+  const sig=rStr(6);
+  const lsd={width:r16(),height:r16()};
+  const packed=r8();
+  lsd.gctFlag=(packed>>7)&1;
+  lsd.colorResolution=((packed>>4)&7)+1;
+  lsd.sortFlag=(packed>>3)&1;
+  lsd.gctSize=packed&7;
+  lsd.bgColorIndex=r8();
+  lsd.pixelAspectRatio=r8();
+  let gct=null;
+  if(lsd.gctFlag){const n=3*(1<<(lsd.gctSize+1));gct=new Uint8Array(buf instanceof ArrayBuffer?buf:buf.buffer,p,n);p+=n;}
+  return{sig,lsd,gct,raw:buf instanceof ArrayBuffer?buf:buf.buffer,gctStart:lsd.gctFlag?(p-3*(1<<(lsd.gctSize+1))):0,dataStart:p};
+}
 
-<div id="omitsu-splash" role="status" aria-label="Loading Omitsu Studio">
-  <div class="splash-logo-wrap">
-    <img class="splash-logo" src="splash-logo.png" alt="Omitsu Studio">
-  </div>
-  <div class="splash-title">OMITSU STUDIO</div>
-  <div class="splash-sub">LOADING<span class="splash-cursor"></span></div>
-</div>
+function decompressFrames(gif,buildImagePatches){
+  const buf=gif.raw;
+  const dv=new DataView(buf);
+  const lsd=gif.lsd;
+  let p=gif.dataStart;
+  const frames=[];
+  const r8=()=>{const v=dv.getUint8(p);p++;return v;};
+  const r16=()=>{const v=dv.getUint16(p,true);p+=2;return v;};
+  const readBlocks=()=>{const data=[];let sz;while((sz=r8())!==0){for(let i=0;i<sz;i++)data.push(dv.getUint8(p++));}return new Uint8Array(data);};
+  let gce={delay:0,transparentIndex:-1,disposalType:0};
+  while(p<buf.byteLength){
+    const intro=r8();
+    if(intro===0x3B)break; // trailer
+    if(intro===0x21){ // extension
+      const label=r8();
+      if(label===0xF9){ // graphic control
+        r8(); // block size (always 4)
+        const ef=r8();
+        gce={delay:r16(),transparentIndex:(ef&1)?r8():(-1+r8()*0),disposalType:(ef>>3)&7};
+        if((ef&1)===0){gce.transparentIndex=-1;}
+        r8(); // block terminator
+      } else {
+        // skip all blocks
+        let sz;while((sz=r8())!==0){p+=sz;}
+      }
+    } else if(intro===0x2C){ // image descriptor
+      const left=r16(),top=r16(),width=r16(),height=r16();
+      const pkd=r8();
+      const lctFlag=(pkd>>7)&1;
+      const interlace=(pkd>>6)&1;
+      const lctSize=pkd&7;
+      let ct=gif.gct;
+      if(lctFlag){const n=3*(1<<(lctSize+1));ct=new Uint8Array(buf,p,n);p+=n;}
+      const minCode=r8();
+      const compData=readBlocks();
+      // LZW decompress
+      const pixels=lzwDecode(minCode,compData,width*height);
+      // Build RGBA patch
+      let patch=null;
+      if(buildImagePatches){
+        patch=new Uint8ClampedArray(width*height*4);
+        const ti=gce.transparentIndex;
+        if(interlace){
+          const passes=[0,4,2,1];const steps=[8,8,4,2];
+          let src=0;const rows=new Array(height);
+          for(let pi=0;pi<4;pi++){for(let row=passes[pi];row<height;row+=steps[pi]){rows[row]=pixels.slice(src,src+width);src+=width;}}
+          let di=0;for(let y=0;y<height;y++){const row=rows[y]||new Uint8Array(width);for(let x=0;x<width;x++){const ci=row[x];if(ci===ti){patch[di]=0;patch[di+1]=0;patch[di+2]=0;patch[di+3]=0;}else{const cp=(ct&&ct.length>ci*3)?ci*3:0;patch[di]=ct?ct[cp]:0;patch[di+1]=ct?ct[cp+1]:0;patch[di+2]=ct?ct[cp+2]:0;patch[di+3]=255;}di+=4;}}
+        } else {
+          for(let i=0;i<pixels.length;i++){const ci=pixels[i];if(ci===ti){patch[i*4]=0;patch[i*4+1]=0;patch[i*4+2]=0;patch[i*4+3]=0;}else{const cp=(ct&&ct.length>ci*3)?ci*3:0;patch[i*4]=ct?ct[cp]:0;patch[i*4+1]=ct?ct[cp+1]:0;patch[i*4+2]=ct?ct[cp+2]:0;patch[i*4+3]=255;}}
+        }
+      }
+      frames.push({dims:{left,top,width,height},delay:gce.delay||4,disposalType:gce.disposalType,transparentIndex:gce.transparentIndex,patch});
+      gce={delay:0,transparentIndex:-1,disposalType:0};
+    } else {
+      // Unknown, try to skip
+      break;
+    }
+  }
+  return frames;
+}
+
+function lzwDecode(minCodeSize,data,pixelCount){
+  const clearCode=1<<minCodeSize;
+  const eoi=clearCode+1;
+  let codeSize=minCodeSize+1;
+  let mask=(1<<codeSize)-1;
+  const table=[];
+  function initTable(){table.length=0;for(let i=0;i<clearCode+2;i++)table[i]=[i];}
+  initTable();
+  let nextCode=clearCode+2;
+  let buf=0,bits=0,di=0;
+  const pixels=[];
+  let prev=null;
+  while(di<data.length||bits>=codeSize){
+    while(bits<codeSize&&di<data.length){buf|=data[di++]<<bits;bits+=8;}
+    const code=buf&mask;buf>>=codeSize;bits-=codeSize;
+    if(code===clearCode){initTable();nextCode=clearCode+2;codeSize=minCodeSize+1;mask=(1<<codeSize)-1;prev=null;continue;}
+    if(code===eoi)break;
+    let entry;
+    if(code<nextCode){entry=table[code];}
+    else if(prev!==null){entry=prev.concat(prev[0]);}
+    else continue;
+    for(const v of entry)pixels.push(v);
+    if(prev!==null){
+      table[nextCode++]=prev.concat(entry[0]);
+      if(nextCode>=mask&&codeSize<12){codeSize++;mask=(1<<codeSize)-1;}
+    }
+    prev=entry;
+    if(pixels.length>=pixelCount)break;
+  }
+  return new Uint8Array(pixels.slice(0,pixelCount));
+}
+
+root.gifuct={parseGIF,decompressFrames};
+if(typeof module!=='undefined')module.exports=root.gifuct;
+})(typeof window!=='undefined'?window:this);
+</script></head>
+<body class="theme-sgi-irix">
 
 <style>
   @font-face{
@@ -1500,7 +1607,7 @@ body.theme-sgi-irix .tbtn[data-pix="timeline"]::before,body.theme-sgi-irix .abtn
       </div>
       <input type="file" id="fileInput" multiple="" accept="image/*,video/*,.gif" style="display:none" onchange="handleFiles(this.files)">
       <div class="tip">Tip: tap thumbnail to add to canvas</div>
-      <div class="media-grid" id="mediaGrid"></div>
+      <div class="media-grid" id="mediaGrid"><div class="mthumb" data-idx="0"><img src="blob:https://8183b9c4-70e5-497c-b41c-47e99f8b7291.lovableproject.com/6babaecb-9b3e-4756-bdf3-a2fb8a57bfb2"><div class="add-lbl">+ Add</div><div class="del-lbl always-show">X</div></div></div>
     </div>
 
     <div class="psec" id="tab-text">
@@ -1869,7 +1976,7 @@ body.theme-sgi-irix .tbtn[data-pix="timeline"]::before,body.theme-sgi-irix .abtn
 <div class="right-panel" id="rightPanel">
   <div class="rpanel-pill" id="rightPanelPill"></div>
   <div class="rph"><span>Layers</span><span style="font-size:7px;color:var(--text-muted)">↑ = in front</span></div>
-  <div class="layers-list" id="layersList"></div>
+  <div class="layers-list" id="layersList"><div class="layer-item" data-id="1" data-idx="0" draggable="true"><span class="drag-handle" title="Drag up/down to reorder" style="touch-action: none;">⠿</span><div class="layer-thumb"><img src="blob:https://8183b9c4-70e5-497c-b41c-47e99f8b7291.lovableproject.com/6babaecb-9b3e-4756-bdf3-a2fb8a57bfb2"></div><div class="layer-name">4_500</div><button class="layer-vis" type="button">[x]</button><button class="layer-lock" type="button" title="Lock layer">[__]</button></div></div>
   <!-- Props embedded at bottom of right panel on desktop -->
   <div class="rpanel-props-header">
     <span>Properties</span>
@@ -3228,17 +3335,144 @@ function toggleLockRatio(){lockRatio=!lockRatio;document.getElementById('lockRat
 // Thumbnails in the media grid use a lightweight video element (paused at first frame).
 // ─────────────────────────────────────────────────────────
 // Lazy-load gifuct-js for animated GIF decoding
+
+// ── INLINE GIF ENCODER (gif.js-compatible API) ──
+(function(root){
+'use strict';
+// NeuQuant color quantizer (adapted from Jef Poskanzer/Anthony Dekker)
+function NeuQuant(pixels,colors){
+  const ncycles=100,netsize=colors,maxnetpos=netsize-1;
+  const netbiasshift=4,intbiasshift=16,intbias=1<<intbiasshift;
+  const gammashift=10,gamma=1<<gammashift,betashift=10,beta=intbias>>betashift;
+  const betagamma=intbias<<(gammashift-betashift);
+  const initrad=netsize>>3,radiusbiasshift=6,radiusbias=1<<radiusbiasshift;
+  const initradius=initrad*radiusbias,radiusdec=30;
+  const alphabiasshift=10,initalpha=1<<alphabiasshift;
+  const network=[];const netindex=new Int32Array(256);
+  const bias=new Int32Array(netsize);const freq=new Int32Array(netsize);
+  for(let i=0;i<netsize;i++){const v=(i<<(netbiasshift+8))/netsize|0;network[i]=[v,v,v,0];freq[i]=intbias/netsize|0;bias[i]=0;}
+  const pxlen=pixels.length;
+  function contest(b,g,r){let bst=-1,bstd=~(1<<31),bstbias=-1,bstf=~(1<<31);
+    for(let i=0;i<netsize;i++){const n=network[i];let d=Math.abs(n[0]-b)+Math.abs(n[1]-g)+Math.abs(n[2]-r);
+      if(d<bstd){bstd=d;bst=i;}d-=((bias[i])>>intbiasshift);if(d<bstf){bstf=d;bstbias=i;}
+      const f=freq[i]-beta;freq[i]=f;bias[i]+=betagamma;}
+    freq[bstbias]+=beta;bias[bstbias]-=betagamma;return bstbias;}
+  function altersingle(alpha,i,b,g,r){network[i][0]-=(alpha*(network[i][0]-b)/initalpha)|0;
+    network[i][1]-=(alpha*(network[i][1]-g)/initalpha)|0;
+    network[i][2]-=(alpha*(network[i][2]-r)/initalpha)|0;}
+  function alterneigh(rad,i,b,g,r){const lo=Math.max(i-rad,0),hi=Math.min(i+rad,maxnetpos);
+    let jj=i+1,kk=i-1;let q=0;
+    while(jj<=hi||kk>=lo){const a=(rad*rad-(q*q)|0);q++;if(jj<=hi){altersingle(a,jj,b,g,r);jj++;}if(kk>=lo){altersingle(a,kk,b,g,r);kk--;}}}
+  const samplingfactor=Math.max(1,pxlen/(netsize*ncycles*3));
+  let step=3;if(pxlen%503!==0)step=503*3;else if(pxlen%491!==0)step=491*3;
+  let radius=initradius;let rad=radius>>radiusbiasshift;
+  let alpha=initalpha;let pos=0;
+  const delta=Math.max(1,(pxlen/(samplingfactor*3*ncycles))|0);
+  for(let i=0;i<pxlen;){
+    const b=(pixels[i]&0xff)<<netbiasshift,g=(pixels[i+1]&0xff)<<netbiasshift,r=(pixels[i+2]&0xff)<<netbiasshift;
+    const j=contest(b,g,r);
+    altersingle(alpha,j,b,g,r);
+    if(rad>0)alterneigh(rad,j,b,g,r);
+    pos+=step;if(pos>=pxlen)pos-=pxlen;
+    i=pos;
+    if(((i/step)|0)%delta===0){alpha-=alpha/30;radius-=radius/radiusdec;rad=radius>>radiusbiasshift;}
+  }
+  this.map=function(r,g,b){let bst=0,bstd=1e9;
+    for(let i=0;i<netsize;i++){const n=network[i];const d=Math.abs(n[0]-b)+Math.abs(n[1]-g)+Math.abs(n[2]-r);if(d<bstd){bstd=d;bst=i;}}return bst;};
+  this.colormap=function(){const m=[];for(let i=0;i<netsize;i++){m.push(network[i][2]>>netbiasshift,network[i][1]>>netbiasshift,network[i][0]>>netbiasshift);}return m;};
+}
+
+// LZW encoder
+function lzwEncode(pixels,colorDepth){
+  const clearCode=1<<colorDepth,endCode=clearCode+1;
+  let codeSize=colorDepth+1;
+  const out=[];let buf=0,bits=0;
+  function emit(code){buf|=code<<bits;bits+=codeSize;while(bits>=8){out.push(buf&0xff);buf>>=8;bits-=8;}if(codeSize<12&&(1<<codeSize)<=nextCode)codeSize++;}
+  const table={};let nextCode=clearCode+2;
+  emit(clearCode);
+  let prev=pixels[0];
+  for(let i=1;i<pixels.length;i++){
+    const cur=pixels[i];const key=prev+','+cur;
+    if(table[key]!==undefined){prev=table[key];}
+    else{emit(prev);table[key]=nextCode++;prev=cur;
+      if(nextCode>4096){emit(clearCode);Object.keys(table).forEach(k=>delete table[k]);nextCode=clearCode+2;codeSize=colorDepth+1;}}
+  }
+  emit(prev);emit(endCode);
+  if(bits>0){out.push(buf&0xff);}
+  return new Uint8Array(out);
+}
+
+function GIF(opts){
+  this._frames=[];this._w=opts.width||100;this._h=opts.height||100;
+  this._q=opts.quality||10;this._colors=Math.min(256,Math.max(2,opts.colors||256));
+  this._listeners={};
+}
+GIF.prototype.addFrame=function(ctx,opts){
+  opts=opts||{};
+  let data;
+  if(ctx instanceof ImageData)data=ctx;
+  else if(ctx.getImageData)data=ctx.getImageData(0,0,this._w,this._h);
+  else if(ctx instanceof HTMLCanvasElement)data=ctx.getContext('2d').getImageData(0,0,this._w,this._h);
+  else data=ctx;
+  this._frames.push({data:data.data,delay:opts.delay||100});
+};
+GIF.prototype.on=function(ev,fn){this._listeners[ev]=(this._listeners[ev]||[]).concat(fn);return this;};
+GIF.prototype._emit=function(ev,arg){(this._listeners[ev]||[]).forEach(fn=>fn(arg));};
+GIF.prototype.render=function(){
+  const frames=this._frames,w=this._w,h=this._h;
+  const nc=this._colors;const self=this;
+  setTimeout(()=>{
+    try{
+      // Quantize all frames together for a global palette
+      const sample=frames[0].data;
+      const rgb=new Uint8Array(sample.length/4*3);
+      for(let i=0,j=0;i<sample.length;i+=4){rgb[j++]=sample[i];rgb[j++]=sample[i+1];rgb[j++]=sample[i+2];}
+      const nq=new NeuQuant(rgb,nc);
+      const cmap=nq.colormap();
+      // Build GIF
+      const out=[];
+      const w8=(...bytes)=>bytes.forEach(b=>out.push(b&0xff));
+      const w16=(v)=>{w8(v&0xff,(v>>8)&0xff);};
+      const wStr=(s)=>{for(let i=0;i<s.length;i++)out.push(s.charCodeAt(i)&0xff);};
+      wStr('GIF89a');
+      w16(w);w16(h);
+      const palBits=Math.ceil(Math.log2(nc))-1;
+      w8(0x80|palBits,0,0); // GCT flag, bg, aspect
+      for(let i=0;i<nc*3;i++)out.push(cmap[i]||0);
+      // Netscape loop extension
+      wStr('\x21\xFF\x0BNETSCAPE2.0\x03\x01\x00\x00\x00');
+      for(let fi=0;fi<frames.length;fi++){
+        const fr=frames[fi];
+        self._emit('progress',(fi+1)/frames.length);
+        // GCE
+        w8(0x21,0xF9,0x04,0x00);w16(Math.round(fr.delay/10));w8(0,0);
+        // Image descriptor
+        w8(0x2C);w16(0);w16(0);w16(w);w16(h);w8(0);
+        // Quantize frame pixels
+        const px=new Uint8Array(w*h);
+        for(let i=0;i<w*h;i++){const o=i*4;px[i]=nq.map(fr.data[o],fr.data[o+1],fr.data[o+2]);}
+        // LZW encode
+        const cd=Math.max(2,Math.ceil(Math.log2(nc)));
+        w8(cd);
+        const lzw=lzwEncode(px,cd);
+        // Write in sub-blocks of 255
+        for(let i=0;i<lzw.length;){const sz=Math.min(255,lzw.length-i);out.push(sz);for(let j=0;j<sz;j++)out.push(lzw[i++]);}
+        out.push(0); // block terminator
+      }
+      out.push(0x3B); // trailer
+      const blob=new Blob([new Uint8Array(out)],{type:'image/gif'});
+      self._emit('finished',blob);
+    }catch(e){self._emit('error',e);}
+  },0);
+};
+root.GIF=GIF;
+})(typeof window!=='undefined'?window:this);
+
 let _gifuctLoaded=null;
 function _loadGifuct(){
   if(_gifuctLoaded)return _gifuctLoaded;
-  _gifuctLoaded=new Promise((resolve,reject)=>{
-    if(window.gifuct)return resolve(window.gifuct);
-    const s=document.createElement('script');
-    s.src='https://cdn.jsdelivr.net/npm/gifuct-js@2.1.2/dist/gifuct-js.min.js';
-    s.onload=()=>resolve(window.gifuct);
-    s.onerror=()=>reject(new Error('Failed to load gifuct-js'));
-    document.head.appendChild(s);
-  });
+  // gifuct is inlined — always resolve immediately
+  _gifuctLoaded=Promise.resolve(window.gifuct);
   return _gifuctLoaded;
 }
 // Decode an animated GIF File/Blob into {frames:[{canvas,delayMs}], totalMs, w, h}
@@ -3716,32 +3950,9 @@ function exportImg(fmt){const pv=new Set(selectedIds);selectedIds.clear();render
 let _gifJsLoaded=null;
 function _loadGifJs(){
   if(_gifJsLoaded)return _gifJsLoaded;
-  _gifJsLoaded=new Promise((resolve,reject)=>{
-    if(window.GIF)return resolve(window.GIF);
-    const s=document.createElement('script');
-    s.src='https://cdn.jsdelivr.net/npm/gif.js.optimized@1.0.1/dist/gif.js';
-    s.onload=()=>resolve(window.GIF);
-    s.onerror=()=>reject(new Error('Failed to load gif.js'));
-    document.head.appendChild(s);
-  });
+  // GIF encoder is inlined — always resolve immediately
+  _gifJsLoaded=Promise.resolve(window.GIF);
   return _gifJsLoaded;
-}
-// Fetch the gif.js worker as a same-origin Blob URL so it works inside iOS PWA
-// (cross-origin worker scripts fail under standalone display + service worker).
-let _gifWorkerBlobUrl=null;
-async function _getGifWorkerUrl(){
-  if(_gifWorkerBlobUrl)return _gifWorkerBlobUrl;
-  const remote='https://cdn.jsdelivr.net/npm/gif.js.optimized@1.0.1/dist/gif.worker.js';
-  try{
-    const res=await fetch(remote,{mode:'cors'});
-    if(!res.ok)throw new Error('worker fetch '+res.status);
-    const txt=await res.text();
-    _gifWorkerBlobUrl=URL.createObjectURL(new Blob([txt],{type:'application/javascript'}));
-  }catch(e){
-    console.warn('GIF worker blob fetch failed, falling back to direct URL',e);
-    _gifWorkerBlobUrl=remote;
-  }
-  return _gifWorkerBlobUrl;
 }
 async function exportGif(){
   const pw=document.getElementById('progWrap'),pb=document.getElementById('progBar'),pl=document.getElementById('progLbl');
@@ -3755,8 +3966,8 @@ async function exportGif(){
   const W=Math.round(CW*scale), H=Math.round(CH*scale);
   const tmp=document.createElement('canvas');tmp.width=W;tmp.height=H;
   const tctx=tmp.getContext('2d');
-  // Same-origin worker URL (Blob) — required for iOS PWA
-  const workerUrl=await _getGifWorkerUrl();
+  // gif.js worker URL (CDN)
+  const workerUrl='https://cdn.jsdelivr.net/npm/gif.js.optimized@1.0.1/dist/gif.worker.js';
   const gif=new window.GIF({workers:2,quality:QUAL,width:W,height:H,workerScript:workerUrl,dither:false});
   const pv=new Set(selectedIds);selectedIds.clear();
   const savedPlayhead=playhead;

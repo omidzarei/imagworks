@@ -2,7 +2,7 @@
 <html lang="en"><head>
 <meta http-equiv="content-type" content="text/html; charset=UTF-8">
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Omitsu Studio</title>
 <link rel="manifest" href="https://8183b9c4-70e5-497c-b41c-47e99f8b7291.lovableproject.com/manifest.webmanifest">
 <meta name="theme-color" content="#a59f80">
@@ -339,13 +339,7 @@ body.theme-sgi-irix .theme-btn.active{color:#000 !important;}
 
 /* Mobile nav buttons stay readable */
 body.theme-sgi-irix #mobNav{
-  border-top:2px solid #000;
-  /* Scanlines in the safe-area padding zone at the bottom */
-  background:
-    repeating-linear-gradient(0deg,
-      #b8b095 0px,#b8b095 1px,
-      #8e8770 1px,#8e8770 2px),
-    #a59f80;
+  border-top:2px solid #000;background:#a59f80;
   box-shadow:inset 0 1px 0 #d4cdb0,inset 0 -1px 0 #6f6a55;
 }
 body.theme-sgi-irix #alignToggleBtn{
@@ -513,10 +507,8 @@ body.theme-warm{
 }
 
 *{margin:0;padding:0;box-sizing:border-box;}
-html{height:100%;width:100%;background:var(--bg);}
 body{font-family:'DM Mono',monospace;background:var(--bg);color:var(--text);
-  position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;
-  display:flex;flex-direction:column;overflow:hidden;user-select:none;-webkit-user-select:none;
+  height:100dvh;display:flex;flex-direction:column;overflow:hidden;user-select:none;-webkit-user-select:none;
   -webkit-tap-highlight-color:transparent;transition:background .3s,color .3s;
   -webkit-touch-callout:none;overscroll-behavior:none;}
 /* Allow text entry/selection in form fields on iOS */
@@ -849,7 +841,7 @@ body.theme-sgi-irix .layer-item.is-locked .layer-lock{color:#c00;background:#cac
   /* ─ ALIGN BAR: floating panel above quick-bar on mobile, auto-shown when needed ─ */
   #alignBar{
     position:fixed;left:8px;right:8px;
-    bottom:calc(var(--mob-nav-h) + env(safe-area-inset-bottom,0px) + 64px);
+    bottom:calc(var(--mob-nav-h) + 50px + 64px);
     height:0;overflow:hidden;padding:0;border:1px solid var(--border2);border-radius:14px;
     background:var(--surface);box-shadow:0 8px 24px rgba(0,0,0,0.55);
     z-index:454;opacity:0;
@@ -865,7 +857,7 @@ body.theme-sgi-irix .layer-item.is-locked .layer-lock{color:#c00;background:#cac
   }
   #alignToggleBtn{
     display:flex;position:fixed;
-    bottom:calc(var(--mob-nav-h) + env(safe-area-inset-bottom,0px) + 60px);
+    bottom:calc(var(--mob-nav-h) + 50px + 60px);
     right:8px;
     background:var(--surface2);border:1px solid var(--border2);
     color:var(--text-muted);border-radius:12px;
@@ -894,7 +886,7 @@ body.theme-sgi-irix .layer-item.is-locked .layer-lock{color:#c00;background:#cac
   /* Left panel → SHORT bottom sheet so canvas stays visible above it */
   .panel{
     position:fixed;
-    bottom:calc(var(--mob-nav-h) + env(safe-area-inset-bottom,0px));
+    bottom:calc(var(--mob-nav-h) + 50px);
     left:0;right:0;width:100%;
     height:48dvh;max-height:48dvh;
     border-right:none;border-top:1px solid var(--border2);
@@ -1003,10 +995,10 @@ body.theme-sgi-irix .layer-item.is-locked .layer-lock{color:#c00;background:#cac
 
   /* ─ BOTTOM NAV (compact) ─ */
   #mobNav{
-    display:flex;align-items:flex-start;
-    position:fixed;bottom:0;left:0;right:0;
-    height:calc(var(--mob-nav-h) + env(safe-area-inset-bottom,0px));
-    padding-bottom:env(safe-area-inset-bottom,0px);
+    display:flex;
+    position:fixed;bottom:50px;left:0;right:0;
+    height:var(--mob-nav-h);
+    padding-bottom:0;
     padding-left:env(safe-area-inset-left,0px);
     padding-right:env(safe-area-inset-right,0px);
     background:var(--surface);
@@ -1018,7 +1010,7 @@ body.theme-sgi-irix .layer-item.is-locked .layer-lock{color:#c00;background:#cac
   /* solid IRIX-pinstripe band behind the curved safe-area on top + bottom */
   body::before, body::after{
     content:"";position:fixed;left:0;right:0;
-    z-index:9999;pointer-events:none;
+    z-index:599;pointer-events:none;
     background:#a59f80;
   }
   body::before{
@@ -1027,6 +1019,24 @@ body.theme-sgi-irix .layer-item.is-locked .layer-lock{color:#c00;background:#cac
   body::after{
     bottom:0;height:env(safe-area-inset-bottom,0px);
   }
+  /* iPhone portrait only: cover the 50px gap below the toolbar with SGI scanlines.
+     z-index:601 sits above the toolbar (600) so nothing bleeds through.
+     pointer-events:auto blocks accidental taps on content underneath. */
+  @media (orientation: portrait) and (max-width: 430px){
+    body::after{
+      height:50px;
+      z-index:601;
+      pointer-events:auto;
+      background:#a59f80;
+    }
+    body.theme-sgi-irix::after{
+      background:
+        repeating-linear-gradient(0deg,
+          #b8b095 0px,#b8b095 1px,
+          #8e8770 1px,#8e8770 2px),
+        #a59f80;
+    }
+  }
   body.theme-sgi-irix::before, body.theme-sgi-irix::after{
     background:
       repeating-linear-gradient(0deg,
@@ -1034,16 +1044,12 @@ body.theme-sgi-irix .layer-item.is-locked .layer-lock{color:#c00;background:#cac
         #8e8770 1px,#8e8770 2px),
       #a59f80;
   }
-  /* Top scanline strip: sits above EVERYTHING (z-index 9999), covers the
-     entire status-bar / Dynamic Island / notch area in the iOS PWA safe zone.
-     viewport-fit=cover lets env(safe-area-inset-top) be non-zero (~59px on
-     iPhone 15 Pro Max). The header's own padding-top pushes its buttons
-     below this strip, so they never overlap. */
+  /* Force the top scanline strip above the header so it visibly covers
+     the area under the iPhone notch / Dynamic Island, matching the
+     bottom toolbar's scanline band. */
   body.theme-sgi-irix::before{
+    z-index:701;
     border-bottom:1px solid var(--border2);
-  }
-  body.theme-sgi-irix::after{
-    border-top:1px solid var(--border2);
   }
   .mob-nav-btn{
     flex:1;display:flex;flex-direction:column;align-items:center;
@@ -1068,7 +1074,7 @@ body.theme-sgi-irix .layer-item.is-locked .layer-lock{color:#c00;background:#cac
     display:block;
     position:fixed;left:0;right:0;
     top:0;
-    bottom:calc(48dvh + var(--mob-nav-h) + env(safe-area-inset-bottom,0px));
+    bottom:calc(48dvh + var(--mob-nav-h) + 50px);
     background:transparent;
     z-index:480;
     opacity:0;pointer-events:none;
@@ -1080,7 +1086,7 @@ body.theme-sgi-irix .layer-item.is-locked .layer-lock{color:#c00;background:#cac
   #mobQuickBar{
     display:flex;
     position:fixed;left:8px;right:8px;
-    bottom:calc(var(--mob-nav-h) + env(safe-area-inset-bottom,0px) + 8px);
+    bottom:calc(var(--mob-nav-h) + 50px + 8px);
     background:var(--surface);
     border:1px solid var(--border2);
     border-radius:14px;
@@ -1179,7 +1185,7 @@ body.theme-sgi-irix .layer-item.is-locked .layer-lock{color:#c00;background:#cac
   /* center canvas exactly between top toolbar+timeline and bottom nav */
   .canvas-area{
     padding-top:46px;  /* timeline height (42px) + small gap */
-    padding-bottom:calc(var(--mob-nav-h) + env(safe-area-inset-bottom,0px) + 18px);
+    padding-bottom:calc(var(--mob-nav-h) + 50px + 18px);
     box-sizing:border-box;
   }
 }
@@ -1213,7 +1219,7 @@ body.theme-sgi-irix .layer-item.is-locked .layer-lock{color:#c00;background:#cac
 /* ── MOBILE: ensure zoom controls always tappable above bottom nav ── */
 @media (max-width:768px){
   .zoom-ctrl{
-    bottom:calc(var(--mob-nav-h, 56px) + env(safe-area-inset-bottom,0px) + 10px) !important;
+    bottom:calc(var(--mob-nav-h, 56px) + 50px + 10px) !important;
     right:calc(10px + env(safe-area-inset-right,0px)) !important;
     z-index:650 !important;
   }
@@ -1246,16 +1252,8 @@ body.theme-sgi-irix .tbtn[data-pix="dist_v"]::before,body.theme-sgi-irix .abtn[d
 body.theme-sgi-irix .tbtn[data-pix="canvas_h"]::before,body.theme-sgi-irix .abtn[data-pix="canvas_h"]::before{background-image:url("data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2012%2012%22%20shape-rendering%3D%22crispEdges%22%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%221%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%228%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%229%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%221%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%221%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%228%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%229%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%228%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%229%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%228%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%229%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%227%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%227%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%228%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%228%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%229%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%229%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%221%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%228%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%229%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3C%2Fsvg%3E");}
 body.theme-sgi-irix .tbtn[data-pix="canvas_v"]::before,body.theme-sgi-irix .abtn[data-pix="canvas_v"]::before{background-image:url("data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2012%2012%22%20shape-rendering%3D%22crispEdges%22%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%221%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%228%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%229%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%221%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%221%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%221%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%226%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%227%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%227%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%227%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%227%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%227%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%227%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%237e8aa8%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%227%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%228%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%228%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%228%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%229%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%229%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%229%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%221%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%228%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%229%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%2210%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3C%2Fsvg%3E");}
 body.theme-sgi-irix .tbtn[data-pix="timeline"]::before,body.theme-sgi-irix .abtn[data-pix="timeline"]::before{background-image:url("data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2012%2012%22%20shape-rendering%3D%22crispEdges%22%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%221%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%228%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%229%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%220%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%221%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%221%22%20y%3D%221%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%221%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%221%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%221%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%221%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%221%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%221%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%228%22%20y%3D%221%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%229%22%20y%3D%221%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%221%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%221%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%221%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%228%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%229%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%222%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%221%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%229%22%20y%3D%223%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%221%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%229%22%20y%3D%224%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%221%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%227%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%229%22%20y%3D%225%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%227%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%227%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%228%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%228%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%228%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%231a1f2e%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%228%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%229%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%229%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffb000%22%2F%3E%3C%2Fsvg%3E");}
-</style></head>
+</style><script src="app_data/gifuct-js.min.js"></script><script src="app_data/gif.js"></script></head>
 <body class="theme-sgi-irix">
-
-<div id="omitsu-splash" role="status" aria-label="Loading Omitsu Studio">
-  <div class="splash-logo-wrap">
-    <img class="splash-logo" src="splash-logo.png" alt="Omitsu Studio">
-  </div>
-  <div class="splash-title">OMITSU STUDIO</div>
-  <div class="splash-sub">LOADING<span class="splash-cursor"></span></div>
-</div>
 
 <style>
   @font-face{
@@ -1500,7 +1498,7 @@ body.theme-sgi-irix .tbtn[data-pix="timeline"]::before,body.theme-sgi-irix .abtn
       </div>
       <input type="file" id="fileInput" multiple="" accept="image/*,video/*,.gif" style="display:none" onchange="handleFiles(this.files)">
       <div class="tip">Tip: tap thumbnail to add to canvas</div>
-      <div class="media-grid" id="mediaGrid"></div>
+      <div class="media-grid" id="mediaGrid"><div class="mthumb" data-idx="0"><img src="blob:https://8183b9c4-70e5-497c-b41c-47e99f8b7291.lovableproject.com/6babaecb-9b3e-4756-bdf3-a2fb8a57bfb2"><div class="add-lbl">+ Add</div><div class="del-lbl always-show">X</div></div></div>
     </div>
 
     <div class="psec" id="tab-text">
@@ -1869,7 +1867,7 @@ body.theme-sgi-irix .tbtn[data-pix="timeline"]::before,body.theme-sgi-irix .abtn
 <div class="right-panel" id="rightPanel">
   <div class="rpanel-pill" id="rightPanelPill"></div>
   <div class="rph"><span>Layers</span><span style="font-size:7px;color:var(--text-muted)">↑ = in front</span></div>
-  <div class="layers-list" id="layersList"></div>
+  <div class="layers-list" id="layersList"><div class="layer-item" data-id="1" data-idx="0" draggable="true"><span class="drag-handle" title="Drag up/down to reorder" style="touch-action: none;">⠿</span><div class="layer-thumb"><img src="blob:https://8183b9c4-70e5-497c-b41c-47e99f8b7291.lovableproject.com/6babaecb-9b3e-4756-bdf3-a2fb8a57bfb2"></div><div class="layer-name">4_500</div><button class="layer-vis" type="button">[x]</button><button class="layer-lock" type="button" title="Lock layer">[__]</button></div></div>
   <!-- Props embedded at bottom of right panel on desktop -->
   <div class="rpanel-props-header">
     <span>Properties</span>
@@ -2176,75 +2174,32 @@ function render(ex=false){
 const _fxCanvas=document.createElement('canvas');
 const _fxCtx=_fxCanvas.getContext('2d',{willReadFrequently:true});
 function clamp255(v){return v<0?0:v>255?255:v;}
-// Software box blur — works on iOS Safari where ctx.filter is unsupported.
-// For performance on large images, operates on a downscaled version.
-function _softwareBlur(data,w,h,radius){
-  const r=Math.min(Math.round(radius),64);
-  if(r<1)return;
-  const len=w*h*4;
-  const tmp=new Uint8ClampedArray(len);
-  const div=2*r+1;
-  // Horizontal pass: data → tmp
-  for(let y=0;y<h;y++){
-    let rS=0,gS=0,bS=0,aS=0;
-    for(let i=-r;i<=r;i++){const xi=Math.max(0,Math.min(w-1,i)),idx=(y*w+xi)*4;rS+=data[idx];gS+=data[idx+1];bS+=data[idx+2];aS+=data[idx+3];}
-    for(let x=0;x<w;x++){
-      const out=(y*w+x)*4;
-      tmp[out]=rS/div|0;tmp[out+1]=gS/div|0;tmp[out+2]=bS/div|0;tmp[out+3]=aS/div|0;
-      const ax=Math.min(x+r+1,w-1),rx=Math.max(x-r,0);
-      const ai=(y*w+ax)*4,ri=(y*w+rx)*4;
-      rS+=data[ai]-data[ri];gS+=data[ai+1]-data[ri+1];bS+=data[ai+2]-data[ri+2];aS+=data[ai+3]-data[ri+3];
-    }
-  }
-  // Vertical pass: tmp → data
-  for(let x=0;x<w;x++){
-    let rS=0,gS=0,bS=0,aS=0;
-    for(let i=-r;i<=r;i++){const yi=Math.max(0,Math.min(h-1,i)),idx=(yi*w+x)*4;rS+=tmp[idx];gS+=tmp[idx+1];bS+=tmp[idx+2];aS+=tmp[idx+3];}
-    for(let y=0;y<h;y++){
-      const out=(y*w+x)*4;
-      data[out]=rS/div|0;data[out+1]=gS/div|0;data[out+2]=bS/div|0;data[out+3]=aS/div|0;
-      const ay=Math.min(y+r+1,h-1),ry=Math.max(y-r,0);
-      const ai=(ay*w+x)*4,ri=(ry*w+x)*4;
-      rS+=tmp[ai]-tmp[ri];gS+=tmp[ai+1]-tmp[ri+1];bS+=tmp[ai+2]-tmp[ri+2];aS+=tmp[ai+3]-tmp[ri+3];
-    }
-  }
-}
 function bakeMediaFx(src,sw,sh,brightness,contrast,invert,saturation,blur){
   if(_fxCanvas.width!==sw)_fxCanvas.width=sw;
   if(_fxCanvas.height!==sh)_fxCanvas.height=sh;
   _fxCtx.clearRect(0,0,sw,sh);
-  const sat=saturation===undefined?1:saturation;
   const blurPx=Math.max(0,Number(blur)||0);
-  const needPixelWork=blurPx>0||brightness!==1||contrast!==1||invert||sat!==1;
-  if(!needPixelWork){ _fxCtx.drawImage(src,0,0,sw,sh); return _fxCanvas; }
-
   if(blurPx>0){
-    // Downsample → software blur → draw back up (fast on iPhone, looks great)
-    const MAX=512;
-    const scale=Math.min(1,MAX/Math.max(sw,sh));
-    const bw=Math.max(1,Math.round(sw*scale)), bh=Math.max(1,Math.round(sh*scale));
-    const bc=document.createElement('canvas'); bc.width=bw; bc.height=bh;
-    const bx=bc.getContext('2d',{willReadFrequently:true});
-    bx.drawImage(src,0,0,bw,bh);
-    let bData;
-    try{ bData=bx.getImageData(0,0,bw,bh); } catch(e){ _fxCtx.drawImage(src,0,0,sw,sh); }
-    if(bData){
-      // Scale radius proportionally to the downscale
-      const scaledR=Math.max(1,Math.round(blurPx*scale));
-      _softwareBlur(bData.data,bw,bh,scaledR);
-      bx.putImageData(bData,0,0);
-      // Draw blurred (small) canvas scaled back up to full size
-      _fxCtx.drawImage(bc,0,0,sw,sh);
-    }
+    try{ _fxCtx.save(); _fxCtx.filter='blur('+blurPx+'px)'; _fxCtx.drawImage(src,0,0,sw,sh); _fxCtx.restore(); _fxCtx.filter='none'; }
+    catch(_e){ _fxCtx.drawImage(src,0,0,sw,sh); }
   } else {
     _fxCtx.drawImage(src,0,0,sw,sh);
   }
-
-  // Apply brightness/contrast/saturation/invert via pixel math
-  if(brightness===1&&contrast===1&&!invert&&sat===1) return _fxCanvas;
+  const sat=saturation===undefined?1:saturation;
+  if(brightness===1&&contrast===1&&!invert&&sat===1)return _fxCanvas;
   let imgData;
   try{ imgData=_fxCtx.getImageData(0,0,sw,sh); }
-  catch(e){ return _fxCanvas; }
+  catch(e){
+    try{
+      _fxCtx.clearRect(0,0,sw,sh);
+      _fxCtx.save();
+      _fxCtx.filter=`brightness(${brightness}) contrast(${contrast}) saturate(${sat})${blurPx>0?' blur('+blurPx+'px)':''}${invert?' invert(1)':''}`;
+      _fxCtx.drawImage(src,0,0,sw,sh);
+      _fxCtx.restore();
+      _fxCtx.filter='none';
+    }catch(_e){}
+    return _fxCanvas;
+  }
   const d=imgData.data;
   for(let i=0;i<d.length;i+=4){
     let r=d[i],g=d[i+1],b=d[i+2];
@@ -2595,21 +2550,23 @@ function onKD(e){if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e
 function doResize(pos){
   const l=layers.find(x=>x.id===[...selectedIds][0]);if(!l)return;
   const dx=pos.x-dragStart.x,dy=pos.y-dragStart.y,h=resizeHandle,ar=layerStart.w/layerStart.h;
-  // Pivot from center: keep cx/cy fixed, expand both sides symmetrically
-  const cx=layerStart.x+layerStart.w/2, cy=layerStart.y+layerStart.h/2;
   if(lockRatio){let nw=layerStart.w,nh=layerStart.h;
-    if(h==='se'||h==='e'||h==='ne'){nw=Math.max(20,layerStart.w+dx*2);nh=nw/ar;}
-    else if(h==='sw'||h==='w'||h==='nw'){nw=Math.max(20,layerStart.w-dx*2);nh=nw/ar;}
-    else if(h==='s'){nh=Math.max(20,layerStart.h+dy*2);nw=nh*ar;}
-    else if(h==='n'){nh=Math.max(20,layerStart.h-dy*2);nw=nh*ar;}
-    l.w=nw;l.h=nh;l.x=cx-nw/2;l.y=cy-nh/2;
+    if(h==='se'||h==='e'||h==='ne'){nw=Math.max(20,layerStart.w+dx);nh=nw/ar;}
+    else if(h==='sw'||h==='w'||h==='nw'){nw=Math.max(20,layerStart.w-dx);nh=nw/ar;}
+    else if(h==='s'){nh=Math.max(20,layerStart.h+dy);nw=nh*ar;}
+    else if(h==='n'){nh=Math.max(20,layerStart.h-dy);nw=nh*ar;}
+    if(h==='nw'||h==='n'||h==='ne')l.y=layerStart.y+(layerStart.h-nh);
+    if(h==='nw'||h==='w'||h==='sw')l.x=layerStart.x+(layerStart.w-nw);
+    l.w=nw;l.h=nh;
   }else{
-    let nw=layerStart.w,nh=layerStart.h;
-    if(h==='e'||h==='se'||h==='ne') nw=Math.max(20,layerStart.w+dx*2);
-    else if(h==='w'||h==='sw'||h==='nw') nw=Math.max(20,layerStart.w-dx*2);
-    if(h==='s'||h==='se'||h==='sw') nh=Math.max(20,layerStart.h+dy*2);
-    else if(h==='n'||h==='ne'||h==='nw') nh=Math.max(20,layerStart.h-dy*2);
-    l.w=nw;l.h=nh;l.x=cx-nw/2;l.y=cy-nh/2;
+    if(h==='se'){l.w=Math.max(20,layerStart.w+dx);l.h=Math.max(20,layerStart.h+dy);}
+    else if(h==='sw'){l.w=Math.max(20,layerStart.w-dx);l.x=layerStart.x+(layerStart.w-l.w);l.h=Math.max(20,layerStart.h+dy);}
+    else if(h==='ne'){l.w=Math.max(20,layerStart.w+dx);l.h=Math.max(20,layerStart.h-dy);l.y=layerStart.y+(layerStart.h-l.h);}
+    else if(h==='nw'){l.w=Math.max(20,layerStart.w-dx);l.x=layerStart.x+(layerStart.w-l.w);l.h=Math.max(20,layerStart.h-dy);l.y=layerStart.y+(layerStart.h-l.h);}
+    else if(h==='e')l.w=Math.max(20,layerStart.w+dx);
+    else if(h==='w'){l.w=Math.max(20,layerStart.w-dx);l.x=layerStart.x+(layerStart.w-l.w);}
+    else if(h==='s')l.h=Math.max(20,layerStart.h+dy);
+    else if(h==='n'){l.h=Math.max(20,layerStart.h-dy);l.y=layerStart.y+(layerStart.h-l.h);}
   }updatePropsPanel();
 }
 
@@ -3726,23 +3683,6 @@ function _loadGifJs(){
   });
   return _gifJsLoaded;
 }
-// Fetch the gif.js worker as a same-origin Blob URL so it works inside iOS PWA
-// (cross-origin worker scripts fail under standalone display + service worker).
-let _gifWorkerBlobUrl=null;
-async function _getGifWorkerUrl(){
-  if(_gifWorkerBlobUrl)return _gifWorkerBlobUrl;
-  const remote='https://cdn.jsdelivr.net/npm/gif.js.optimized@1.0.1/dist/gif.worker.js';
-  try{
-    const res=await fetch(remote,{mode:'cors'});
-    if(!res.ok)throw new Error('worker fetch '+res.status);
-    const txt=await res.text();
-    _gifWorkerBlobUrl=URL.createObjectURL(new Blob([txt],{type:'application/javascript'}));
-  }catch(e){
-    console.warn('GIF worker blob fetch failed, falling back to direct URL',e);
-    _gifWorkerBlobUrl=remote;
-  }
-  return _gifWorkerBlobUrl;
-}
 async function exportGif(){
   const pw=document.getElementById('progWrap'),pb=document.getElementById('progBar'),pl=document.getElementById('progLbl');
   pw.classList.add('show');pl.textContent='Loading GIF encoder…';
@@ -3755,8 +3695,8 @@ async function exportGif(){
   const W=Math.round(CW*scale), H=Math.round(CH*scale);
   const tmp=document.createElement('canvas');tmp.width=W;tmp.height=H;
   const tctx=tmp.getContext('2d');
-  // Same-origin worker URL (Blob) — required for iOS PWA
-  const workerUrl=await _getGifWorkerUrl();
+  // gif.js worker URL (CDN)
+  const workerUrl='https://cdn.jsdelivr.net/npm/gif.js.optimized@1.0.1/dist/gif.worker.js';
   const gif=new window.GIF({workers:2,quality:QUAL,width:W,height:H,workerScript:workerUrl,dither:false});
   const pv=new Set(selectedIds);selectedIds.clear();
   const savedPlayhead=playhead;
