@@ -4098,39 +4098,15 @@ function savePreset(){
   const name=prompt('Preset name:');if(!name)return;
   const preset={name,bgColor,CW,CH,layers:layers.map(l=>{
     const s={...l};delete s.img;delete s.vid;delete s._qbRefW;delete s._qbRefH;delete s._qbRefX;delete s._qbRefY;
-    if(l.type==='image'&&l.img){
-      try{
-        // Store a tiny thumbnail (max 200px on longest side) at low quality
-        // to stay well within the 5 MB localStorage quota.
-        const MAX=200, iw=l.img.naturalWidth||300, ih=l.img.naturalHeight||300;
-        const scale=Math.min(1,MAX/Math.max(iw,ih));
-        const tw=Math.round(iw*scale)||1, th=Math.round(ih*scale)||1;
-        const c=document.createElement('canvas');c.width=tw;c.height=th;
-        c.getContext('2d').drawImage(l.img,0,0,tw,th);
-        s._dataUrl=c.toDataURL('image/jpeg',0.5);
-        s._thumbW=tw;s._thumbH=th; // flag so loadPreset knows it's a thumb
-      }catch(e){}
-    }
+    if(l.type==='image'&&l.img){try{const c=document.createElement('canvas');c.width=l.img.naturalWidth||300;c.height=l.img.naturalHeight||300;const x=c.getContext('2d');x.drawImage(l.img,0,0);s._dataUrl=c.toDataURL('image/jpeg',0.7);}catch(e){}}
     return s;
   })};
   try{
     const stored=JSON.parse(localStorage.getItem('omitsuPresets')||'[]');
     stored.push(preset);
-    const json=JSON.stringify(stored);
-    // If still over quota, drop oldest presets one by one until it fits
-    let attempts=stored.length;
-    while(attempts-->0){
-      try{
-        localStorage.setItem('omitsuPresets',JSON.stringify(stored));
-        showToast('Preset saved: '+name);
-        renderPresetsList();
-        return;
-      }catch(e){
-        if(stored.length<=1){alert('Could not save preset — storage is full even after clearing old presets.');return;}
-        const removed=stored.shift(); // remove oldest
-        showToast('Storage full — removed oldest preset "'+removed.name+'"');
-      }
-    }
+    localStorage.setItem('omitsuPresets',JSON.stringify(stored));
+    showToast('Preset saved: '+name);
+    renderPresetsList();
   }catch(e){alert('Could not save preset: '+e.message);}
 }
 function loadPreset(idx){
@@ -4157,12 +4133,6 @@ function deletePreset(idx){
     localStorage.setItem('omitsuPresets',JSON.stringify(stored));
     renderPresetsList();
   }catch(e){}
-}
-function clearAllPresets(){
-  if(!confirm('Delete ALL saved presets? This frees up storage space.'))return;
-  try{localStorage.removeItem('omitsuPresets');}catch(e){}
-  renderPresetsList();
-  showToast('All presets cleared');
 }
 // Built-in factory presets (always available, not stored in localStorage)
 const BUILTIN_PRESETS = [
@@ -4874,10 +4844,7 @@ window.addEventListener('load',()=>{
       <div class="pgrp">
         <div class="plabel">Presets</div>
         <div class="tip">Save current canvas layout as a reusable preset</div>
-        <div style="display:flex;gap:6px;margin-bottom:8px">
-          <button class="add-text-btn" onclick="savePreset()" type="button" style="flex:1">[ Save as Preset ]</button>
-          <button class="add-text-btn" onclick="clearAllPresets()" type="button" style="flex:0 0 auto;opacity:0.6" title="Clear all presets to free storage">[ Clear All ]</button>
-        </div>
+        <button class="add-text-btn" onclick="savePreset()" type="button" style="margin-bottom:8px">[ Save as Preset ]</button>
         <div id="presetsList"></div>
       </div>`;
     canvasTab.appendChild(div);
@@ -6387,40 +6354,17 @@ function clearBgGraphic() {
   }
 
   // ── WHEEL: vertical drag — font mode if text selected, else graphic ──
-  var _wLastY      = 0;
-  var _wAccum      = 0;
-  var _wActive     = false;
-  var _wRestoreTimer = null;
-
-  // Hide align bar + quick bar while wheel is active
-  function _wheelHideBars(){
-    clearTimeout(_wRestoreTimer);
-    var qb = document.getElementById('mobQuickBar');
-    var ab = document.getElementById('alignBar');
-    var at = document.getElementById('alignToggleBtn');
-    if(qb) qb.style.opacity = '0';
-    if(ab) ab.style.opacity = '0';
-    if(at) at.style.opacity = '0';
-  }
-  function _wheelRestoreBars(){
-    _wRestoreTimer = setTimeout(function(){
-      var qb = document.getElementById('mobQuickBar');
-      var ab = document.getElementById('alignBar');
-      var at = document.getElementById('alignToggleBtn');
-      if(qb) qb.style.opacity = '';
-      if(ab) ab.style.opacity = '';
-      if(at) at.style.opacity = '';
-    }, 420); // short delay so the UI doesn't flash back immediately
-  }
+  var _wLastY  = 0;
+  var _wAccum  = 0;
+  var _wActive = false;
 
   function onTrackTS(e){
     _wLastY  = e.touches[0].clientY;
     _wAccum  = 0;
     _wActive = true;
-    _wheelHideBars();
     // Sync fontIdx to the selected layer's current font before dragging
     if(getSelectedTextLayer()) syncFontIdx();
-    // Show label immediately
+    // Show label immediately on touch so user knows which mode is active
     var inFontMode = !!getSelectedTextLayer();
     if(inFontMode){
       var f = fontList[fontIdx];
@@ -6433,12 +6377,13 @@ function clearBgGraphic() {
   function onTrackTM(e){
     if(!_wActive) return;
     e.preventDefault();
-    var dy    = _wLastY - e.touches[0].clientY;
+    var dy    = _wLastY - e.touches[0].clientY; // up = positive = next
     _wLastY   = e.touches[0].clientY;
     _wAccum  += dy;
     var steps = Math.trunc(_wAccum / DRAG_PER);
     if(!steps) return;
     _wAccum -= steps * DRAG_PER;
+
     if(getSelectedTextLayer()){
       applyFontAtIdx(fontIdx + steps);
     } else {
@@ -6448,7 +6393,6 @@ function clearBgGraphic() {
   function onTrackTE(){
     _wActive = false;
     _wAccum  = 0;
-    _wheelRestoreBars();
     hideLabel();
   }
 
@@ -6729,57 +6673,9 @@ function clearBgGraphic() {
       });
     }
 
-    // ── Logo double-tap: full reset ───────────────────────────────
-    // Hides nudge/align bars, collapses quickbar + wheel, resets zoom/pan
-    var _logoTapTimer = null;
-    var logoEl = document.querySelector('header .logo');
-    if(logoEl){
-      logoEl.style.cursor = 'pointer';
-      logoEl.addEventListener('click', function(){
-        if(_logoTapTimer){
-          // Second tap — double-tap confirmed
-          clearTimeout(_logoTapTimer);
-          _logoTapTimer = null;
-          _doLogoReset();
-        } else {
-          _logoTapTimer = setTimeout(function(){ _logoTapTimer = null; }, 380);
-        }
-      });
-    }
-    function _doLogoReset(){
-      // 1. Collapse the wheel
-      if(!collapsed){
-        collapsed = true;
-        scaleEl.classList.add('irix-collapsed');
-        btnEl.classList.remove('is-open');
-      }
-      // 2. Dismiss align bar
-      var ab = document.getElementById('alignBar');
-      if(ab) ab.classList.remove('mob-align-open');
-      var at = document.getElementById('alignToggleBtn');
-      if(at) at.classList.remove('active');
-      // 3. Collapse quick bar (nudge bar)
-      var qb = document.getElementById('mobQuickBar');
-      if(qb) qb.classList.remove('show');
-      document.body.classList.remove('mob-has-sel','mob-multi-sel');
-      // 4. Reset zoom + canvas position to fit
-      if(typeof zoomFit === 'function') zoomFit();
-      // 5. Restore any opacity we may have hidden
-      clearTimeout(_wRestoreTimer);
-      if(qb) qb.style.opacity = '';
-      if(ab) ab.style.opacity = '';
-      if(at) at.style.opacity = '';
-      // 6. Hide label
-      hideLabel();
-      if(typeof showToast === 'function') showToast('View reset');
-    }
-
     window.addEventListener('resize', function(){
       if(!collapsed) renderTicks();
     });
-    // Rebuild font list if user uploads a custom font
-    var fsEl = document.getElementById('fontSelect');
-    if(fsEl) fsEl.addEventListener('change', function(){ buildFontList(); });
     // Rebuild font list if user uploads a custom font (fontSelect changes)
     var fsEl = document.getElementById('fontSelect');
     if(fsEl) fsEl.addEventListener('change', function(){ buildFontList(); });
