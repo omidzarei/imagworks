@@ -654,47 +654,6 @@ body.theme-sgi-irix .font-sample .fs-name{font-family:'ScreenBold','Chicago',mon
   cursor:pointer;font-family:'DM Mono',monospace;font-size:10px;font-weight:500;letter-spacing:0.05em;transition:all .15s;margin-top:4px;
   -webkit-tap-highlight-color:transparent;touch-action:manipulation;min-height:36px;}
 .del-btn-red{background:var(--accent2)!important;color:#fff!important;}
-/* Inline + button below textarea — adds text to canvas */
-.txt-add-inline-btn{
-  display:block;
-  width:100%;
-  margin-top:4px;
-  padding:6px 0;
-  background:var(--surface3);
-  color:var(--text);
-  border:1px solid var(--border2);
-  border-radius:6px;
-  font-family:'DM Mono',monospace;
-  font-size:18px;
-  font-weight:400;
-  line-height:1;
-  letter-spacing:0;
-  cursor:pointer;
-  -webkit-tap-highlight-color:transparent;
-  touch-action:manipulation;
-  transition:background .12s, box-shadow .12s;
-  min-height:34px;
-}
-.txt-add-inline-btn:active{
-  background:var(--accent-dim);
-  border-color:var(--accent);
-  color:var(--accent);
-}
-/* SGI IRIX: raised bevel button */
-body.theme-sgi-irix .txt-add-inline-btn{
-  background:#a59f80 !important;
-  color:#000 !important;
-  border:1px solid #000 !important;
-  border-radius:0 !important;
-  box-shadow:inset 1px 1px 0 #d4cdb0, inset -1px -1px 0 #6f6a55 !important;
-  font-family:"Helvetica Neue",Helvetica,Arial,sans-serif !important;
-  font-weight:700;
-  font-size:16px;
-}
-body.theme-sgi-irix .txt-add-inline-btn:active{
-  background:#8a846b !important;
-  box-shadow:inset 1px 1px 0 #6f6a55, inset -1px -1px 0 #d4cdb0 !important;
-}
 .divider{height:1px;background:var(--border);margin:10px 0;}
 .tip{font-size:8px;color:var(--text-muted);background:var(--surface2);border-radius:4px;padding:4px 6px;margin-bottom:7px;line-height:1.5;}
 .no-sel-msg{font-size:9px;color:var(--text-muted);text-align:center;padding:18px 10px;line-height:1.6;}
@@ -1750,7 +1709,6 @@ body:not(.theme-sgi-irix) #canvasOuter.irix-swipe-active{
       <div class="pgrp">
         <div class="plabel">Content</div>
         <textarea class="pinput" id="txtContent" rows="3" style="resize:vertical;width:100%;font-size:11px" placeholder="Type text..." onfocus="if(this.value==='Your Text'){this.value='';}" onblur="if(!this.value){this.value='Your Text';}">Your Text</textarea>
-        <button class="txt-add-inline-btn" onclick="addTextLayer()" type="button" title="Add text to canvas">+</button>
       </div>
       <div class="pgrp">
         <div class="plabel">Font</div>
@@ -3129,7 +3087,7 @@ function addTextLayer(){
   const text=document.getElementById('txtContent').value||'Your Text',size=parseInt(document.getElementById('txtSize').value);
   const {w,h}=measureTextBox(text,txtCfg.font,size,txtCfg.bold,txtCfg.italic);
   addLayer({id:nextId++,type:'text',name:text.substring(0,18),text,font:txtCfg.font,size,color:txtCfg.color,bold:txtCfg.bold,italic:txtCfg.italic,shadow:txtCfg.shadow,align:txtCfg.align||'left',aspectRatio:null,x:(CW-w)/2,y:(CH-h)/2,w,h,rotation:0,opacity:100});
-  if(isMob()){ closeMobPanels(); }
+  if(isMob()){switchTab('props');openMobPanel('left');}
 }
 function addTextAt(cx,cy){
   const text=document.getElementById('txtContent').value||'Your Text',size=parseInt(document.getElementById('txtSize').value);
@@ -6320,8 +6278,8 @@ function clearBgGraphic() {
   'use strict';
 
   // ── Constants ────────────────────────────────────────────────
-  var SLAT_H      = 10;   // px: slat height + gap (tighter = snappier visual)
-  var DRAG_PER    = 9;    // px finger travel per one step (lower = more sensitive)
+  var SLAT_H      = 13;   // px: slat height + gap
+  var DRAG_PER    = 16;   // px finger travel per one step
   var LONG_MS     = 600;  // ms hold before swipe mode activates
   var MOVE_CANCEL = 8;    // px movement cancels the long-press timer
 
@@ -6433,8 +6391,6 @@ function clearBgGraphic() {
   var _wAccum      = 0;
   var _wActive     = false;
   var _wRestoreTimer = null;
-  var _wLastTime   = 0;   // timestamp of last touchmove, for velocity
-  var _wVelocity   = 0;   // px/ms, exponential smoothing
 
   // Hide align bar + quick bar while wheel is active
   function _wheelHideBars(){
@@ -6454,17 +6410,17 @@ function clearBgGraphic() {
       if(qb) qb.style.opacity = '';
       if(ab) ab.style.opacity = '';
       if(at) at.style.opacity = '';
-    }, 420);
+    }, 420); // short delay so the UI doesn't flash back immediately
   }
 
   function onTrackTS(e){
-    _wLastY    = e.touches[0].clientY;
-    _wAccum    = 0;
-    _wActive   = true;
-    _wVelocity = 0;
-    _wLastTime = e.timeStamp;
+    _wLastY  = e.touches[0].clientY;
+    _wAccum  = 0;
+    _wActive = true;
     _wheelHideBars();
+    // Sync fontIdx to the selected layer's current font before dragging
     if(getSelectedTextLayer()) syncFontIdx();
+    // Show label immediately
     var inFontMode = !!getSelectedTextLayer();
     if(inFontMode){
       var f = fontList[fontIdx];
@@ -6477,26 +6433,12 @@ function clearBgGraphic() {
   function onTrackTM(e){
     if(!_wActive) return;
     e.preventDefault();
-    var now  = e.timeStamp;
-    var dt   = Math.max(1, now - _wLastTime);
-    var dy   = _wLastY - e.touches[0].clientY;
-    _wLastY  = e.touches[0].clientY;
-    _wLastTime = now;
-
-    // Exponential velocity smoothing — fast swipes accelerate
-    var instV = dy / dt; // px/ms
-    _wVelocity = _wVelocity * 0.6 + instV * 0.4;
-
-    // Scale DRAG_PER down when moving fast (velocity > ~1px/ms = fast flick)
-    var speed    = Math.abs(_wVelocity);
-    var effective = speed > 1.2 ? DRAG_PER * 0.45    // very fast: nearly half threshold
-                  : speed > 0.5 ? DRAG_PER * 0.7     // moderate
-                  : DRAG_PER;                          // slow: normal
-
-    _wAccum += dy;
-    var steps = Math.trunc(_wAccum / effective);
+    var dy    = _wLastY - e.touches[0].clientY;
+    _wLastY   = e.touches[0].clientY;
+    _wAccum  += dy;
+    var steps = Math.trunc(_wAccum / DRAG_PER);
     if(!steps) return;
-    _wAccum -= steps * effective;
+    _wAccum -= steps * DRAG_PER;
     if(getSelectedTextLayer()){
       applyFontAtIdx(fontIdx + steps);
     } else {
@@ -6504,9 +6446,8 @@ function clearBgGraphic() {
     }
   }
   function onTrackTE(){
-    _wActive   = false;
-    _wAccum    = 0;
-    _wVelocity = 0;
+    _wActive = false;
+    _wAccum  = 0;
     _wheelRestoreBars();
     hideLabel();
   }
