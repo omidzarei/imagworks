@@ -910,8 +910,8 @@ body.theme-sgi-irix .layer-item.is-locked .layer-lock{color:#c00;background:#cac
 
   /* media grid: 4 cols */
   .media-grid{grid-template-columns:repeat(4,1fr);gap:6px;}
-  /* always-visible overlay on touch */
-  .mthumb .add-lbl{opacity:1;background:rgba(200,245,90,0.75);font-size:10px;}
+  /* on touch: keep delete affordance visible, but no green overlay on thumbnails */
+  .mthumb .add-lbl{opacity:0;background:transparent;}
   .mthumb .del-lbl{opacity:1;width:22px;height:22px;font-size:11px;}
 
   /* bigger tap targets for inputs */
@@ -1481,7 +1481,7 @@ body.theme-sgi-irix .layer-item.is-locked .layer-lock{color:#c00;background:#cac
     <div class="psec" id="tab-text">
       <div class="pgrp">
         <div class="plabel">Content</div>
-        <textarea class="pinput" id="txtContent" rows="3" style="resize:vertical;width:100%;font-size:11px" placeholder="Type text...">Your Text</textarea>
+        <textarea class="pinput" id="txtContent" rows="3" style="resize:vertical;width:100%;font-size:11px" placeholder="Type text..." onfocus="if(this.value==='Your Text'){this.value='';}" onblur="if(!this.value){this.value='Your Text';}">Your Text</textarea>
       </div>
       <div class="pgrp">
         <div class="plabel">Font</div>
@@ -1589,9 +1589,9 @@ body.theme-sgi-irix .layer-item.is-locked .layer-lock{color:#c00;background:#cac
           <button class="style-btn" id="shadowBtn" onclick="toggleShadow()" type="button">Shadow</button>
         </div>
         <div class="style-row" style="margin-top:4px">
-          <button class="style-btn" id="alignLeftBtn" onclick="setTxtAlign('left')" type="button" title="Align left">&#9664; Left</button>
-          <button class="style-btn on" id="alignCenterBtn" onclick="setTxtAlign('center')" type="button" title="Align center">&#9632; Center</button>
-          <button class="style-btn" id="alignRightBtn" onclick="setTxtAlign('right')" type="button" title="Align right">Right &#9654;</button>
+          <button class="style-btn" id="alignLeftBtn" onclick="setTxtAlign('left')" type="button" title="Align left" aria-label="Align left"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="14" y2="12"/><line x1="3" y1="18" x2="18" y2="18"/></svg></button>
+          <button class="style-btn on" id="alignCenterBtn" onclick="setTxtAlign('center')" type="button" title="Align center" aria-label="Align center"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle"><line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg></button>
+          <button class="style-btn" id="alignRightBtn" onclick="setTxtAlign('right')" type="button" title="Align right" aria-label="Align right"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle"><line x1="3" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="6" y1="18" x2="21" y2="18"/></svg></button>
         </div>
       </div>
       <button class="add-text-btn" onclick="addTextLayer()" type="button">+ Add Text to Canvas</button>
@@ -1609,7 +1609,7 @@ body.theme-sgi-irix .layer-item.is-locked .layer-lock{color:#c00;background:#cac
           <div class="sw" style="background:#ff4d6d" data-c="#ff4d6d" onclick="setBg(this)"></div>
           <div class="sw" style="background:#1e3a5f" data-c="#1e3a5f" onclick="setBg(this)"></div>
           <div class="sw" style="background:#fdf6ec" data-c="#fdf6ec" onclick="setBg(this)"></div>
-          <input type="color" id="bgPicker" value="#000000" oninput="bgColor=this.value" style="width:24px;height:24px;border-radius:50%;border:2px solid #444;cursor:pointer;padding:0">
+          <input type="color" id="bgPicker" value="#000000" oninput="onBgPickerChange(this.value)" onchange="onBgPickerChange(this.value)" style="width:24px;height:24px;border-radius:50%;border:2px solid #444;cursor:pointer;padding:0">
         </div>
       </div>
       <div class="pgrp">
@@ -2214,7 +2214,8 @@ function drawMedia(l){
   // If l.frameMode is true, the layer boundary is a fixed frame.
   // The content fills that frame with cover scaling, then can be panned/zoomed within it.
   if(l.frameMode){
-    const drawSrc=bakeMediaFx(src,sw,sh,brightness,contrast,invert,saturation);
+    let drawSrc=bakeMediaFx(src,sw,sh,brightness,contrast,invert,saturation);
+    if(blurPx>0) drawSrc=bakeBlur(drawSrc,sw,sh,blurPx);
     const contentScale=l.contentScale||1;
     const baseScale=Math.max(l.w/sw, l.h/sh);
     const scale=baseScale*contentScale;
@@ -2222,10 +2223,8 @@ function drawMedia(l){
     const ox=(l.w-cw)/2 + (l.contentOffsetX||0);
     const oy=(l.h-ch)/2 + (l.contentOffsetY||0);
     ctx.save();
-    if(blurPx>0) ctx.filter=`blur(${blurPx}px)`;
     ctx.beginPath();ctx.rect(0,0,l.w,l.h);ctx.clip();
     ctx.drawImage(drawSrc,0,0,sw,sh,ox,oy,cw,ch);
-    ctx.filter='';
     ctx.restore();
     return;
   }
@@ -2236,17 +2235,63 @@ function drawMedia(l){
   const cT=Math.max(0,Math.min(99,Number(l.cropT)||0))/100;
   const cB=Math.max(0,Math.min(99,Number(l.cropB)||0))/100;
   if(cL+cR>=0.99||cT+cB>=0.99)return;
-  const drawSrc=bakeMediaFx(src,sw,sh,brightness,contrast,invert,saturation);
+  let drawSrc=bakeMediaFx(src,sw,sh,brightness,contrast,invert,saturation);
+  if(blurPx>0) drawSrc=bakeBlur(drawSrc,sw,sh,blurPx);
   ctx.save();
-  if(blurPx>0) ctx.filter=`blur(${blurPx}px)`;
   const clipX=l.w*cL, clipY=l.h*cT;
   const clipW=l.w*(1-cL-cR), clipH=l.h*(1-cT-cB);
   ctx.beginPath();
   ctx.rect(clipX,clipY,clipW,clipH);
   ctx.clip();
   ctx.drawImage(drawSrc,0,0,sw,sh,0,0,l.w,l.h);
-  ctx.filter='';
   ctx.restore();
+}
+
+// ── BLUR baker: works reliably on iOS PWA ──
+// iOS Safari (esp. in standalone PWA) sometimes ignores ctx.filter='blur(...)' on
+// drawImage. We bake the blur into an offscreen canvas using ctx.filter when
+// available, and fall back to an iterative downscale/upscale box-blur which works
+// everywhere including iOS PWA.
+let _blurCanvas=null,_blurCtx=null,_blurTmp=null,_blurTmpCtx=null;
+let _ctxFilterOk=null;
+function _detectCtxFilter(){
+  if(_ctxFilterOk!==null) return _ctxFilterOk;
+  try{
+    const c=document.createElement('canvas');c.width=8;c.height=8;
+    const x=c.getContext('2d');
+    x.fillStyle='#fff';x.fillRect(0,0,8,8);
+    x.filter='blur(2px)';
+    if(typeof x.filter==='string' && x.filter.indexOf('blur')!==-1){_ctxFilterOk=true;}
+    else _ctxFilterOk=false;
+  }catch(_e){_ctxFilterOk=false;}
+  return _ctxFilterOk;
+}
+function bakeBlur(src,sw,sh,px){
+  if(!_blurCanvas){_blurCanvas=document.createElement('canvas');_blurCtx=_blurCanvas.getContext('2d');}
+  _blurCanvas.width=sw;_blurCanvas.height=sh;
+  _blurCtx.clearRect(0,0,sw,sh);
+  if(_detectCtxFilter()){
+    try{
+      _blurCtx.filter=`blur(${px}px)`;
+      _blurCtx.drawImage(src,0,0,sw,sh);
+      _blurCtx.filter='none';
+      return _blurCanvas;
+    }catch(_e){/* fall through */}
+  }
+  // Fallback: downscale → upscale box blur (very fast, works in iOS PWA)
+  if(!_blurTmp){_blurTmp=document.createElement('canvas');_blurTmpCtx=_blurTmp.getContext('2d');}
+  const factor=Math.max(2, Math.min(32, Math.round(px*0.6)));
+  const dw=Math.max(2,Math.floor(sw/factor));
+  const dh=Math.max(2,Math.floor(sh/factor));
+  _blurTmp.width=dw;_blurTmp.height=dh;
+  _blurTmpCtx.clearRect(0,0,dw,dh);
+  _blurTmpCtx.imageSmoothingEnabled=true;_blurTmpCtx.imageSmoothingQuality='low';
+  _blurTmpCtx.drawImage(src,0,0,sw,sh,0,0,dw,dh);
+  _blurCtx.imageSmoothingEnabled=true;_blurCtx.imageSmoothingQuality='low';
+  // Two passes for smoother result
+  _blurCtx.drawImage(_blurTmp,0,0,dw,dh,0,0,sw,sh);
+  _blurCtx.drawImage(_blurCanvas,0,0,sw,sh,0,0,sw,sh);
+  return _blurCanvas;
 }
 function drawTxt(l){
   const s=(l.italic?'italic ':'')+(l.bold?'bold ':'');
@@ -2499,25 +2544,54 @@ function onKD(e){if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e
 function doResize(pos){
   const l=layers.find(x=>x.id===[...selectedIds][0]);if(!l)return;
   const dx=pos.x-dragStart.x,dy=pos.y-dragStart.y,h=resizeHandle,ar=layerStart.w/layerStart.h;
-  if(lockRatio){let nw=layerStart.w,nh=layerStart.h;
-    if(h==='se'||h==='e'||h==='ne'){nw=Math.max(20,layerStart.w+dx);nh=nw/ar;}
-    else if(h==='sw'||h==='w'||h==='nw'){nw=Math.max(20,layerStart.w-dx);nh=nw/ar;}
-    else if(h==='s'){nh=Math.max(20,layerStart.h+dy);nw=nh*ar;}
-    else if(h==='n'){nh=Math.max(20,layerStart.h-dy);nw=nh*ar;}
-    if(h==='nw'||h==='n'||h==='ne')l.y=layerStart.y+(layerStart.h-nh);
-    if(h==='nw'||h==='w'||h==='sw')l.x=layerStart.x+(layerStart.w-nw);
-    l.w=nw;l.h=nh;
+  // Center-pivot scaling: anchor on the layer center by default so resizing
+  // grows/shrinks symmetrically around the center. Hold Alt/Option to use the
+  // legacy opposite-corner pivot.
+  const centerPivot = !(window._lastResizeAlt===true);
+  const cx0 = layerStart.x + layerStart.w/2;
+  const cy0 = layerStart.y + layerStart.h/2;
+  if(lockRatio){
+    let nw=layerStart.w,nh=layerStart.h;
+    if(h==='se'||h==='e'||h==='ne'){nw=Math.max(20,layerStart.w+(centerPivot?dx*2:dx));nh=nw/ar;}
+    else if(h==='sw'||h==='w'||h==='nw'){nw=Math.max(20,layerStart.w-(centerPivot?dx*2:dx));nh=nw/ar;}
+    else if(h==='s'){nh=Math.max(20,layerStart.h+(centerPivot?dy*2:dy));nw=nh*ar;}
+    else if(h==='n'){nh=Math.max(20,layerStart.h-(centerPivot?dy*2:dy));nw=nh*ar;}
+    if(centerPivot){
+      l.w=nw;l.h=nh;l.x=cx0-nw/2;l.y=cy0-nh/2;
+    } else {
+      if(h==='nw'||h==='n'||h==='ne')l.y=layerStart.y+(layerStart.h-nh);
+      if(h==='nw'||h==='w'||h==='sw')l.x=layerStart.x+(layerStart.w-nw);
+      l.w=nw;l.h=nh;
+    }
   }else{
-    if(h==='se'){l.w=Math.max(20,layerStart.w+dx);l.h=Math.max(20,layerStart.h+dy);}
-    else if(h==='sw'){l.w=Math.max(20,layerStart.w-dx);l.x=layerStart.x+(layerStart.w-l.w);l.h=Math.max(20,layerStart.h+dy);}
-    else if(h==='ne'){l.w=Math.max(20,layerStart.w+dx);l.h=Math.max(20,layerStart.h-dy);l.y=layerStart.y+(layerStart.h-l.h);}
-    else if(h==='nw'){l.w=Math.max(20,layerStart.w-dx);l.x=layerStart.x+(layerStart.w-l.w);l.h=Math.max(20,layerStart.h-dy);l.y=layerStart.y+(layerStart.h-l.h);}
-    else if(h==='e')l.w=Math.max(20,layerStart.w+dx);
-    else if(h==='w'){l.w=Math.max(20,layerStart.w-dx);l.x=layerStart.x+(layerStart.w-l.w);}
-    else if(h==='s')l.h=Math.max(20,layerStart.h+dy);
-    else if(h==='n'){l.h=Math.max(20,layerStart.h-dy);l.y=layerStart.y+(layerStart.h-l.h);}
-  }updatePropsPanel();
+    let nw=layerStart.w,nh=layerStart.h;
+    if(h==='se'){nw=Math.max(20,layerStart.w+(centerPivot?dx*2:dx));nh=Math.max(20,layerStart.h+(centerPivot?dy*2:dy));}
+    else if(h==='sw'){nw=Math.max(20,layerStart.w-(centerPivot?dx*2:dx));nh=Math.max(20,layerStart.h+(centerPivot?dy*2:dy));}
+    else if(h==='ne'){nw=Math.max(20,layerStart.w+(centerPivot?dx*2:dx));nh=Math.max(20,layerStart.h-(centerPivot?dy*2:dy));}
+    else if(h==='nw'){nw=Math.max(20,layerStart.w-(centerPivot?dx*2:dx));nh=Math.max(20,layerStart.h-(centerPivot?dy*2:dy));}
+    else if(h==='e'){nw=Math.max(20,layerStart.w+(centerPivot?dx*2:dx));}
+    else if(h==='w'){nw=Math.max(20,layerStart.w-(centerPivot?dx*2:dx));}
+    else if(h==='s'){nh=Math.max(20,layerStart.h+(centerPivot?dy*2:dy));}
+    else if(h==='n'){nh=Math.max(20,layerStart.h-(centerPivot?dy*2:dy));}
+    if(centerPivot){
+      l.w=nw;l.h=nh;l.x=cx0-nw/2;l.y=cy0-nh/2;
+    } else {
+      if(h==='se'){l.w=nw;l.h=nh;}
+      else if(h==='sw'){l.w=nw;l.x=layerStart.x+(layerStart.w-nw);l.h=nh;}
+      else if(h==='ne'){l.w=nw;l.h=nh;l.y=layerStart.y+(layerStart.h-nh);}
+      else if(h==='nw'){l.w=nw;l.x=layerStart.x+(layerStart.w-nw);l.h=nh;l.y=layerStart.y+(layerStart.h-nh);}
+      else if(h==='e'){l.w=nw;}
+      else if(h==='w'){l.w=nw;l.x=layerStart.x+(layerStart.w-nw);}
+      else if(h==='s'){l.h=nh;}
+      else if(h==='n'){l.h=nh;l.y=layerStart.y+(layerStart.h-nh);}
+    }
+  }
+  updatePropsPanel();
 }
+// Track Alt/Option key so users can opt out of center-pivot when desired
+window._lastResizeAlt=false;
+window.addEventListener('keydown',(e)=>{ if(e.altKey) window._lastResizeAlt=true; });
+window.addEventListener('keyup',  (e)=>{ if(!e.altKey) window._lastResizeAlt=false; });
 
 // TOUCH
 function d2(t1,t2){return Math.hypot(t1.clientX-t2.clientX,t1.clientY-t2.clientY);}
@@ -3280,6 +3354,10 @@ function toggleItalic(){txtCfg.italic=!txtCfg.italic;document.getElementById('it
 function toggleShadow(){txtCfg.shadow=!txtCfg.shadow;document.getElementById('shadowBtn').classList.toggle('on',txtCfg.shadow);const l=layers.find(x=>x.id===[...selectedIds][0]&&x.type==='text');if(l)l.shadow=txtCfg.shadow;}
 function setTxtAlign(a){txtCfg.align=a;['left','center','right'].forEach(v=>{const b=document.getElementById('align'+v.charAt(0).toUpperCase()+v.slice(1)+'Btn');if(b)b.classList.toggle('on',v===a);});const l=layers.find(x=>x.id===[...selectedIds][0]&&x.type==='text');if(l)l.align=a;}
 function setBg(el){document.querySelectorAll('#tab-canvas .swatches .sw').forEach(s=>s.classList.remove('active'));el.classList.add('active');bgColor=el.dataset.c;document.getElementById('bgPicker').value=bgColor;}
+function onBgPickerChange(v){
+  bgColor=v;
+  document.querySelectorAll('#tab-canvas .swatches .sw').forEach(s=>s.classList.remove('active'));
+}
 function toggleSnap(el){const k=el.dataset.snap;snapState[k]=!snapState[k];el.classList.toggle('on',snapState[k]);el.textContent=(snapState[k]?'[x] ':'[ ] ')+el.textContent.slice(4);}
 function toggleGrid(el){const k=el.dataset.grid;gridState[k]=!gridState[k];el.classList.toggle('on',gridState[k]);el.textContent=(gridState[k]?'[x] ':'[ ] ')+el.textContent.slice(4);}
 
