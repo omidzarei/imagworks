@@ -81,6 +81,7 @@ body.theme-sgi-irix{
 body.theme-sgi-irix{
   font-family:"Helvetica Neue",Helvetica,Arial,sans-serif !important;
   background:#5a5a5a;
+  padding-bottom:env(safe-area-inset-bottom);
 }
 body.theme-sgi-irix *{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;}
 body.theme-sgi-irix *::-webkit-scrollbar{width:14px;height:14px;}
@@ -1000,7 +1001,7 @@ body.theme-sgi-irix .layer-item.is-locked .layer-lock{color:#c00;background:#cac
   #mobNav{
     display:flex;
     position:fixed;
-    bottom:calc(50px + env(safe-area-inset-bottom,0px));
+    bottom:env(safe-area-inset-bottom,0px);
     left:0;right:0;
     height:var(--mob-nav-h);
     padding-bottom:0;
@@ -1029,7 +1030,7 @@ body.theme-sgi-irix .layer-item.is-locked .layer-lock{color:#c00;background:#cac
      z-index:601 sits above the toolbar (600) so nothing bleeds through. */
   @media (orientation: portrait) and (max-width: 430px){
     body::after{
-      height:calc(50px + env(safe-area-inset-bottom,0px));
+      height:env(safe-area-inset-bottom,0px);
       z-index:601;
       pointer-events:auto;
       background:#a59f80;
