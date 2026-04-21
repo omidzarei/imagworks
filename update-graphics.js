@@ -34,18 +34,29 @@ const files = fs.readdirSync(GRAPHICS_DIR)
 const entries = files.map(f => ({ name: toDisplayName(f), src: 'Graphics/' + f }));
 const newArray = JSON.stringify(entries);
 
+// Build the baked <option> HTML (same approach as the working version)
+const bakedOptions = entries.map((g, i) => `<option value="${i}">${g.name}</option>`).join('');
+const newSelectInner = `\n            <option value="" selected="selected">— None —</option>\n          ${bakedOptions}`;
+
 // Patch index.html — replace the CANVAS_GRAPHICS = [...] line
 let html = fs.readFileSync(HTML_FILE, 'utf8');
-const before = html;
+
+if (!/var CANVAS_GRAPHICS = \[.*?\];/.test(html)) {
+  console.error('✗ Could not find CANVAS_GRAPHICS in index.html — nothing updated.');
+  process.exit(1);
+}
+
+// 1. Update the JS array
 html = html.replace(
   /var CANVAS_GRAPHICS = \[.*?\];/,
   'var CANVAS_GRAPHICS = ' + newArray + ';'
 );
 
-if (html === before) {
-  console.error('✗ Could not find CANVAS_GRAPHICS in index.html — nothing updated.');
-  process.exit(1);
-}
+// 2. Bake options directly into the <select> element (works even before JS runs)
+html = html.replace(
+  /(<select[^>]*id="bgGraphicSelect"[^>]*>)[\s\S]*?(<\/select>)/,
+  '$1' + newSelectInner + '\n          $2'
+);
 
 fs.writeFileSync(HTML_FILE, html);
 

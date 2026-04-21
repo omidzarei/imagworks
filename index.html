@@ -1421,9 +1421,6 @@ body.theme-sgi-irix .layer-item.is-locked .layer-lock{color:#c00;background:#cac
   <button class="tbtn mob-land-toggle" id="toggleTimelineBtn" onclick="toggleViewTimeline()" type="button" title="Toggle timeline">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M10 8l6 4-6 4z" fill="currentColor"/></svg>
   </button>
-  <button class="tbtn" onclick="openUIEditor()" type="button" title="UI Editor" id="uiEditorBtn" style="margin-right:4px">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M3 9h6M3 15h6"/></svg><span>UI</span>
-  </button>
   <button class="exp-btn" onclick="openExport()" type="button">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Export
   </button>
@@ -1616,7 +1613,8 @@ body.theme-sgi-irix .layer-item.is-locked .layer-lock{color:#c00;background:#cac
         <div class="plabel">Background Graphic</div>
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
           <select class="font-select" id="bgGraphicSelect" onchange="applyBgGraphic(this.value)" style="flex:1">
-            <option value="">— None —</option>
+            <option value="" selected="selected">— None —</option>
+          <option value="0">Carpaint Blue</option><option value="1">Dither H</option><option value="2">Dither V</option><option value="3">Gradient 1</option><option value="4">Gradient 2</option><option value="5">Gradient Blue</option><option value="6">Gradient Pink</option><option value="7">Green Leak Soft</option><option value="8">Ice</option><option value="9">Light Ramp</option><option value="10">Noise 1</option><option value="11">Noise 2</option><option value="12">Noise 3</option><option value="13">Noise Pink</option><option value="14">Red Dotted</option><option value="15">Scanline Glitch</option><option value="16">Spotlight 1</option>
           </select>
           <button class="style-btn" type="button" onclick="clearBgGraphic()" style="width:44px;padding:4px">✕</button>
         </div>
@@ -1912,9 +1910,6 @@ body.theme-sgi-irix .layer-item.is-locked .layer-lock{color:#c00;background:#cac
   </button>
   <button class="mob-nav-btn" id="navLayers" onclick="mobNavTap('layers')" type="button">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l10 6-10 6L2 8z"/><path d="M2 14l10 6 10-6"/><path d="M2 18l10 6 10-6"/></svg><span class="nav-label">Layers</span>
-  </button>
-  <button class="mob-nav-btn" id="navUIEditor" onclick="openUIEditor()" type="button">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M3 9h6M3 15h6"/></svg><span class="nav-label">UI</span>
   </button>
 </div>
 
@@ -2247,22 +2242,35 @@ function drawMedia(l){
   ctx.restore();
 }
 
-// ── BLUR baker: works reliably on iOS PWA ──
-// iOS Safari (esp. in standalone PWA) sometimes ignores ctx.filter='blur(...)' on
-// drawImage. We bake the blur into an offscreen canvas using ctx.filter when
-// available, and fall back to an iterative downscale/upscale box-blur which works
-// everywhere including iOS PWA.
+// ── BLUR baker: iOS PWA-safe implementation ──
+// iOS Safari (standalone PWA and regular) silently accepts ctx.filter='blur(Xpx)'
+// but does NOT actually apply it when drawing — the property getter returns the
+// string you set, making naive string-based detection always report "supported".
+// Real detection requires a pixel-comparison test. We do that once at startup and
+// cache the result. On any browser where the test fails (iOS Safari, some Android
+// WebViews) we use a multi-pass downscale→upscale box blur which works everywhere.
 let _blurCanvas=null,_blurCtx=null,_blurTmp=null,_blurTmpCtx=null;
 let _ctxFilterOk=null;
 function _detectCtxFilter(){
   if(_ctxFilterOk!==null) return _ctxFilterOk;
   try{
-    const c=document.createElement('canvas');c.width=8;c.height=8;
-    const x=c.getContext('2d');
-    x.fillStyle='#fff';x.fillRect(0,0,8,8);
+    // Draw a solid white pixel, apply blur, then check centre pixel turned grey.
+    // If ctx.filter is truly working the centre will be darker than 255.
+    const c=document.createElement('canvas');c.width=9;c.height=9;
+    const x=c.getContext('2d',{willReadFrequently:true});
+    // Draw black centre pixel surrounded by white
+    x.fillStyle='#fff';x.fillRect(0,0,9,9);
+    x.fillStyle='#000';x.fillRect(4,4,1,1);
     x.filter='blur(2px)';
-    if(typeof x.filter==='string' && x.filter.indexOf('blur')!==-1){_ctxFilterOk=true;}
-    else _ctxFilterOk=false;
+    // Draw onto a second canvas so the filter is composited fresh
+    const c2=document.createElement('canvas');c2.width=9;c2.height=9;
+    const x2=c2.getContext('2d',{willReadFrequently:true});
+    x2.filter='blur(2px)';
+    x2.drawImage(c,0,0);
+    x2.filter='none';
+    const px=x2.getImageData(4,4,1,1).data;
+    // If blur worked the centre pixel will have brightened (blended with white neighbours)
+    _ctxFilterOk = px[0] > 10; // should be ~128+ if blur applied, stays 0 if ignored
   }catch(_e){_ctxFilterOk=false;}
   return _ctxFilterOk;
 }
@@ -2276,21 +2284,30 @@ function bakeBlur(src,sw,sh,px){
       _blurCtx.drawImage(src,0,0,sw,sh);
       _blurCtx.filter='none';
       return _blurCanvas;
-    }catch(_e){/* fall through */}
+    }catch(_e){/* fall through to box-blur */}
   }
-  // Fallback: downscale → upscale box blur (very fast, works in iOS PWA)
+  // ── Fallback: multi-pass downscale→upscale box blur ──
+  // Works on iOS Safari PWA, Android WebView, and any env where ctx.filter is broken.
+  // More passes and a gentler scale factor produce a smoother gaussian-like result.
   if(!_blurTmp){_blurTmp=document.createElement('canvas');_blurTmpCtx=_blurTmp.getContext('2d');}
-  const factor=Math.max(2, Math.min(32, Math.round(px*0.6)));
+  // Clamp factor: small blur = mild downscale, large blur = aggressive downscale
+  const factor=Math.max(2, Math.min(24, Math.round(px*0.5)));
   const dw=Math.max(2,Math.floor(sw/factor));
   const dh=Math.max(2,Math.floor(sh/factor));
   _blurTmp.width=dw;_blurTmp.height=dh;
   _blurTmpCtx.clearRect(0,0,dw,dh);
-  _blurTmpCtx.imageSmoothingEnabled=true;_blurTmpCtx.imageSmoothingQuality='low';
+  _blurTmpCtx.imageSmoothingEnabled=true;_blurTmpCtx.imageSmoothingQuality='high';
+  // Pass 1: shrink source into tiny canvas
   _blurTmpCtx.drawImage(src,0,0,sw,sh,0,0,dw,dh);
-  _blurCtx.imageSmoothingEnabled=true;_blurCtx.imageSmoothingQuality='low';
-  // Two passes for smoother result
+  _blurCtx.imageSmoothingEnabled=true;_blurCtx.imageSmoothingQuality='high';
+  // Pass 2: upscale back — first pass
   _blurCtx.drawImage(_blurTmp,0,0,dw,dh,0,0,sw,sh);
-  _blurCtx.drawImage(_blurCanvas,0,0,sw,sh,0,0,sw,sh);
+  // Pass 3: downscale the upscaled result for a second smoothing round
+  _blurTmpCtx.clearRect(0,0,dw,dh);
+  _blurTmpCtx.drawImage(_blurCanvas,0,0,sw,sh,0,0,dw,dh);
+  // Pass 4: upscale again — final result is a smooth double-pass box blur
+  _blurCtx.clearRect(0,0,sw,sh);
+  _blurCtx.drawImage(_blurTmp,0,0,dw,dh,0,0,sw,sh);
   return _blurCanvas;
 }
 function drawTxt(l){
@@ -5853,7 +5870,7 @@ XXXXXXXXXX..
 // CANVAS_GRAPHICS is embedded at deploy time by scanning the Graphics/ folder.
 // To update: upload a new zip built via Claude (it rescans Graphics/ automatically).
 // The refresh button (↺) repopulates the dropdown from this same list.
-var CANVAS_GRAPHICS = [{"name":"Gradient 1","src":"Graphics/gradient_1.png"},{"name":"Gradient 2","src":"Graphics/gradient_2.png"},{"name":"Noise 1","src":"Graphics/noise_1.png"},{"name":"Noise 2","src":"Graphics/noise_2.png"},{"name":"Noise 3","src":"Graphics/noise_3.png"},{"name":"Spotlight 1","src":"Graphics/spotlight_1.png"}];
+var CANVAS_GRAPHICS = [{"name":"Carpaint Blue","src":"Graphics/carpaint_blue.jpg"},{"name":"Dither H","src":"Graphics/dither_h.jpg"},{"name":"Dither V","src":"Graphics/dither_v.jpg"},{"name":"Gradient 1","src":"Graphics/gradient_1.png"},{"name":"Gradient 2","src":"Graphics/gradient_2.png"},{"name":"Gradient Blue","src":"Graphics/gradient_blue.jpg"},{"name":"Gradient Pink","src":"Graphics/gradient_pink.png"},{"name":"Green Leak Soft","src":"Graphics/green_leak_soft.png"},{"name":"Ice","src":"Graphics/ice.jpg"},{"name":"Light Ramp","src":"Graphics/light_ramp.png"},{"name":"Noise 1","src":"Graphics/noise_1.png"},{"name":"Noise 2","src":"Graphics/noise_2.png"},{"name":"Noise 3","src":"Graphics/noise_3.png"},{"name":"Noise Pink","src":"Graphics/noise_pink.jpg"},{"name":"Red Dotted","src":"Graphics/red_dotted.png"},{"name":"Scanline Glitch","src":"Graphics/scanline_glitch.jpg"},{"name":"Spotlight 1","src":"Graphics/spotlight_1.png"}];
 
 function populateBgGraphicsDropdown(graphics) {
   CANVAS_GRAPHICS = graphics;
@@ -5877,7 +5894,22 @@ function scanGraphicsFolder() {
     showToast(CANVAS_GRAPHICS.length + ' graphic' + (CANVAS_GRAPHICS.length !== 1 ? 's' : '') + ' loaded');
 }
 
+// Populate immediately (synchronous) so it works even if load events fire out of order
+(function(){
+  var sel = document.getElementById('bgGraphicSelect');
+  if (sel) {
+    while (sel.options.length > 1) sel.remove(1);
+    CANVAS_GRAPHICS.forEach(function(g, i) {
+      var opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = g.name;
+      sel.appendChild(opt);
+    });
+  }
+})();
+// Also re-populate on load in case the select wasn't in DOM yet (e.g. deferred rendering)
 window.addEventListener('load', scanGraphicsFolder);
+window.addEventListener('DOMContentLoaded', scanGraphicsFolder);
 
 var _bgGraphicImg = null;
 var _bgGraphicLayerId = null; // tracks the layer we inserted so we can replace/remove it
@@ -5945,391 +5977,7 @@ function clearBgGraphic() {
   updateLayersList();
   render && render();
 }
-<!-- ══════════════════════════════════════════
-     UI EDITOR OVERLAY
-     ══════════════════════════════════════════ -->
-<div id="uiEditorOverlay" style="display:none">
-  <div id="uiEditorPanel">
-    <div id="uiEditorHeader">
-      <span id="uiEditorTitle">UI Editor</span>
-      <div style="display:flex;gap:6px;align-items:center">
-        <button class="style-btn" onclick="uiEditorReset()" type="button" id="uiEditorResetBtn">[ Reset All ]</button>
-        <button class="style-btn" onclick="uiEditorExport()" type="button" id="uiEditorExportBtn">[ Save index.html ]</button>
-        <button onclick="closeUIEditor()" type="button" id="uiEditorCloseBtn">✕</button>
-      </div>
-    </div>
-    <div id="uiEditorBody">
-
-      <div class="ued-section">
-        <div class="ued-section-title">Layout &amp; Panels</div>
-        <div class="ued-row"><label>Left Panel Width</label><input type="range" min="180" max="420" step="2" data-ued-var="--panel-w" data-ued-unit="px"><span class="ued-val"></span></div>
-        <div class="ued-row"><label>Right Panel Width</label><input type="range" min="140" max="360" step="2" data-ued-var="--right-w" data-ued-unit="px"><span class="ued-val"></span></div>
-        <div class="ued-row"><label>Header Height</label><input type="range" min="28" max="72" step="1" data-ued-var="--header-h" data-ued-unit="px"><span class="ued-val"></span></div>
-        <div class="ued-row"><label>Timeline Height</label><input type="range" min="40" max="140" step="2" data-ued-var="--timeline-h" data-ued-unit="px"><span class="ued-val"></span></div>
-        <div class="ued-row"><label>Align Bar Height</label><input type="range" min="24" max="60" step="1" data-ued-var="--align-h" data-ued-unit="px"><span class="ued-val"></span></div>
-        <div class="ued-row"><label>Mobile Nav Height</label><input type="range" min="32" max="80" step="2" data-ued-var="--mob-nav-h" data-ued-unit="px"><span class="ued-val"></span></div>
-      </div>
-
-      <div class="ued-section">
-        <div class="ued-section-title">Colors</div>
-        <div class="ued-row"><label>Background</label><input type="color" data-ued-var="--bg" data-ued-unit=""><span class="ued-val"></span></div>
-        <div class="ued-row"><label>Surface</label><input type="color" data-ued-var="--surface" data-ued-unit=""><span class="ued-val"></span></div>
-        <div class="ued-row"><label>Surface 2</label><input type="color" data-ued-var="--surface2" data-ued-unit=""><span class="ued-val"></span></div>
-        <div class="ued-row"><label>Surface 3</label><input type="color" data-ued-var="--surface3" data-ued-unit=""><span class="ued-val"></span></div>
-        <div class="ued-row"><label>Accent</label><input type="color" data-ued-var="--accent" data-ued-unit=""><span class="ued-val"></span></div>
-        <div class="ued-row"><label>Accent 2</label><input type="color" data-ued-var="--accent2" data-ued-unit=""><span class="ued-val"></span></div>
-        <div class="ued-row"><label>Text</label><input type="color" data-ued-var="--text" data-ued-unit=""><span class="ued-val"></span></div>
-        <div class="ued-row"><label>Text Muted</label><input type="color" data-ued-var="--text-muted" data-ued-unit=""><span class="ued-val"></span></div>
-      </div>
-
-      <div class="ued-section">
-        <div class="ued-section-title">Typography</div>
-        <div class="ued-row ued-font-row">
-          <label>UI Font</label>
-          <select id="uedFontFamily">
-            <option value="">— system default —</option>
-            <option value="'Inter',sans-serif">Inter</option>
-            <option value="'DM Mono',monospace">DM Mono</option>
-            <option value="'JetBrains Mono',monospace">JetBrains Mono</option>
-            <option value="'Space Mono',monospace">Space Mono</option>
-            <option value="'Roboto',sans-serif">Roboto</option>
-            <option value="'Syne',sans-serif">Syne</option>
-            <option value="'Helvetica Neue',Helvetica,Arial,sans-serif">Helvetica Neue</option>
-            <option value="'Courier New',monospace">Courier New</option>
-          </select>
-        </div>
-        <div class="ued-row"><label>Base Font Size</label><input type="range" min="9" max="18" step="0.5" data-ued-prop="font-size" data-ued-sel="body" data-ued-unit="px"><span class="ued-val"></span></div>
-        <div class="ued-row"><label>Panel Label Size</label><input type="range" min="7" max="14" step="0.5" data-ued-prop="font-size" data-ued-sel=".plabel" data-ued-unit="px"><span class="ued-val"></span></div>
-        <div class="ued-row"><label>Tab Font Size</label><input type="range" min="8" max="16" step="0.5" data-ued-prop="font-size" data-ued-sel=".ptab" data-ued-unit="px"><span class="ued-val"></span></div>
-        <div class="ued-row"><label>Nav Label Size</label><input type="range" min="6" max="14" step="0.5" data-ued-prop="font-size" data-ued-sel=".nav-label" data-ued-unit="px"><span class="ued-val"></span></div>
-        <div class="ued-row"><label>Layer Name Size</label><input type="range" min="8" max="16" step="0.5" data-ued-prop="font-size" data-ued-sel=".layer-name" data-ued-unit="px"><span class="ued-val"></span></div>
-        <div class="ued-row"><label>Button Font Size</label><input type="range" min="8" max="16" step="0.5" data-ued-prop="font-size" data-ued-sel=".tbtn,.style-btn,.add-text-btn" data-ued-unit="px"><span class="ued-val"></span></div>
-      </div>
-
-      <div class="ued-section">
-        <div class="ued-section-title">Spacing &amp; Density</div>
-        <div class="ued-row"><label>Panel Content Padding</label><input type="range" min="4" max="28" step="1" data-ued-prop="padding" data-ued-sel=".pcontent" data-ued-unit="px"><span class="ued-val"></span></div>
-        <div class="ued-row"><label>Prop Group Gap</label><input type="range" min="2" max="20" step="1" data-ued-prop="margin-bottom" data-ued-sel=".pgrp" data-ued-unit="px"><span class="ued-val"></span></div>
-        <div class="ued-row"><label>Prop Row Gap</label><input type="range" min="1" max="14" step="1" data-ued-prop="margin-bottom" data-ued-sel=".prow" data-ued-unit="px"><span class="ued-val"></span></div>
-        <div class="ued-row"><label>Button Height</label><input type="range" min="22" max="52" step="1" data-ued-prop="min-height" data-ued-sel=".tbtn" data-ued-unit="px"><span class="ued-val"></span></div>
-        <div class="ued-row"><label>Layer Item Height</label><input type="range" min="28" max="72" step="2" data-ued-prop="min-height" data-ued-sel=".layer-item" data-ued-unit="px"><span class="ued-val"></span></div>
-      </div>
-
-      <div class="ued-section">
-        <div class="ued-section-title">Borders &amp; Radius</div>
-        <div class="ued-row"><label>Panel Border Radius</label><input type="range" min="0" max="20" step="1" data-ued-prop="border-radius" data-ued-sel=".panel,.right-panel" data-ued-unit="px"><span class="ued-val"></span></div>
-        <div class="ued-row"><label>Button Border Radius</label><input type="range" min="0" max="16" step="1" data-ued-prop="border-radius" data-ued-sel=".tbtn,.style-btn,.add-text-btn" data-ued-unit="px"><span class="ued-val"></span></div>
-        <div class="ued-row"><label>Input Border Radius</label><input type="range" min="0" max="10" step="1" data-ued-prop="border-radius" data-ued-sel=".pinput,input[type='range']" data-ued-unit="px"><span class="ued-val"></span></div>
-      </div>
-
-      <div class="ued-section">
-        <div class="ued-section-title">Raw CSS Override</div>
-        <div style="font-size:10px;color:var(--text-muted);margin-bottom:6px">Any valid CSS injected into &lt;head&gt; on export.</div>
-        <textarea id="uedRawCSS" placeholder="/* e.g.: .ptab { text-transform: uppercase; } */" spellcheck="false"></textarea>
-      </div>
-
-    </div>
-  </div>
-</div>
-
-<style>
-#uiEditorOverlay{
-  position:fixed;inset:0;z-index:2000;
-  background:rgba(0,0,0,0.7);
-  display:flex;align-items:flex-start;justify-content:center;
-  overflow-y:auto;
-  padding:env(safe-area-inset-top,0) env(safe-area-inset-right,0) calc(env(safe-area-inset-bottom,0) + 60px) env(safe-area-inset-left,0);
-  -webkit-overflow-scrolling:touch;
-}
-#uiEditorPanel{
-  background:var(--surface);
-  border:1px solid var(--border2);
-  border-radius:10px;
-  width:min(600px,96vw);
-  margin:12px auto;
-  overflow:hidden;
-  box-shadow:0 8px 40px rgba(0,0,0,0.6);
-}
-#uiEditorHeader{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:12px 14px;
-  background:var(--surface2);
-  border-bottom:1px solid var(--border2);
-  position:sticky;top:0;z-index:10;
-}
-#uiEditorTitle{
-  font-size:13px;font-weight:600;color:var(--text);letter-spacing:0.05em;
-}
-#uiEditorCloseBtn{
-  background:none;border:none;color:var(--text-muted);font-size:18px;
-  cursor:pointer;padding:4px 8px;
-  -webkit-tap-highlight-color:transparent;
-}
-#uiEditorCloseBtn:hover{color:var(--text);}
-#uiEditorBody{
-  padding:0 0 16px 0;
-  overflow-y:auto;
-  max-height:calc(90vh - 60px);
-  -webkit-overflow-scrolling:touch;
-}
-.ued-section{
-  padding:12px 14px 6px;
-  border-bottom:1px solid var(--border);
-}
-.ued-section:last-child{border-bottom:none;}
-.ued-section-title{
-  font-size:9px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;
-  color:var(--accent);margin-bottom:10px;
-}
-.ued-row{
-  display:flex;align-items:center;gap:8px;
-  margin-bottom:8px;
-}
-.ued-row label{
-  font-size:10px;color:var(--text-muted);
-  width:140px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-}
-.ued-row input[type="range"]{
-  flex:1;min-width:0;
-}
-.ued-row input[type="color"]{
-  width:36px;height:28px;padding:2px;
-  border:1px solid var(--border2);border-radius:4px;
-  background:var(--surface2);cursor:pointer;flex-shrink:0;
-}
-.ued-val{
-  font-size:9px;color:var(--text-muted);
-  width:48px;text-align:right;flex-shrink:0;
-  font-family:'DM Mono',monospace;
-}
-.ued-font-row select{
-  flex:1;background:var(--surface2);color:var(--text);
-  border:1px solid var(--border2);border-radius:4px;
-  padding:5px 6px;font-size:11px;
-}
-#uedRawCSS{
-  width:100%;box-sizing:border-box;
-  min-height:120px;
-  background:var(--surface2);color:var(--text);
-  border:1px solid var(--border2);border-radius:4px;
-  padding:8px;font-size:11px;
-  font-family:'DM Mono','Courier New',monospace;
-  resize:vertical;
-}
-body.theme-sgi-irix #uiEditorPanel{background:#a59f80;border:1px solid #000;}
-body.theme-sgi-irix #uiEditorHeader{background:#b8b295;border-bottom:1px solid #000;}
-body.theme-sgi-irix .ued-section{border-bottom:1px solid #888;}
-body.theme-sgi-irix .ued-section-title{color:#a52a2a;}
-body.theme-sgi-irix .ued-font-row select,
-body.theme-sgi-irix #uedRawCSS{background:#d4cdb0;color:#000;border:1px solid #000;font-family:'Courier New',monospace;}
-</style>
-
-<script>
-// ── UI EDITOR ──────────────────────────────────────────────────────────────
-var _uedState = {};      // { cssVar|selector+prop : value }
-var _uedStyleEl = null;  // <style> we inject live
-
-function _uedGetStyleEl(){
-  if(!_uedStyleEl){
-    _uedStyleEl=document.createElement('style');
-    _uedStyleEl.id='ued-live-style';
-    document.head.appendChild(_uedStyleEl);
-  }
-  return _uedStyleEl;
-}
-
-// Flush _uedState to a live <style> block
-function _uedApply(){
-  var lines=[];
-  var varLines=[];
-  var propMap={}; // selector -> { prop: val }
-
-  Object.keys(_uedState).forEach(function(k){
-    var v=_uedState[k];
-    if(v===null||v===undefined||v==='')return;
-    if(k.startsWith('--')){
-      varLines.push('  '+k+':'+v+';');
-    } else {
-      // key format: "selector|||prop"
-      var parts=k.split('|||');
-      var sel=parts[0], prop=parts[1];
-      if(!propMap[sel])propMap[sel]={};
-      propMap[sel][prop]=v;
-    }
-  });
-
-  if(varLines.length) lines.push(':root{'+varLines.join('')+'}');
-
-  Object.keys(propMap).forEach(function(sel){
-    var props=propMap[sel];
-    var decls=Object.keys(props).map(function(p){return p+':'+props[p]+' !important;'}).join('');
-    lines.push(sel+'{'+decls+'}');
-  });
-
-  // Font family override
-  var ff=document.getElementById('uedFontFamily');
-  if(ff&&ff.value){
-    lines.push('body,body *{font-family:'+ff.value+' !important;}');
-  }
-
-  _uedGetStyleEl().textContent=lines.join('\n');
-}
-
-function _uedReadCurrentVar(varName){
-  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
-}
-
-function _uedReadCurrentProp(selector, prop){
-  var el=document.querySelector(selector.split(',')[0].trim());
-  if(!el)return null;
-  return getComputedStyle(el)[prop]||null;
-}
-
-function _parsePx(str){ return parseFloat(str)||0; }
-function _parseColor(str){
-  // Convert rgb()/rgba() to hex for color inputs
-  if(!str)return'#000000';
-  str=str.trim();
-  if(str.startsWith('#'))return str.length===4?'#'+str[1]+str[1]+str[2]+str[2]+str[3]+str[3]:str.substring(0,7);
-  var m=str.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-  if(!m)return'#000000';
-  return'#'+[m[1],m[2],m[3]].map(function(x){return('0'+parseInt(x).toString(16)).slice(-2);}).join('');
-}
-
-function openUIEditor(){
-  var overlay=document.getElementById('uiEditorOverlay');
-  overlay.style.display='flex';
-  _uedInitControls();
-}
-function closeUIEditor(){
-  document.getElementById('uiEditorOverlay').style.display='none';
-}
-
-function _uedInitControls(){
-  // CSS variable sliders
-  document.querySelectorAll('#uiEditorBody input[data-ued-var]').forEach(function(inp){
-    var v=inp.dataset.uedVar;
-    var unit=inp.dataset.uedUnit;
-    var cur=_uedReadCurrentVar(v);
-    var num=parseFloat(cur)||parseFloat(inp.min)||0;
-    inp.value=num;
-    var valEl=inp.nextElementSibling;
-    if(valEl)valEl.textContent=Math.round(num)+unit;
-    inp.oninput=function(){
-      _uedState[v]=this.value+unit;
-      if(valEl)valEl.textContent=Math.round(this.value)+unit;
-      _uedApply();
-    };
-  });
-
-  // Color inputs
-  document.querySelectorAll('#uiEditorBody input[type="color"][data-ued-var]').forEach(function(inp){
-    var v=inp.dataset.uedVar;
-    var cur=_parseColor(_uedReadCurrentVar(v));
-    inp.value=cur;
-    var valEl=inp.nextElementSibling;
-    if(valEl)valEl.textContent=cur;
-    inp.oninput=function(){
-      _uedState[v]=this.value;
-      if(valEl)valEl.textContent=this.value;
-      _uedApply();
-    };
-  });
-
-  // CSS property sliders (sel + prop)
-  document.querySelectorAll('#uiEditorBody input[data-ued-prop]').forEach(function(inp){
-    var sel=inp.dataset.uedSel;
-    var prop=inp.dataset.uedProp;
-    var unit=inp.dataset.uedUnit;
-    var cur=_uedReadCurrentProp(sel,prop);
-    var num=cur?_parsePx(cur):parseFloat(inp.min)||0;
-    inp.value=num;
-    var valEl=inp.nextElementSibling;
-    if(valEl)valEl.textContent=Math.round(num)+unit;
-    var k=sel+'|||'+prop;
-    inp.oninput=function(){
-      _uedState[k]=this.value+unit;
-      if(valEl)valEl.textContent=Math.round(this.value)+unit;
-      _uedApply();
-    };
-  });
-
-  // Font family
-  var ff=document.getElementById('uedFontFamily');
-  ff.onchange=function(){ _uedApply(); };
-}
-
-function uiEditorReset(){
-  _uedState={};
-  _uedGetStyleEl().textContent='';
-  document.getElementById('uedFontFamily').value='';
-  document.getElementById('uedRawCSS').value='';
-  _uedInitControls();
-  if(typeof showToast==='function')showToast('UI reset to defaults');
-}
-
-function uiEditorExport(){
-  // Build the override <style> block
-  var lines=[];
-  var varLines=[];
-  var propMap={};
-
-  Object.keys(_uedState).forEach(function(k){
-    var v=_uedState[k];
-    if(v===null||v===undefined||v==='')return;
-    if(k.startsWith('--')){
-      varLines.push('  '+k+':'+v+';');
-    } else {
-      var parts=k.split('|||');
-      var sel=parts[0],prop=parts[1];
-      if(!propMap[sel])propMap[sel]={};
-      propMap[sel][prop]=v;
-    }
-  });
-
-  if(varLines.length) lines.push(':root{\n'+varLines.join('\n')+'\n}');
-
-  Object.keys(propMap).forEach(function(sel){
-    var props=propMap[sel];
-    var decls=Object.keys(props).map(function(p){return '  '+p+':'+props[p]+' !important;';}).join('\n');
-    lines.push(sel+' {\n'+decls+'\n}');
-  });
-
-  var ff=document.getElementById('uedFontFamily');
-  if(ff&&ff.value){
-    lines.push('body, body * { font-family:'+ff.value+' !important; }');
-  }
-
-  var raw=document.getElementById('uedRawCSS').value.trim();
-  if(raw) lines.push('\n/* — Raw CSS override — */\n'+raw);
-
-  if(!lines.length){
-    if(typeof showToast==='function')showToast('No changes to save');
-    return;
-  }
-
-  var overrideBlock='<!-- UI-EDITOR-OVERRIDES-START -->\n<style id="ui-editor-overrides">\n'+lines.join('\n\n')+'\n</style>\n<!-- UI-EDITOR-OVERRIDES-END -->';
-
-  // Fetch the current index.html, inject/replace the override block, download
-  fetch('index.html?_='+Date.now())
-    .then(function(r){return r.text();})
-    .then(function(html){
-      // Remove any previous UI-EDITOR-OVERRIDES block
-      html=html.replace(/<!-- UI-EDITOR-OVERRIDES-START -->[\s\S]*?<!-- UI-EDITOR-OVERRIDES-END -->\n?/,'');
-      // Inject before </head>
-      html=html.replace('</head>', overrideBlock+'\n</head>');
-      var blob=new Blob([html],{type:'text/html'});
-      var a=document.createElement('a');
-      a.href=URL.createObjectURL(blob);
-      a.download='index.html';
-      document.body.appendChild(a);a.click();
-      setTimeout(function(){URL.revokeObjectURL(a.href);document.body.removeChild(a);},2000);
-      if(typeof showToast==='function')showToast('index.html saved — replace your deployed file');
-    })
-    .catch(function(){
-      if(typeof showToast==='function')showToast('Could not fetch index.html to patch');
-    });
-}
 </script>
+
 </body>
 </html>
