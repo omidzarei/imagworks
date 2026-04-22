@@ -6420,44 +6420,235 @@ function clearBgGraphic() {
 
 <script>
 // ═══════════════════════════════════════════════════════════════
-// SGI IRIX Scale Widget + Canvas long-press swipe
+// SGI IRIX Scale — Canvas Graphic Wheel + Canvas Long-Press Swipe
+//
+// WHEEL (right-edge vertical strip):
+//   • Starts hidden (collapsed). Tap button to reveal/hide.
+//   • Drag up/down on the trough to scroll CANVAS_GRAPHICS alpha.
+//
+// CANVAS LONG-PRESS SWIPE (portrait iPhone only):
+//   • Hard press-and-hold (600ms) on the *empty* canvas area
+//     while the bg graphic layer is locked → activates swipe mode.
+//   • While active, horizontal swipe anywhere on canvas scrolls graphics.
+//   • Release finger to exit swipe mode.
+//
+// LABEL: shared SGI-styled chip below the canvas, above the toolbar.
+//   Shows the current graphic name whenever either control is active.
 // ═══════════════════════════════════════════════════════════════
 (function(){
   'use strict';
 
-  var SLAT_H      = 10;
-  var PX_PER_STEP = 22;   // px of drag per one item step — consistent, no dead zones
-  var LONG_MS     = 500;  // ms hold before canvas swipe mode activates
-  var MOVE_CANCEL = 10;
+  // ── Constants ────────────────────────────────────────────────
+  var SLAT_H      = 10;   // px: slat height + gap (tighter = snappier visual)
+  var DRAG_PER    = 9;    // px finger travel per one step (lower = more sensitive)
+  var LONG_MS     = 600;  // ms hold before swipe mode activates
+  var MOVE_CANCEL = 8;    // px movement cancels the long-press timer
 
+  // ── State ─────────────────────────────────────────────────────
   var sortedGraphics = [];
   var currentIdx     = 0;
-  var collapsed      = true;
+  var collapsed      = true;   // wheel starts hidden
+
+  // Elements (resolved in boot)
   var scaleEl, btnEl, trackEl, ticksEl, labelEl;
 
-  var fontList = [];
-  var fontIdx  = 0;
-
-  var _accumY = 0;
-  var _accumX = 0;
-  var _wActive = false;
-  var _wRestoreTimer = null;
-  var _wLastY = 0;
-
-  var _lpTimer   = null;
-  var _lpStartX  = 0;
-  var _lpStartY  = 0;
-  var _swipeMode = 'off';
-  var _swLastX   = 0;
-  var _swLastY   = 0;
-  var _swAccumX  = 0;
-  var _swAccumY  = 0;
-
-  // ── Build lists ───────────────────────────────────────────────
+  // ── Build sorted list ─────────────────────────────────────────
   function buildSortedList(){
     if(typeof CANVAS_GRAPHICS === 'undefined') return [];
-    return CANVAS_GRAPHICS.slice().sort(function(a,b){ return a.name.localeCompare(b.name); });
+    return CANVAS_GRAPHICS.slice().sort(function(a,b){
+      return a.name.localeCompare(b.name);
+    });
   }
+
+  // ── Render slats — context-aware: font mode when text selected ─
+  function renderTicks(){
+    if(!ticksEl || !trackEl) return;
+    ticksEl.innerHTML = '';
+
+    var inFontMode = !!getSelectedTextLayer();
+    var activeIdx  = inFontMode ? fontIdx         : currentIdx;
+    var listLen    = inFontMode ? fontList.length  : sortedGraphics.length;
+    if(!listLen) return;
+
+    var trackH  = trackEl.clientHeight || 300;
+    var visible = Math.ceil(trackH / SLAT_H) + 6;
+    var half    = Math.floor(visible / 2);
+    var start   = activeIdx - half;
+
+    for(var i = 0; i < visible; i++){
+      var di  = start + i;
+      var div = document.createElement('div');
+      div.className = 'irix-tick';
+      if(((di % 5) + 5) % 5 === 0) div.classList.add('irix-tick-major');
+      if(di === activeIdx)           div.classList.add('irix-tick-active');
+      ticksEl.appendChild(div);
+    }
+
+    var centreOff = (trackH / 2) - (half * SLAT_H) - (SLAT_H / 2);
+    ticksEl.style.transform = 'translateY(' + centreOff + 'px)';
+  }
+
+  // ── Apply graphic at index ────────────────────────────────────
+  function applyAtIndex(idx, forceLabelOnly){
+    if(!sortedGraphics.length) return;
+    idx = Math.max(0, Math.min(sortedGraphics.length - 1, idx));
+
+    // forceLabelOnly: just show label for current, don't re-apply
+    if(forceLabelOnly){
+      var g0 = sortedGraphics[currentIdx];
+      if(g0) showLabel(g0.name, true);
+      return;
+    }
+
+    if(idx === currentIdx) return;
+    currentIdx = idx;
+
+    var g       = sortedGraphics[idx];
+    var origIdx = -1;
+    for(var i = 0; i < CANVAS_GRAPHICS.length; i++){
+      if(CANVAS_GRAPHICS[i].src === g.src){ origIdx = i; break; }
+    }
+    if(origIdx < 0) return;
+
+    var sel = document.getElementById('bgGraphicSelect');
+    if(sel) sel.value = String(origIdx);
+    if(typeof applyBgGraphic === 'function') applyBgGraphic(origIdx);
+
+    renderTicks();
+    showLabel(g.name);
+    if(navigator.vibrate) navigator.vibrate(5);
+  }
+
+  // ── Shared label: shown below canvas, above toolbar ───────────
+  var _labelTimer;
+  function showLabel(name, persist){
+    if(!labelEl) return;
+    labelEl.textContent = name;
+    labelEl.style.display = 'block';
+    clearTimeout(_labelTimer);
+    if(!persist){
+      _labelTimer = setTimeout(function(){ labelEl.style.display = 'none'; }, 1800);
+    }
+  }
+  function hideLabel(){
+    clearTimeout(_labelTimer);
+    if(labelEl) labelEl.style.display = 'none';
+  }
+
+  // ── Toggle wheel open/closed ──────────────────────────────────
+  function toggleCollapsed(){
+    collapsed = !collapsed;
+    scaleEl.classList.toggle('irix-collapsed', collapsed);
+    btnEl.classList.toggle('is-open', !collapsed);
+    if(!collapsed){
+      // Sync font index in case selection changed while wheel was closed
+      if(getSelectedTextLayer()) syncFontIdx();
+      renderTicks();
+    }
+  }
+
+  // ── WHEEL: vertical drag — font mode if text selected, else graphic ──
+  var _wLastY      = 0;
+  var _wAccum      = 0;
+  var _wActive     = false;
+  var _wRestoreTimer = null;
+  var _wLastTime   = 0;   // timestamp of last touchmove, for velocity
+  var _wVelocity   = 0;   // px/ms, exponential smoothing
+
+  // Hide align bar + quick bar while wheel is active
+  function _wheelHideBars(){
+    clearTimeout(_wRestoreTimer);
+    var qb = document.getElementById('mobQuickBar');
+    var ab = document.getElementById('alignBar');
+    var at = document.getElementById('alignToggleBtn');
+    if(qb) qb.style.opacity = '0';
+    if(ab) ab.style.opacity = '0';
+    if(at) at.style.opacity = '0';
+  }
+  function _wheelRestoreBars(){
+    _wRestoreTimer = setTimeout(function(){
+      var qb = document.getElementById('mobQuickBar');
+      var ab = document.getElementById('alignBar');
+      var at = document.getElementById('alignToggleBtn');
+      if(qb) qb.style.opacity = '';
+      if(ab) ab.style.opacity = '';
+      if(at) at.style.opacity = '';
+    }, 420);
+  }
+
+  function onTrackTS(e){
+    _wLastY    = e.touches[0].clientY;
+    _wAccum    = 0;
+    _wActive   = true;
+    _wVelocity = 0;
+    _wLastTime = e.timeStamp;
+    _wheelHideBars();
+    if(getSelectedTextLayer()) syncFontIdx();
+    var inFontMode = !!getSelectedTextLayer();
+    if(inFontMode){
+      var f = fontList[fontIdx];
+      if(f) showLabel(f.name, true);
+    } else {
+      var g = sortedGraphics[currentIdx];
+      if(g) showLabel(g.name, true);
+    }
+  }
+  function onTrackTM(e){
+    if(!_wActive) return;
+    e.preventDefault();
+    var now  = e.timeStamp;
+    var dt   = Math.max(1, now - _wLastTime);
+    var dy   = _wLastY - e.touches[0].clientY;
+    _wLastY  = e.touches[0].clientY;
+    _wLastTime = now;
+
+    // Exponential velocity smoothing — fast swipes accelerate
+    var instV = dy / dt; // px/ms
+    _wVelocity = _wVelocity * 0.6 + instV * 0.4;
+
+    // Scale DRAG_PER down when moving fast (velocity > ~1px/ms = fast flick)
+    var speed    = Math.abs(_wVelocity);
+    var effective = speed > 1.2 ? DRAG_PER * 0.45    // very fast: nearly half threshold
+                  : speed > 0.5 ? DRAG_PER * 0.7     // moderate
+                  : DRAG_PER;                          // slow: normal
+
+    _wAccum += dy;
+    var steps = Math.trunc(_wAccum / effective);
+    if(!steps) return;
+    _wAccum -= steps * effective;
+    if(getSelectedTextLayer()){
+      applyFontAtIdx(fontIdx + steps);
+    } else {
+      applyAtIndex(currentIdx + steps);
+    }
+  }
+  function onTrackTE(){
+    _wActive   = false;
+    _wAccum    = 0;
+    _wVelocity = 0;
+    _wheelRestoreBars();
+    hideLabel();
+  }
+
+  // ── CANVAS LONG-PRESS SWIPE ───────────────────────────────────
+  // Two modes share the same long-press mechanism:
+  //   'graphic' — horizontal swipe cycles bg graphics (when locked bg layer exists)
+  //   'font'    — vertical swipe cycles fonts for the selected text layer
+  // ─────────────────────────────────────────────────────────────
+
+  var _lpTimer    = null;
+  var _lpStartX   = 0;
+  var _lpStartY   = 0;
+  // 'off' | 'graphic' | 'font'
+  var _swipeMode  = 'off';
+  var _swLastX    = 0;
+  var _swLastY    = 0;
+  var _swAccum    = 0;
+
+  // Font list — built from #fontSelect options at boot
+  var fontList    = [];   // [{value, name}]
+  var fontIdx     = 0;   // current index into fontList
+
   function buildFontList(){
     var sel = document.getElementById('fontSelect');
     if(!sel) return;
@@ -6468,20 +6659,29 @@ function clearBgGraphic() {
       fontList.push({ value: o.value, name: o.dataset.preview || o.textContent.trim() });
     }
   }
+
   function syncFontIdx(){
-    var tl = getSelectedTextLayer();
-    var curVal = tl ? (tl.font || '') : (document.getElementById('fontSelect') ? document.getElementById('fontSelect').value : '');
+    // Set fontIdx to match selected text layer's current font
+    var sel = document.getElementById('fontSelect');
+    var curVal = sel ? sel.value : '';
+    if(!curVal){
+      var tl = getSelectedTextLayer();
+      if(tl) curVal = tl.font || '';
+    }
     for(var i = 0; i < fontList.length; i++){
       if(fontList[i].value === curVal){ fontIdx = i; return; }
     }
     fontIdx = 0;
   }
+
   function getSelectedTextLayer(){
     if(typeof selectedIds === 'undefined' || typeof layers === 'undefined') return null;
     if(selectedIds.size !== 1) return null;
     var id = [...selectedIds][0];
-    return layers.find(function(x){ return x.id === id && x.type === 'text'; }) || null;
+    var l = layers.find(function(x){ return x.id === id && x.type === 'text'; });
+    return l || null;
   }
+
   function hasBgGraphicLocked(){
     if(typeof layers === 'undefined') return false;
     for(var i = 0; i < layers.length; i++){
@@ -6489,277 +6689,285 @@ function clearBgGraphic() {
     }
     return false;
   }
+
   function isPortraitPhone(){
     return window.innerWidth <= 430 && window.innerHeight > window.innerWidth;
   }
 
-  // ── Render ticks (rAF-throttled, reuses DOM nodes) ───────────
-  var _tickRafPending = false;
-  function renderTicks(){
-    if(_tickRafPending) return;
-    _tickRafPending = true;
-    requestAnimationFrame(_doRenderTicks);
-  }
-  function _doRenderTicks(){
-    _tickRafPending = false;
-    if(!ticksEl || !trackEl) return;
-    var inFontMode = !!getSelectedTextLayer();
-    var activeIdx  = inFontMode ? fontIdx : currentIdx;
-    var listLen    = inFontMode ? fontList.length : sortedGraphics.length;
-    if(!listLen) return;
-    var trackH  = trackEl.clientHeight || 300;
-    var visible = Math.ceil(trackH / SLAT_H) + 6;
-    var half    = Math.floor(visible / 2);
-    var start   = activeIdx - half;
-    var existing = ticksEl.children;
-    while(existing.length < visible){ var d=document.createElement('div'); d.className='irix-tick'; ticksEl.appendChild(d); }
-    while(existing.length > visible) ticksEl.removeChild(ticksEl.lastChild);
-    for(var i = 0; i < visible; i++){
-      var di = start + i;
-      var maj = (((di % 5) + 5) % 5 === 0);
-      var act = (di === activeIdx);
-      existing[i].className = 'irix-tick' + (maj ? ' irix-tick-major' : '') + (act ? ' irix-tick-active' : '');
-    }
-    var centreOff = (trackH / 2) - (half * SLAT_H) - (SLAT_H / 2);
-    ticksEl.style.transform = 'translateY(' + centreOff + 'px)';
-  }
-
-  // ── Label ─────────────────────────────────────────────────────
-  var _labelTimer;
-  function showLabel(name, persist){
-    if(!labelEl) return;
-    labelEl.textContent = name;
-    labelEl.style.display = 'block';
-    clearTimeout(_labelTimer);
-    if(!persist) _labelTimer = setTimeout(function(){ labelEl.style.display='none'; }, 1800);
-  }
-  function hideLabel(){ clearTimeout(_labelTimer); if(labelEl) labelEl.style.display='none'; }
-
-  // ── Apply graphic (debounced — defer I/O off touch event) ─────
-  var _applyGfxTimer = null;
-  function applyAtIndex(idx){
-    if(!sortedGraphics.length) return;
-    currentIdx = Math.max(0, Math.min(sortedGraphics.length - 1, idx));
-    renderTicks();
-    var g = sortedGraphics[currentIdx];
-    if(g) showLabel(g.name, true);
-    if(navigator.vibrate) navigator.vibrate(4);
-    clearTimeout(_applyGfxTimer);
-    _applyGfxTimer = setTimeout(function(){
-      var g2 = sortedGraphics[currentIdx];
-      if(!g2) return;
-      var origIdx = -1;
-      for(var i = 0; i < CANVAS_GRAPHICS.length; i++){
-        if(CANVAS_GRAPHICS[i].src === g2.src){ origIdx = i; break; }
-      }
-      if(origIdx < 0) return;
-      var sel = document.getElementById('bgGraphicSelect');
-      if(sel) sel.value = String(origIdx);
-      if(typeof applyBgGraphic === 'function') applyBgGraphic(origIdx);
-    }, 80);
-  }
-
-  // ── Apply font (immediate) ────────────────────────────────────
-  function applyFontAtIdx(idx){
-    if(!fontList.length) return;
-    fontIdx = Math.max(0, Math.min(fontList.length - 1, idx));
-    var f = fontList[fontIdx];
-    if(!f) return;
-    var sel = document.getElementById('fontSelect');
-    if(sel) sel.value = f.value;
-    if(typeof txtCfg !== 'undefined') txtCfg.font = f.value;
-    var tl = getSelectedTextLayer();
-    if(tl){ tl.font = f.value; if(typeof render === 'function') render(); }
-    if(typeof updateFontPreview === 'function') updateFontPreview();
-    if(typeof markActiveFontSample === 'function') markActiveFontSample();
-    renderTicks();
-    showLabel(f.name, true);
-    if(navigator.vibrate) navigator.vibrate(4);
-  }
-
-  // ── Step helpers — Math.round so both directions respond equally ─
-  function stepByDY(dy){
-    _accumY += dy;
-    var steps = Math.round(_accumY / PX_PER_STEP);
-    if(steps === 0) return;
-    _accumY -= steps * PX_PER_STEP;
-    if(getSelectedTextLayer()) applyFontAtIdx(fontIdx + steps);
-    else applyAtIndex(currentIdx + steps);
-  }
-  function stepByDX(dx){
-    _accumX += dx;
-    var steps = Math.round(_accumX / PX_PER_STEP);
-    if(steps === 0) return;
-    _accumX -= steps * PX_PER_STEP;
-    applyAtIndex(currentIdx + steps);
-  }
-
-  // ── Toolbar hide/restore ──────────────────────────────────────
-  function _wheelHideBars(){
-    clearTimeout(_wRestoreTimer);
-    var qb=document.getElementById('mobQuickBar'), ab=document.getElementById('alignBar'), at=document.getElementById('alignToggleBtn');
-    if(qb) qb.style.opacity='0'; if(ab) ab.style.opacity='0'; if(at) at.style.opacity='0';
-  }
-  function _wheelRestoreBars(){
-    _wRestoreTimer = setTimeout(function(){
-      var qb=document.getElementById('mobQuickBar'), ab=document.getElementById('alignBar'), at=document.getElementById('alignToggleBtn');
-      if(qb) qb.style.opacity=''; if(ab) ab.style.opacity=''; if(at) at.style.opacity='';
-    }, 350);
-  }
-
-  // ── Wheel touch handlers ──────────────────────────────────────
-  function onTrackTS(e){
-    e.stopPropagation();
-    _wLastY  = e.touches[0].clientY;
-    _accumY  = 0;
-    _wActive = true;
-    _wheelHideBars();
-    if(getSelectedTextLayer()) syncFontIdx();
-    var inFontMode = !!getSelectedTextLayer();
-    if(inFontMode){ var f=fontList[fontIdx]; if(f) showLabel(f.name, true); }
-    else { var g=sortedGraphics[currentIdx]; if(g) showLabel(g.name, true); }
-  }
-  function onTrackTM(e){
-    if(!_wActive) return;
-    e.preventDefault(); e.stopPropagation();
-    var y = e.touches[0].clientY;
-    var dy = _wLastY - y;
-    _wLastY = y;
-    stepByDY(dy);
-  }
-  function onTrackTE(e){
-    if(e) e.stopPropagation();
-    _wActive = false; _accumY = 0;
-    _wheelRestoreBars(); hideLabel();
-  }
-
-  // ── Toggle wheel ──────────────────────────────────────────────
-  function toggleCollapsed(){
-    collapsed = !collapsed;
-    scaleEl.classList.toggle('irix-collapsed', collapsed);
-    btnEl.classList.toggle('is-open', !collapsed);
-    if(!collapsed){ if(getSelectedTextLayer()) syncFontIdx(); _doRenderTicks(); }
-  }
-
-  // ── Canvas long-press swipe ───────────────────────────────────
+  // ── Activate ──────────────────────────────────────────────────
   function activateGraphicSwipe(startX){
-    _swipeMode='graphic'; _swLastX=startX; _swAccumX=0;
-    var co=document.getElementById('canvasOuter'); if(co) co.classList.add('irix-swipe-active');
-    var g=sortedGraphics[currentIdx]; if(g) showLabel(g.name, true);
-    if(navigator.vibrate) navigator.vibrate([15,8,15]);
+    _swipeMode = 'graphic';
+    _swLastX   = startX;
+    _swAccum   = 0;
+    var co = document.getElementById('canvasOuter');
+    if(co) co.classList.add('irix-swipe-active');
+    applyAtIndex(currentIdx, true);  // show label for current graphic
+    if(navigator.vibrate) navigator.vibrate([20, 10, 20]);
   }
+
   function activateFontSwipe(startY){
-    _swipeMode='font'; _swLastY=startY; _swAccumY=0; syncFontIdx();
-    var co=document.getElementById('canvasOuter'); if(co) co.classList.add('irix-swipe-active');
-    var f=fontList[fontIdx]; if(f) showLabel(f.name, true);
-    if(navigator.vibrate) navigator.vibrate([15,8,15]);
+    _swipeMode = 'font';
+    _swLastY   = startY;
+    _swAccum   = 0;
+    syncFontIdx();
+    var co = document.getElementById('canvasOuter');
+    if(co) co.classList.add('irix-swipe-active');
+    // Show current font name
+    var f = fontList[fontIdx];
+    if(f) showLabel(f.name, true);
+    if(navigator.vibrate) navigator.vibrate([20, 10, 20]);
   }
+
   function deactivateSwipe(){
-    _swipeMode='off'; _swAccumX=0; _swAccumY=0;
-    var co=document.getElementById('canvasOuter'); if(co) co.classList.remove('irix-swipe-active');
+    _swipeMode = 'off';
+    _swAccum   = 0;
+    var co = document.getElementById('canvasOuter');
+    if(co) co.classList.remove('irix-swipe-active');
     hideLabel();
   }
-  function cancelLongPress(){ clearTimeout(_lpTimer); _lpTimer=null; }
+
+  // ── Apply font at index ───────────────────────────────────────
+  function applyFontAtIdx(idx){
+    if(!fontList.length) return;
+    idx = Math.max(0, Math.min(fontList.length - 1, idx));
+    if(idx === fontIdx) return;
+    fontIdx = idx;
+    var f = fontList[idx];
+    if(!f) return;
+    if(typeof applyFontFromSample === 'function'){
+      applyFontFromSample(f.value);
+    } else {
+      var sel = document.getElementById('fontSelect');
+      if(sel) sel.value = f.value;
+      if(typeof txtCfg !== 'undefined') txtCfg.font = f.value;
+      var tl = getSelectedTextLayer();
+      if(tl) tl.font = f.value;
+      if(typeof updateFontPreview === 'function') updateFontPreview();
+    }
+    renderTicks();
+    showLabel(f.name, true); // persist while finger is down; onTrackTE hides it
+    if(navigator.vibrate) navigator.vibrate(5);
+  }
+
+  function cancelLongPress(){
+    clearTimeout(_lpTimer);
+    _lpTimer = null;
+  }
+
+  // ── Determine which mode to activate on long-press ───────────
   function resolveLongPressMode(clientX, clientY){
-    if(typeof layers==='undefined') return null;
-    var pos=(typeof c2c==='function')?c2c(clientX,clientY):null;
-    if(pos){ for(var i=layers.length-1;i>=0;i--){ var l=layers[i]; if(!l.locked&&typeof hitT==='function'&&hitT(pos,l)) return null; } }
-    if(getSelectedTextLayer()&&fontList.length) return 'font';
+    if(typeof layers === 'undefined') return null;
+
+    // Check if the press point hits any unlocked layer
+    var pos = (typeof c2c === 'function') ? c2c(clientX, clientY) : null;
+    var hitUnlocked = false;
+    if(pos){
+      for(var i = layers.length - 1; i >= 0; i--){
+        var l = layers[i];
+        if(!l.locked && typeof hitT === 'function' && hitT(pos, l)){
+          hitUnlocked = true; break;
+        }
+      }
+    }
+    if(hitUnlocked) return null;  // pressed on a real layer — don't steal
+
+    // Font mode: one text layer selected
+    if(getSelectedTextLayer() && fontList.length) return 'font';
+
+    // Graphic mode: locked bg graphic exists
     if(hasBgGraphicLocked()) return 'graphic';
+
     return null;
   }
+
+  // ── Patch canvas touch ────────────────────────────────────────
   function patchCanvasTouch(){
-    var area=document.getElementById('canvasArea'); if(!area) return;
-    area.addEventListener('touchstart',function(e){
+    var area = document.getElementById('canvasArea');
+    if(!area) return;
+
+    area.addEventListener('touchstart', function(e){
       if(!isPortraitPhone()) return;
-      if(e.touches.length!==1){ cancelLongPress(); return; }
-      var t=e.touches[0]; _lpStartX=t.clientX; _lpStartY=t.clientY;
+      if(e.touches.length !== 1){ cancelLongPress(); return; }
+
+      var t = e.touches[0];
+      _lpStartX = t.clientX;
+      _lpStartY = t.clientY;
+
       cancelLongPress();
-      _lpTimer=setTimeout(function(){
-        _lpTimer=null;
-        var mode=resolveLongPressMode(_lpStartX,_lpStartY);
-        if(mode==='graphic') activateGraphicSwipe(_lpStartX);
-        else if(mode==='font') activateFontSwipe(_lpStartY);
-      },LONG_MS);
-    },{passive:true,capture:true});
-    area.addEventListener('touchmove',function(e){
+      _lpTimer = setTimeout(function(){
+        _lpTimer = null;
+        var mode = resolveLongPressMode(_lpStartX, _lpStartY);
+        if(mode === 'graphic') activateGraphicSwipe(_lpStartX);
+        else if(mode === 'font') activateFontSwipe(_lpStartY);
+      }, LONG_MS);
+    }, {passive: true, capture: true});
+
+    area.addEventListener('touchmove', function(e){
       if(!isPortraitPhone()) return;
-      if(e.touches.length!==1){ cancelLongPress(); return; }
-      var t=e.touches[0];
-      if(_lpTimer&&Math.hypot(t.clientX-_lpStartX,t.clientY-_lpStartY)>MOVE_CANCEL){ cancelLongPress(); return; }
-      if(_swipeMode==='graphic'){
-        e.preventDefault();
-        var dx=_swLastX-t.clientX; _swLastX=t.clientX; _swAccumX+=dx;
-        var steps=Math.round(_swAccumX/PX_PER_STEP); if(steps){ _swAccumX-=steps*PX_PER_STEP; applyAtIndex(currentIdx+steps); }
-      } else if(_swipeMode==='font'){
-        e.preventDefault();
-        var dy=_swLastY-t.clientY; _swLastY=t.clientY; _swAccumY+=dy;
-        var fsteps=Math.round(_swAccumY/PX_PER_STEP); if(fsteps){ _swAccumY-=fsteps*PX_PER_STEP; applyFontAtIdx(fontIdx+fsteps); }
+      if(e.touches.length !== 1){ cancelLongPress(); return; }
+
+      var t  = e.touches[0];
+      var dx = t.clientX - _lpStartX;
+      var dy = t.clientY - _lpStartY;
+
+      // Cancel long-press if finger moved too much before it fires
+      if(_lpTimer && Math.hypot(dx, dy) > MOVE_CANCEL){
+        cancelLongPress();
+        return;
       }
-    },{passive:false,capture:true});
-    area.addEventListener('touchend',function(e){ cancelLongPress(); if(_swipeMode!=='off') deactivateSwipe(); },{passive:true,capture:true});
-    area.addEventListener('touchcancel',function(e){ cancelLongPress(); if(_swipeMode!=='off') deactivateSwipe(); },{passive:true,capture:true});
+
+      if(_swipeMode === 'graphic'){
+        e.preventDefault();
+        var deltaX  = _swLastX - t.clientX;  // right = next graphic
+        _swLastX    = t.clientX;
+        _swAccum   += deltaX;
+        var steps   = Math.trunc(_swAccum / DRAG_PER);
+        if(steps){
+          _swAccum -= steps * DRAG_PER;
+          applyAtIndex(currentIdx + steps);
+          var g = sortedGraphics[currentIdx];
+          if(g) showLabel(g.name, true);
+        }
+      } else if(_swipeMode === 'font'){
+        e.preventDefault();
+        var deltaY  = _swLastY - t.clientY;  // up = next font
+        _swLastY    = t.clientY;
+        _swAccum   += deltaY;
+        var fsteps  = Math.trunc(_swAccum / DRAG_PER);
+        if(fsteps){
+          _swAccum -= fsteps * DRAG_PER;
+          applyFontAtIdx(fontIdx + fsteps);
+        }
+      }
+    }, {passive: false, capture: true});
+
+    area.addEventListener('touchend', function(e){
+      cancelLongPress();
+      if(_swipeMode !== 'off') deactivateSwipe();
+    }, {passive: true, capture: true});
+
+    area.addEventListener('touchcancel', function(e){
+      cancelLongPress();
+      if(_swipeMode !== 'off') deactivateSwipe();
+    }, {passive: true, capture: true});
   }
 
   // ── Boot ──────────────────────────────────────────────────────
   function boot(){
-    scaleEl=document.getElementById('irixScale');
-    btnEl=document.getElementById('irixScaleButton');
-    trackEl=document.getElementById('irixScaleTrack');
-    ticksEl=document.getElementById('irixScaleTicks');
-    labelEl=document.getElementById('irixGraphicLabel');
+    scaleEl = document.getElementById('irixScale');
+    btnEl   = document.getElementById('irixScaleButton');
+    trackEl = document.getElementById('irixScaleTrack');
+    ticksEl = document.getElementById('irixScaleTicks');
+    labelEl = document.getElementById('irixGraphicLabel');
+
     if(!scaleEl) return;
-    sortedGraphics=buildSortedList(); buildFontList();
-    var sel=document.getElementById('bgGraphicSelect');
-    var selVal=sel?parseInt(sel.value):-1;
-    if(selVal>=0&&CANVAS_GRAPHICS[selVal]){
-      var src=CANVAS_GRAPHICS[selVal].src;
-      for(var i=0;i<sortedGraphics.length;i++){ if(sortedGraphics[i].src===src){ currentIdx=i; break; } }
+
+    sortedGraphics = buildSortedList();
+    buildFontList();
+
+    // Sync to dropdown
+    var sel    = document.getElementById('bgGraphicSelect');
+    var selVal = sel ? parseInt(sel.value) : -1;
+    if(selVal >= 0 && CANVAS_GRAPHICS[selVal]){
+      var src = CANVAS_GRAPHICS[selVal].src;
+      for(var i = 0; i < sortedGraphics.length; i++){
+        if(sortedGraphics[i].src === src){ currentIdx = i; break; }
+      }
     }
-    scaleEl.classList.add('irix-collapsed'); collapsed=true;
-    btnEl.addEventListener('click',function(e){ e.stopPropagation(); toggleCollapsed(); });
-    trackEl.addEventListener('touchstart',onTrackTS,{passive:true});
-    trackEl.addEventListener('touchmove',onTrackTM,{passive:false});
-    trackEl.addEventListener('touchend',onTrackTE,{passive:true});
-    trackEl.addEventListener('touchcancel',onTrackTE,{passive:true});
+
+    // Start collapsed (wheel hidden)
+    scaleEl.classList.add('irix-collapsed');
+    collapsed = true;
+
+    // Button toggles wheel
+    btnEl.addEventListener('click', function(e){
+      e.stopPropagation();
+      toggleCollapsed();
+    });
+
+    // Wheel track touch
+    trackEl.addEventListener('touchstart', onTrackTS, {passive: true});
+    trackEl.addEventListener('touchmove',  onTrackTM, {passive: false});
+    trackEl.addEventListener('touchend',   onTrackTE, {passive: true});
+    trackEl.addEventListener('touchcancel',onTrackTE, {passive: true});
+
+    // Canvas long-press swipe
     patchCanvasTouch();
+
+    // Keep in sync with dropdown
     if(sel){
-      sel.addEventListener('change',function(){
-        var v=parseInt(sel.value); if(isNaN(v)) return;
-        var src2=CANVAS_GRAPHICS[v]&&CANVAS_GRAPHICS[v].src;
-        for(var i=0;i<sortedGraphics.length;i++){ if(sortedGraphics[i].src===src2){ currentIdx=i; break; } }
+      sel.addEventListener('change', function(){
+        var v = parseInt(sel.value);
+        if(isNaN(v)) return;
+        var src = CANVAS_GRAPHICS[v] && CANVAS_GRAPHICS[v].src;
+        for(var i = 0; i < sortedGraphics.length; i++){
+          if(sortedGraphics[i].src === src){ currentIdx = i; break; }
+        }
         if(!collapsed) renderTicks();
       });
     }
-    // Logo double-tap reset
-    var _logoTapTimer=null;
-    var logoEl=document.querySelector('header .logo');
+
+    // ── Logo double-tap: full reset ───────────────────────────────
+    // Hides nudge/align bars, collapses quickbar + wheel, resets zoom/pan
+    var _logoTapTimer = null;
+    var logoEl = document.querySelector('header .logo');
     if(logoEl){
-      logoEl.style.cursor='pointer';
-      logoEl.addEventListener('click',function(){
-        if(_logoTapTimer){ clearTimeout(_logoTapTimer); _logoTapTimer=null; _doLogoReset(); }
-        else _logoTapTimer=setTimeout(function(){ _logoTapTimer=null; },380);
+      logoEl.style.cursor = 'pointer';
+      logoEl.addEventListener('click', function(){
+        if(_logoTapTimer){
+          // Second tap — double-tap confirmed
+          clearTimeout(_logoTapTimer);
+          _logoTapTimer = null;
+          _doLogoReset();
+        } else {
+          _logoTapTimer = setTimeout(function(){ _logoTapTimer = null; }, 380);
+        }
       });
     }
     function _doLogoReset(){
-      if(!collapsed){ collapsed=true; scaleEl.classList.add('irix-collapsed'); btnEl.classList.remove('is-open'); }
-      var ab=document.getElementById('alignBar'); if(ab) ab.classList.remove('mob-align-open');
-      var at=document.getElementById('alignToggleBtn'); if(at) at.classList.remove('active');
-      var qb=document.getElementById('mobQuickBar'); if(qb) qb.classList.remove('show');
+      // 1. Collapse the wheel
+      if(!collapsed){
+        collapsed = true;
+        scaleEl.classList.add('irix-collapsed');
+        btnEl.classList.remove('is-open');
+      }
+      // 2. Dismiss align bar
+      var ab = document.getElementById('alignBar');
+      if(ab) ab.classList.remove('mob-align-open');
+      var at = document.getElementById('alignToggleBtn');
+      if(at) at.classList.remove('active');
+      // 3. Collapse quick bar (nudge bar)
+      var qb = document.getElementById('mobQuickBar');
+      if(qb) qb.classList.remove('show');
       document.body.classList.remove('mob-has-sel','mob-multi-sel');
-      if(typeof zoomFit==='function') zoomFit();
+      // 4. Reset zoom + canvas position to fit
+      if(typeof zoomFit === 'function') zoomFit();
+      // 5. Restore any opacity we may have hidden
       clearTimeout(_wRestoreTimer);
-      if(qb) qb.style.opacity=''; if(ab) ab.style.opacity=''; if(at) at.style.opacity='';
+      if(qb) qb.style.opacity = '';
+      if(ab) ab.style.opacity = '';
+      if(at) at.style.opacity = '';
+      // 6. Hide label
       hideLabel();
-      if(typeof showToast==='function') showToast('View reset');
+      if(typeof showToast === 'function') showToast('View reset');
     }
-    window.addEventListener('resize',function(){ if(!collapsed) renderTicks(); });
-    var fsEl=document.getElementById('fontSelect');
-    if(fsEl) fsEl.addEventListener('change',function(){ buildFontList(); });
+
+    window.addEventListener('resize', function(){
+      if(!collapsed) renderTicks();
+    });
+    // Rebuild font list if user uploads a custom font
+    var fsEl = document.getElementById('fontSelect');
+    if(fsEl) fsEl.addEventListener('change', function(){ buildFontList(); });
+    // Rebuild font list if user uploads a custom font (fontSelect changes)
+    var fsEl = document.getElementById('fontSelect');
+    if(fsEl) fsEl.addEventListener('change', function(){ buildFontList(); });
   }
 
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot);
-  else setTimeout(boot,150);
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    setTimeout(boot, 150);
+  }
 })();
 </script>
 
