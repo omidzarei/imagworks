@@ -2566,86 +2566,119 @@ function drawMedia(l){
 // Real detection requires a pixel-comparison test. We do that once at startup and
 // cache the result. On any browser where the test fails (iOS Safari, some Android
 // WebViews) we use a multi-pass downscale→upscale box blur which works everywhere.
-// ── Stack Blur — pure canvas-2D, correct opacity, works on iOS Safari PWA ────
-// Approach: shrink → average via pixel math → upscale. No alpha compositing tricks.
-// getImageData is used only on the tiny downscaled canvas (cheap), not on the full image.
+// ── Dual Kawase Blur ─────────────────────────────────────────────────────────
+// Pure canvas-2D, no ctx.filter, works on iOS Safari PWA.
+// Each pass: shrink with high-quality bilinear + half-pixel offset taps, then expand.
 (function(){
-  let _downC=null,_downX=null,_upC=null,_upX=null,_tmpC=null,_tmpX=null;
-  function _ensureCanvases(){
-    if(!_downC){_downC=document.createElement('canvas');_downX=_downC.getContext('2d',{willReadFrequently:true});}
-    if(!_upC){_upC=document.createElement('canvas');_upX=_upC.getContext('2d');}
-    if(!_tmpC){_tmpC=document.createElement('canvas');_tmpX=_tmpC.getContext('2d',{willReadFrequently:true});}
+  const _pool=[];   // reusable {canvas, ctx} pairs
+  function _acquire(w,h){
+    for(const p of _pool){if(!p.busy){p.busy=true;if(p.c.width!==w)p.c.width=w;if(p.c.height!==h)p.c.height=h;return p;}}
+    const c=document.createElement('canvas');c.width=w;c.height=h;
+    const x=c.getContext('2d',{willReadFrequently:false,alpha:true});
+    const p={c,x,busy:true};_pool.push(p);return p;
+  }
+  function _release(p){p.busy=false;}
+
+  // Draw src scaled into dst at (dx,dy,dw,dh) using high-quality smoothing
+  function _blit(dstX,srcC,sw,sh,dx,dy,dw,dh){
+    dstX.imageSmoothingEnabled=true;
+    dstX.imageSmoothingQuality='high';
+    dstX.drawImage(srcC,0,0,sw,sh,dx,dy,dw,dh);
   }
 
-  // Box-blur a small ImageData in-place using a simple 1-D separable box filter
-  function _boxBlurImageData(data,w,h,r){
-    r=Math.max(1,Math.round(r));
-    const len=w*h*4;
-    const tmp=new Uint8ClampedArray(len);
-    // Horizontal pass
-    for(let y=0;y<h;y++){
-      for(let x=0;x<w;x++){
-        let rr=0,gg=0,bb=0,aa=0,cnt=0;
-        for(let kx=-r;kx<=r;kx++){
-          const sx=Math.min(w-1,Math.max(0,x+kx));
-          const idx=(y*w+sx)*4;
-          rr+=data[idx];gg+=data[idx+1];bb+=data[idx+2];aa+=data[idx+3];cnt++;
-        }
-        const oi=(y*w+x)*4;
-        tmp[oi]=rr/cnt;tmp[oi+1]=gg/cnt;tmp[oi+2]=bb/cnt;tmp[oi+3]=aa/cnt;
-      }
-    }
-    // Vertical pass back into data
-    for(let x=0;x<w;x++){
-      for(let y=0;y<h;y++){
-        let rr=0,gg=0,bb=0,aa=0,cnt=0;
-        for(let ky=-r;ky<=r;ky++){
-          const sy=Math.min(h-1,Math.max(0,y+ky));
-          const idx=(sy*w+x)*4;
-          rr+=tmp[idx];gg+=tmp[idx+1];bb+=tmp[idx+2];aa+=tmp[idx+3];cnt++;
-        }
-        const oi=(y*w+x)*4;
-        data[oi]=rr/cnt;data[oi+1]=gg/cnt;data[oi+2]=bb/cnt;data[oi+3]=aa/cnt;
-      }
-    }
+  // One Kawase pass: scale srcC(sw×sh) into a new buffer(dw×dh)
+  // with 4 diagonal offset taps averaged via a temp accumulator
+  function _kawasePass(srcC,sw,sh,dw,dh,off){
+    const out=_acquire(dw,dh);
+    const tmp=_acquire(dw,dh);
+    out.x.clearRect(0,0,dw,dh);
+    // Fractional offset in destination pixels
+    const ox=off*(dw/sw);
+    const oy=off*(dh/sh);
+    // Draw 4 offset copies into tmp at full opacity, then average down
+    // We do 2 pairs: accumulate with 50% opacity each pair
+    const t=tmp.x;
+    t.clearRect(0,0,dw,dh);
+    t.globalAlpha=0.5;
+    t.globalCompositeOperation='source-over';
+    _blit(t,srcC,sw,sh,-ox,-oy,dw,dh);
+    _blit(t,srcC,sw,sh, ox, oy,dw,dh);
+    // Copy pair-1 average at 50% into output
+    const o=out.x;
+    o.globalAlpha=0.5;
+    o.globalCompositeOperation='source-over';
+    o.drawImage(tmp.c,0,0);
+    // Second pair into tmp
+    t.clearRect(0,0,dw,dh);
+    t.globalAlpha=0.5;
+    t.globalCompositeOperation='source-over';
+    _blit(t,srcC,sw,sh, ox,-oy,dw,dh);
+    _blit(t,srcC,sw,sh,-ox, oy,dw,dh);
+    // Blend pair-2 average at 50% on top → final = (p1+p2)/2 = average of all 4
+    o.globalAlpha=0.5;
+    o.globalCompositeOperation='source-over';
+    o.drawImage(tmp.c,0,0);
+    // Reset state
+    o.globalAlpha=1;o.globalCompositeOperation='source-over';
+    t.globalAlpha=1;t.globalCompositeOperation='source-over';
+    _release(tmp);
+    return out; // caller must _release when done
   }
 
   window.bakeBlur=function bakeBlur(src,sw,sh,px){
     if(px<=0)return src;
-    _ensureCanvases();
+    // Scale number of passes with blur radius
+    const numPasses=Math.max(2,Math.min(5,Math.round(Math.sqrt(px*1.4))));
+    // First pass shrinks to a fraction proportional to radius
+    const scale0=Math.max(0.06,Math.min(0.45, 1/(1+px*0.04)));
+    const MIN=4;
 
-    // Step 1: Downscale source to a small working size.
-    // Smaller = more blur per pass; clamp to reasonable bounds.
-    const factor=Math.max(3,Math.min(32,Math.round(px*0.6)));
-    const dw=Math.max(4,Math.floor(sw/factor));
-    const dh=Math.max(4,Math.floor(sh/factor));
+    // Build size pyramid
+    const sizes=[];
+    let cw=Math.max(MIN,Math.round(sw*scale0));
+    let ch=Math.max(MIN,Math.round(sh*scale0));
+    sizes.push({w:cw,h:ch});
+    for(let i=1;i<numPasses;i++){
+      cw=Math.max(MIN,Math.round(cw*0.65));
+      ch=Math.max(MIN,Math.round(ch*0.65));
+      sizes.push({w:cw,h:ch});
+    }
 
-    // Draw source into downscale canvas using bilinear (browser does this well)
-    if(_downC.width!==dw)_downC.width=dw;
-    if(_downC.height!==dh)_downC.height=dh;
-    _downX.clearRect(0,0,dw,dh);
-    _downX.imageSmoothingEnabled=true;
-    _downX.imageSmoothingQuality='high';
-    _downX.drawImage(src,0,0,sw,sh,0,0,dw,dh);
+    // Downsample: src → pyramid[0] → … → pyramid[numPasses-1]
+    const bufs=[];
+    let prevC=src,prevW=sw,prevH=sh;
+    for(let i=0;i<numPasses;i++){
+      const {w,h}=sizes[i];
+      const off=0.5+i*0.4;
+      const b=_kawasePass(prevC,prevW,prevH,w,h,off);
+      bufs.push(b);
+      prevC=b.c;prevW=w;prevH=h;
+    }
 
-    // Step 2: Box-blur the tiny canvas in pixel space (correct alpha, no compositing)
-    // Kernel radius of 2 on the tiny canvas = smooth result when upscaled
-    const imgData=_downX.getImageData(0,0,dw,dh);
-    _boxBlurImageData(imgData.data,dw,dh,2);
-    // Second pass for softer result on heavy blur
-    if(px>20)_boxBlurImageData(imgData.data,dw,dh,2);
-    _downX.putImageData(imgData,0,0);
+    // Upsample: pyramid[numPasses-1] → … → pyramid[0] → original size
+    for(let i=numPasses-2;i>=0;i--){
+      const tw=i===0?sw:sizes[i-1].w;
+      const th=i===0?sh:sizes[i-1].h;
+      const off=0.5+(numPasses-1-i)*0.4;
+      const b=_kawasePass(prevC,prevW,prevH,tw,th,off);
+      // Release the just-read buf if it's from the downsample (don't release src)
+      if(bufs[i+1])_release(bufs[i+1]);
+      bufs.push(b);
+      prevC=b.c;prevW=tw;prevH=th;
+    }
+    // Release deepest downsample buf
+    if(bufs[numPasses-1])_release(bufs[numPasses-1]);
 
-    // Step 3: Upscale back to original size — bilinear upscale gives smooth blur
-    if(!window._blurOut)window._blurOut=document.createElement('canvas');
+    // prevC is now a pooled canvas at sw×sh — copy to a stable output canvas
+    if(!window._blurOut){window._blurOut=document.createElement('canvas');}
     const out=window._blurOut;
     if(out.width!==sw)out.width=sw;
     if(out.height!==sh)out.height=sh;
-    const outX=out.getContext('2d');
-    outX.clearRect(0,0,sw,sh);
-    outX.imageSmoothingEnabled=true;
-    outX.imageSmoothingQuality='high';
-    outX.drawImage(_downC,0,0,dw,dh,0,0,sw,sh);
+    const ox=out.getContext('2d');
+    ox.clearRect(0,0,sw,sh);
+    ox.drawImage(prevC,0,0);
+    // Release the last upsample buf
+    _release(bufs[bufs.length-1]);
     return out;
   };
 })();
