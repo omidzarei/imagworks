@@ -2414,22 +2414,16 @@ function render(ex=false){
     if(l.hidden&&!ex)continue;
     ctx.save();
     ctx.globalAlpha=(l.opacity??100)/100;
+    // Blend mode
     const gco=_blendModeGCO(l.blendMode);
     if(gco)ctx.globalCompositeOperation=gco;
     const cx=l.x+l.w/2,cy=l.y+l.h/2;
     ctx.translate(cx,cy);ctx.rotate((l.rotation||0)*Math.PI/180);ctx.translate(-l.w/2,-l.h/2);
-    if(l.type==='image'||l.type==='video') drawMedia(l);
-    else if(l.type==='text') drawTxt(l);
-    ctx.restore();
-    // After the bg graphic layer: tint it with bgColor so color picker mixes with the graphic
-    if(l._isBgGraphic && bgColor && bgColor!=='#000000'){
-      ctx.save();
-      ctx.globalAlpha=0.42;
-      ctx.globalCompositeOperation='source-over';
-      ctx.fillStyle=bgColor;
-      ctx.fillRect(0,0,CW,CH);
-      ctx.restore();
+    if(l.type==='image'||l.type==='video'){
+      drawMedia(l);
     }
+    else if(l.type==='text')drawTxt(l);
+    ctx.restore();
     if(!ex&&selectedIds.has(l.id))drawSel(l,selectedIds.size>1);
   }
 }
@@ -2849,46 +2843,45 @@ let _editingLayerId=null;
 let _editBlurGuard=false;
 let _caretVisible=true;
 let _caretInterval=null;
-let _caretPos=0;
-let _editLockedW=0; // box width locked during edit — no resize while typing
-let _editLockedH=0;
-
+let _caretPos=0; // character index in ta.value
 function beginTextEdit(l){
   if(!l||l.type!=='text')return;
   endTextEdit();
   _editingLayerId=l.id;
-  // Lock the box size for the duration of editing — prevents layout jumps on every keystroke
-  _editLockedW=l.w;
-  _editLockedH=l.h;
-
   const ta=document.getElementById('canvasTextEditor');
-  // Position off-screen (invisible, but focusable — iOS needs it in DOM and visible)
+
   ta.style.position='fixed';
   ta.style.left='-9999px';
   ta.style.top='50%';
   ta.style.width='1px';
   ta.style.height='1px';
   ta.style.opacity='0';
-  ta.style.fontSize='16px'; // prevents iOS zoom-on-focus
+  ta.style.fontSize='16px';
   ta.style.fontFamily='sans-serif';
   ta.style.transform='none';
   ta.style.display='block';
 
+  // Show textarea off-screen and focus SYNCHRONOUSLY here — must be
+  // called directly from a touchend handler for iOS to honour the keyboard
+  ta.style.display='block';
   ta.value=l.text||'';
   _caretPos=ta.value.length;
   l._editing=true;
 
+  // Synchronous focus — inside the touchend gesture stack
   ta.focus({preventScroll:true});
-  try{ta.setSelectionRange(_caretPos,_caretPos);}catch(e){}
+  const len=ta.value.length;
+  try{ta.setSelectionRange(len,len);}catch(e){}
+  _caretPos=len;
 
   ta.oninput=()=>{
     const lay=layers.find(x=>x.id===_editingLayerId);
     if(lay){
       lay.text=ta.value;
-      // Keep box size locked — do NOT resize while typing (prevents position jumps).
-      // The box will resize to fit on endTextEdit.
-      lay.w=_editLockedW;
-      lay.h=_editLockedH;
+      // Resize layer to fit new content — anchor top-left so position stays stable
+      const {w,h}=measureTextBox(lay.text,lay.font,lay.size,lay.bold,lay.italic);
+      lay.w=w; lay.h=h;
+      updatePropsPanel();
     }
     _caretPos=ta.selectionStart??ta.value.length;
     _caretVisible=true;
@@ -2909,11 +2902,12 @@ function beginTextEdit(l){
     if(ev.key==='Enter'&&ev.metaKey){ev.preventDefault();endTextEdit();}
   };
 
+  // Start SGI caret blink after focus
   _caretVisible=true;
   if(_caretInterval)clearInterval(_caretInterval);
   _caretInterval=setInterval(()=>{ _caretVisible=!_caretVisible; render&&render(); },530);
 
-  // Pan canvas to show the text layer — single shot, no retry loop
+  // Pan canvas to focus on the text being edited (mirrors props-tab focus).
   try{ textEditZoomIn(l); }catch(e){}
 }
 function endTextEdit(){
@@ -2922,17 +2916,7 @@ function endTextEdit(){
   const ta=document.getElementById('canvasTextEditor');
   if(!ta||ta.style.display==='none'){_editingLayerId=null;try{textEditZoomOut();}catch(e){}return;}
   const lay=_editingLayerId!=null?layers.find(x=>x.id===_editingLayerId):null;
-  if(lay){
-    lay.text=ta.value||lay.text;
-    delete lay._editing;
-    // Now resize the box to fit the final content, centred on the layer's current centre
-    const cx=lay.x+lay.w/2, cy=lay.y+lay.h/2;
-    const {w,h}=measureTextBox(lay.text,lay.font,lay.size,lay.bold,lay.italic);
-    lay.w=w; lay.h=h;
-    lay.x=Math.round(cx-w/2); lay.y=Math.round(cy-h/2);
-    updatePropsPanel();
-  }
-  _editLockedW=0; _editLockedH=0;
+  if(lay){lay.text=ta.value;delete lay._editing;}
   ta.style.display='none';ta.value='';ta.oninput=null;ta.onblur=null;ta.onkeydown=null;ta.onkeyup=null;
   _editingLayerId=null;
   try{ textEditZoomOut(); }catch(e){}
@@ -5169,6 +5153,7 @@ function _applyTextEditPan(){
 
 function textEditZoomIn(l){
   if(!l)return;
+  // If props zoom is also active, undo it first to avoid stacking transforms
   if(_propsZoomActive){
     _propsZoomActive=false;
     const o0=document.getElementById('canvasOuter');
@@ -5176,13 +5161,15 @@ function textEditZoomIn(l){
   }
   _textEditZoomActive=true;
   _textEditLayerId=l.id;
+  // Try a few times because iOS keyboard takes ~250-500ms to settle
   if(_textEditRetryTO)clearTimeout(_textEditRetryTO);
-  // Single pan after keyboard has settled (~350ms on iOS)
-  _textEditRetryTO=setTimeout(_applyTextEditPan, 380);
-  // Re-pan only if viewport resizes (keyboard appears/disappears)
+  const tries=[120,300,550,850];
+  tries.forEach(t=>setTimeout(_applyTextEditPan,t));
+  // Re-pan whenever the visual viewport changes (keyboard show/hide/resize)
   if(window.visualViewport && !_textEditVVHandler){
     _textEditVVHandler=()=>{ _applyTextEditPan(); };
     window.visualViewport.addEventListener('resize',_textEditVVHandler);
+    window.visualViewport.addEventListener('scroll',_textEditVVHandler);
   }
 }
 
@@ -5198,10 +5185,11 @@ function textEditZoomOut(){
   }
   const o=document.getElementById('canvasOuter');
   if(o){
-    o.style.transition='transform 0.25s ease';
-    o.style.transform='';
-    setTimeout(()=>{if(o)o.style.transition='';},280);
+    o.style.transition='transform 0.3s cubic-bezier(0.4,0,0.2,1)';
+    o.style.transform=_propsZoomActive?o.style.transform:'';
+    setTimeout(()=>{if(o)o.style.transition='';},350);
   }
+  setTimeout(()=>{ if(!_propsZoomActive&&!_textEditZoomActive) try{zoomFit();}catch(e){} },360);
 }
 
 // Patch Props tab (desktop ptab) and mobile navProps button onclick directly
