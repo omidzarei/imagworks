@@ -660,19 +660,6 @@ body.theme-sgi-irix .font-sample .fs-name{font-family:'ScreenBold','Chicago',mon
   cursor:pointer;font-family:'DM Mono',monospace;font-size:10px;font-weight:500;letter-spacing:0.05em;transition:all .15s;margin-top:4px;
   -webkit-tap-highlight-color:transparent;touch-action:manipulation;min-height:36px;}
 .del-btn-red{background:var(--accent2)!important;color:#fff!important;}
-/* Thin horizontal IRIX-style action button (used in Canvas tab presets) */
-.thin-irix-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
-  background:linear-gradient(180deg,#3a3a3a 0%,#1f1f1f 100%);color:var(--accent);
-  border:1px solid #000;border-top-color:#555;border-left-color:#555;
-  padding:6px 10px;border-radius:3px;cursor:pointer;
-  font-family:'DM Mono',monospace;font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;
-  transition:background .12s;margin-top:6px;-webkit-tap-highlight-color:transparent;touch-action:manipulation;min-height:30px;box-sizing:border-box;}
-.thin-irix-btn:hover{background:linear-gradient(180deg,#4a4a4a 0%,#2a2a2a 100%);}
-.thin-irix-btn:active{background:linear-gradient(180deg,#1f1f1f 0%,#3a3a3a 100%);border-top-color:#000;border-left-color:#000;border-bottom-color:#555;border-right-color:#555;}
-.thin-irix-btn svg{width:14px;height:14px;flex:0 0 auto;}
-.thin-irix-btn span{white-space:nowrap;}
-.thin-irix-btn.danger{color:#ff8a80;}
-.thin-irix-btn.danger:hover{background:linear-gradient(180deg,#5a2020 0%,#2a0f0f 100%);color:#ffb3b0;}
 /* Inline + button below textarea — adds text to canvas */
 .txt-add-inline-btn{
   display:block;
@@ -4349,15 +4336,7 @@ function clearAllPresets(){
   renderPresetsList();
   showToast('All presets cleared');
 }
-// Wrapped confirm for the thin Clear-All button (prevents accidental taps)
-function confirmClearAllPresets(){
-  // Two-step verification to avoid accidental clicks on touch devices
-  if(!confirm('Delete ALL saved presets?\n\nThis cannot be undone.'))return;
-  if(!confirm('Are you sure? This will permanently remove every saved preset.'))return;
-  try{localStorage.removeItem('omitsuPresets');}catch(e){}
-  renderPresetsList();
-  showToast('All presets cleared');
-}
+// Built-in factory presets (always available, not stored in localStorage)
 const BUILTIN_PRESETS = [
   {
     name:'Vx3',
@@ -5067,16 +5046,11 @@ window.addEventListener('load',()=>{
       <div class="pgrp">
         <div class="plabel">Presets</div>
         <div class="tip">Save current canvas layout as a reusable preset</div>
-        <button class="thin-irix-btn" onclick="savePreset()" type="button" title="Save current canvas as preset">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-          <span>Save as Preset</span>
-        </button>
+        <div style="display:flex;gap:6px;margin-bottom:8px">
+          <button class="add-text-btn" onclick="savePreset()" type="button" style="flex:1">[ Save as Preset ]</button>
+          <button class="add-text-btn" onclick="clearAllPresets()" type="button" style="flex:0 0 auto;opacity:0.6" title="Clear all presets to free storage">[ Clear All ]</button>
+        </div>
         <div id="presetsList"></div>
-        <div class="divider" style="margin-top:8px"></div>
-        <button class="thin-irix-btn danger" onclick="confirmClearAllPresets()" type="button" title="Delete all saved presets">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-          <span>Clear All Presets</span>
-        </button>
       </div>`;
     canvasTab.appendChild(div);
     renderPresetsList();
