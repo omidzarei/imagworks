@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Omitsu Studio</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#a59f80">
@@ -507,12 +507,8 @@ body.theme-warm{
 }
 
 *{margin:0;padding:0;box-sizing:border-box;}
-/* iPhone PWA edge-to-edge: white-bar hack — extend html so the bottom of the page
-   reaches the home-indicator area after iOS shifts content up by safe-area-inset-top. */
-html{min-height:calc(100% + env(safe-area-inset-top,0px));background:#000;}
 body{font-family:'DM Mono',monospace;background:var(--bg);color:var(--text);
-  height:100vh;height:-webkit-fill-available;height:100dvh;
-  display:flex;flex-direction:column;overflow:hidden;user-select:none;-webkit-user-select:none;
+  height:100dvh;display:flex;flex-direction:column;overflow:hidden;user-select:none;-webkit-user-select:none;
   -webkit-tap-highlight-color:transparent;transition:background .3s,color .3s;
   -webkit-touch-callout:none;overscroll-behavior:none;}
 /* Allow text entry/selection in form fields on iOS */
