@@ -1,7 +1,6 @@
 [
   {
-    "family": "Decterm",
-    "group": "Decterm",
+    "family": "decterm",
     "file": "Fonts/_decterm.ttf",
     "format": "truetype",
     "weight": 400,
@@ -9,188 +8,167 @@
     "label": "Decterm"
   },
   {
-    "family": "Articulat CF Bold",
-    "group": "Articulat CF",
+    "family": "Articulat CF",
     "file": "Fonts/ArticulatCF/ArticulatCF-Bold.otf",
     "format": "opentype",
     "weight": 700,
     "style": "normal",
-    "label": "Articulat CF Bold"
+    "label": "ArticulatCF Bold"
   },
   {
-    "family": "Articulat CF Bold Oblique",
-    "group": "Articulat CF",
+    "family": "Articulat CF",
     "file": "Fonts/ArticulatCF/ArticulatCF-BoldOblique.otf",
     "format": "opentype",
-    "weight": 400,
+    "weight": 700,
     "style": "italic",
-    "label": "Articulat CF Bold Oblique"
+    "label": "ArticulatCF BoldOblique"
   },
   {
-    "family": "Articulat CF Demi Bold",
-    "group": "Articulat CF",
+    "family": "Articulat CF",
     "file": "Fonts/ArticulatCF/ArticulatCF-DemiBold.otf",
     "format": "opentype",
     "weight": 600,
     "style": "normal",
-    "label": "Articulat CF Demi Bold"
+    "label": "ArticulatCF DemiBold"
   },
   {
-    "family": "Articulat CF Demi Bold Oblique",
-    "group": "Articulat CF",
+    "family": "Articulat CF",
     "file": "Fonts/ArticulatCF/ArticulatCF-DemiBoldOblique.otf",
     "format": "opentype",
     "weight": 600,
     "style": "italic",
-    "label": "Articulat CF Demi Bold Oblique"
+    "label": "ArticulatCF DemiBoldOblique"
   },
   {
-    "family": "Articulat CF Extra Bold",
-    "group": "Articulat CF",
+    "family": "Articulat CF",
     "file": "Fonts/ArticulatCF/ArticulatCF-ExtraBold.otf",
     "format": "opentype",
     "weight": 800,
     "style": "normal",
-    "label": "Articulat CF Extra Bold"
+    "label": "ArticulatCF ExtraBold"
   },
   {
-    "family": "Articulat CF Extra Bold Oblique",
-    "group": "Articulat CF",
+    "family": "Articulat CF",
     "file": "Fonts/ArticulatCF/ArticulatCF-ExtraBoldOblique.otf",
     "format": "opentype",
     "weight": 800,
     "style": "italic",
-    "label": "Articulat CF Extra Bold Oblique"
+    "label": "ArticulatCF ExtraBoldOblique"
   },
   {
-    "family": "Articulat CF Extra Light",
-    "group": "Articulat CF",
+    "family": "Articulat CF",
     "file": "Fonts/ArticulatCF/ArticulatCF-ExtraLight.otf",
     "format": "opentype",
     "weight": 200,
     "style": "normal",
-    "label": "Articulat CF Extra Light"
+    "label": "ArticulatCF ExtraLight"
   },
   {
-    "family": "Articulat CF Extra Light Oblique",
-    "group": "Articulat CF",
+    "family": "Articulat CF",
     "file": "Fonts/ArticulatCF/ArticulatCF-ExtraLightOblique.otf",
     "format": "opentype",
     "weight": 200,
     "style": "italic",
-    "label": "Articulat CF Extra Light Oblique"
+    "label": "ArticulatCF ExtraLightOblique"
   },
   {
-    "family": "Articulat CF Heavy",
-    "group": "Articulat CF",
+    "family": "Articulat CF",
     "file": "Fonts/ArticulatCF/ArticulatCF-Heavy.otf",
     "format": "opentype",
     "weight": 900,
     "style": "normal",
-    "label": "Articulat CF Heavy"
+    "label": "ArticulatCF Heavy"
   },
   {
-    "family": "Articulat CF Heavy Oblique",
-    "group": "Articulat CF",
+    "family": "Articulat CF",
     "file": "Fonts/ArticulatCF/ArticulatCF-HeavyOblique.otf",
     "format": "opentype",
-    "weight": 400,
+    "weight": 900,
     "style": "italic",
-    "label": "Articulat CF Heavy Oblique"
+    "label": "ArticulatCF HeavyOblique"
   },
   {
-    "family": "Articulat CF Light",
-    "group": "Articulat CF",
+    "family": "Articulat CF",
     "file": "Fonts/ArticulatCF/ArticulatCF-Light.otf",
     "format": "opentype",
     "weight": 300,
     "style": "normal",
-    "label": "Articulat CF Light"
+    "label": "ArticulatCF Light"
   },
   {
-    "family": "Articulat CF Light Oblique",
-    "group": "Articulat CF",
+    "family": "Articulat CF",
     "file": "Fonts/ArticulatCF/ArticulatCF-LightOblique.otf",
     "format": "opentype",
-    "weight": 400,
+    "weight": 300,
     "style": "italic",
-    "label": "Articulat CF Light Oblique"
+    "label": "ArticulatCF LightOblique"
   },
   {
-    "family": "Articulat CF Medium",
-    "group": "Articulat CF",
+    "family": "Articulat CF",
     "file": "Fonts/ArticulatCF/ArticulatCF-Medium.otf",
     "format": "opentype",
     "weight": 500,
     "style": "normal",
-    "label": "Articulat CF Medium"
+    "label": "ArticulatCF Medium"
   },
   {
-    "family": "Articulat CF Medium Oblique",
-    "group": "Articulat CF",
+    "family": "Articulat CF",
     "file": "Fonts/ArticulatCF/ArticulatCF-MediumOblique.otf",
     "format": "opentype",
-    "weight": 400,
+    "weight": 500,
     "style": "italic",
-    "label": "Articulat CF Medium Oblique"
+    "label": "ArticulatCF MediumOblique"
   },
   {
-    "family": "Articulat CF Normal",
-    "group": "Articulat CF",
+    "family": "Articulat CF",
     "file": "Fonts/ArticulatCF/ArticulatCF-Normal.otf",
     "format": "opentype",
     "weight": 400,
     "style": "normal",
-    "label": "Articulat CF Normal"
+    "label": "ArticulatCF Normal"
   },
   {
-    "family": "Articulat CF Normal Oblique",
-    "group": "Articulat CF",
+    "family": "Articulat CF",
     "file": "Fonts/ArticulatCF/ArticulatCF-NormalOblique.otf",
     "format": "opentype",
     "weight": 400,
     "style": "italic",
-    "label": "Articulat CF Normal Oblique"
+    "label": "ArticulatCF NormalOblique"
   },
   {
-    "family": "Articulat CF Regular",
-    "group": "Articulat CF",
+    "family": "Articulat CF",
     "file": "Fonts/ArticulatCF/ArticulatCF-Regular.otf",
     "format": "opentype",
     "weight": 400,
     "style": "normal",
-    "label": "Articulat CF Regular"
+    "label": "ArticulatCF Regular"
   },
   {
-    "family": "Articulat CF Regular Oblique",
-    "group": "Articulat CF",
+    "family": "Articulat CF",
     "file": "Fonts/ArticulatCF/ArticulatCF-RegularOblique.otf",
     "format": "opentype",
     "weight": 400,
     "style": "italic",
-    "label": "Articulat CF Regular Oblique"
+    "label": "ArticulatCF RegularOblique"
   },
   {
-    "family": "Articulat CF Thin",
-    "group": "Articulat CF",
+    "family": "Articulat CF",
     "file": "Fonts/ArticulatCF/ArticulatCF-Thin.otf",
     "format": "opentype",
     "weight": 100,
     "style": "normal",
-    "label": "Articulat CF Thin"
+    "label": "ArticulatCF Thin"
   },
   {
-    "family": "Articulat CF Thin Oblique",
-    "group": "Articulat CF",
+    "family": "Articulat CF",
     "file": "Fonts/ArticulatCF/ArticulatCF-ThinOblique.otf",
     "format": "opentype",
-    "weight": 400,
+    "weight": 100,
     "style": "italic",
-    "label": "Articulat CF Thin Oblique"
+    "label": "ArticulatCF ThinOblique"
   },
   {
     "family": "Benyoritha G334D",
-    "group": "Benyoritha",
     "file": "Fonts/Benyoritha-G334D.otf",
     "format": "opentype",
     "weight": 400,
@@ -198,26 +176,23 @@
     "label": "Benyoritha G334D"
   },
   {
-    "family": "Cinecav D Mono",
-    "group": "Cinecav D Mono",
+    "family": "cinecav D mono",
     "file": "Fonts/cinecavD mono.ttf",
     "format": "truetype",
     "weight": 400,
     "style": "normal",
-    "label": "Cinecav D Mono"
+    "label": "CinecavD Mono"
   },
   {
-    "family": "Fixedsys 62",
-    "group": "Fixedsys62",
+    "family": "Fixedsys62",
     "file": "Fonts/Fixedsys62.ttf",
     "format": "truetype",
     "weight": 400,
     "style": "normal",
-    "label": "Fixedsys 62"
+    "label": "Fixedsys62"
   },
   {
-    "family": "Lemur Bold",
-    "group": "Lemur",
+    "family": "Lemur",
     "file": "Fonts/Lemur/Lemur-Bold.otf",
     "format": "opentype",
     "weight": 700,
@@ -225,8 +200,7 @@
     "label": "Lemur Bold"
   },
   {
-    "family": "Lemur Light",
-    "group": "Lemur",
+    "family": "Lemur",
     "file": "Fonts/Lemur/Lemur-Light.otf",
     "format": "opentype",
     "weight": 300,
@@ -234,8 +208,7 @@
     "label": "Lemur Light"
   },
   {
-    "family": "Lemur Medium",
-    "group": "Lemur",
+    "family": "Lemur",
     "file": "Fonts/Lemur/Lemur-Medium.otf",
     "format": "opentype",
     "weight": 500,
@@ -243,8 +216,7 @@
     "label": "Lemur Medium"
   },
   {
-    "family": "Lemur Regular",
-    "group": "Lemur",
+    "family": "Lemur",
     "file": "Fonts/Lemur/Lemur-Regular.otf",
     "format": "opentype",
     "weight": 400,
@@ -252,17 +224,15 @@
     "label": "Lemur Regular"
   },
   {
-    "family": "Ligon Bold OZ",
-    "group": "Ligon Bold OZ",
+    "family": "Ligon OZ",
     "file": "Fonts/LigonBold_OZ.otf",
     "format": "opentype",
-    "weight": 400,
+    "weight": 700,
     "style": "normal",
-    "label": "Ligon Bold OZ"
+    "label": "LigonBold OZ"
   },
   {
     "family": "Optician Sans",
-    "group": "Optician Sans",
     "file": "Fonts/Optician Sans/Optician-Sans.otf",
     "format": "opentype",
     "weight": 400,
@@ -270,17 +240,15 @@
     "label": "Optician Sans"
   },
   {
-    "family": "Screen Bold",
-    "group": "Screen Bold",
+    "family": "Screen",
     "file": "Fonts/ScreenBold.ttf",
     "format": "truetype",
-    "weight": 400,
+    "weight": 700,
     "style": "normal",
-    "label": "Screen Bold"
+    "label": "ScreenBold"
   },
   {
     "family": "SGI Text",
-    "group": "SGI Text",
     "file": "Fonts/SGI-Text.otf",
     "format": "opentype",
     "weight": 400,
@@ -289,128 +257,130 @@
   },
   {
     "family": "Sudo Variable",
-    "group": "Sudo",
     "file": "Fonts/SudoVariable.ttf",
     "format": "truetype",
     "weight": 400,
     "style": "normal",
-    "label": "Sudo Variable"
+    "label": "SudoVariable"
   },
   {
-    "family": "W95F (Windows 95)",
-    "group": "W95F",
+    "family": "W95F",
+    "file": "Fonts/Win95/W95F.otf",
+    "format": "opentype",
+    "weight": 400,
+    "style": "normal",
+    "label": "W95F"
+  },
+  {
+    "family": "w95f",
+    "file": "Fonts/Win95/w95f.woff",
+    "format": "woff",
+    "weight": 400,
+    "style": "normal",
+    "label": "W95f"
+  },
+  {
+    "family": "w95f",
     "file": "Fonts/Win95/w95f.woff2",
     "format": "woff2",
     "weight": 400,
     "style": "normal",
-    "label": "W95F (Windows 95)"
+    "label": "W95f"
   },
   {
-    "family": "Wonderland Pro Black",
-    "group": "Wonderland Pro",
+    "family": "WONDERLANDPRO",
     "file": "Fonts/Wonderland Pro/WONDERLANDPRO-Black.ttf",
     "format": "truetype",
     "weight": 900,
     "style": "normal",
-    "label": "Wonderland Pro Black"
+    "label": "WONDERLANDPRO Black"
   },
   {
-    "family": "Wonderland Pro Black Italic",
-    "group": "Wonderland Pro",
+    "family": "WONDERLANDPRO",
     "file": "Fonts/Wonderland Pro/WONDERLANDPRO-BlackItalic.ttf",
     "format": "truetype",
-    "weight": 400,
+    "weight": 900,
     "style": "italic",
-    "label": "Wonderland Pro Black Italic"
+    "label": "WONDERLANDPRO BlackItalic"
   },
   {
-    "family": "Wonderland Pro Bold",
-    "group": "Wonderland Pro",
+    "family": "WONDERLANDPRO",
     "file": "Fonts/Wonderland Pro/WONDERLANDPRO-Bold.ttf",
     "format": "truetype",
     "weight": 700,
     "style": "normal",
-    "label": "Wonderland Pro Bold"
+    "label": "WONDERLANDPRO Bold"
   },
   {
-    "family": "Wonderland Pro Bold Italic",
-    "group": "Wonderland Pro",
+    "family": "WONDERLANDPRO",
     "file": "Fonts/Wonderland Pro/WONDERLANDPRO-BoldItalic.ttf",
     "format": "truetype",
-    "weight": 400,
+    "weight": 700,
     "style": "italic",
-    "label": "Wonderland Pro Bold Italic"
+    "label": "WONDERLANDPRO BoldItalic"
   },
   {
-    "family": "Wonderland Pro Extra Bold",
-    "group": "Wonderland Pro",
+    "family": "WONDERLANDPRO",
     "file": "Fonts/Wonderland Pro/WONDERLANDPRO-ExtraBold.ttf",
     "format": "truetype",
     "weight": 800,
     "style": "normal",
-    "label": "Wonderland Pro Extra Bold"
+    "label": "WONDERLANDPRO ExtraBold"
   },
   {
-    "family": "Wonderland Pro Extra Bold Italic",
-    "group": "Wonderland Pro",
+    "family": "WONDERLANDPRO",
     "file": "Fonts/Wonderland Pro/WONDERLANDPRO-ExtraBoldItalic.ttf",
     "format": "truetype",
     "weight": 800,
     "style": "italic",
-    "label": "Wonderland Pro Extra Bold Italic"
+    "label": "WONDERLANDPRO ExtraBoldItalic"
   },
   {
-    "family": "Wonderland Pro Medium",
-    "group": "Wonderland Pro",
+    "family": "WONDERLANDPRO",
     "file": "Fonts/Wonderland Pro/WONDERLANDPRO-Medium.ttf",
     "format": "truetype",
     "weight": 500,
     "style": "normal",
-    "label": "Wonderland Pro Medium"
+    "label": "WONDERLANDPRO Medium"
   },
   {
-    "family": "Wonderland Pro Medium Italic",
-    "group": "Wonderland Pro",
+    "family": "WONDERLANDPRO",
     "file": "Fonts/Wonderland Pro/WONDERLANDPRO-MediumItalic.ttf",
     "format": "truetype",
-    "weight": 400,
+    "weight": 500,
     "style": "italic",
-    "label": "Wonderland Pro Medium Italic"
+    "label": "WONDERLANDPRO MediumItalic"
   },
   {
-    "family": "Wonderland Pro Outline",
-    "group": "Wonderland Pro",
+    "family": "WONDERLANDPRO Outline",
     "file": "Fonts/Wonderland Pro/WONDERLANDPRO-Outline.ttf",
     "format": "truetype",
     "weight": 400,
     "style": "normal",
-    "label": "Wonderland Pro Outline"
+    "label": "WONDERLANDPRO Outline"
   },
   {
-    "family": "Wonderland Pro Regular",
-    "group": "Wonderland Pro",
+    "family": "WONDERLANDPRO",
     "file": "Fonts/Wonderland Pro/WONDERLANDPRO-Regular.ttf",
     "format": "truetype",
     "weight": 400,
     "style": "normal",
-    "label": "Wonderland Pro Regular"
+    "label": "WONDERLANDPRO Regular"
   },
   {
-    "family": "Wonderland Pro Semi Bold",
-    "group": "Wonderland Pro",
+    "family": "WONDERLANDPRO",
     "file": "Fonts/Wonderland Pro/WONDERLANDPRO-SemiBold.ttf",
     "format": "truetype",
     "weight": 600,
     "style": "normal",
-    "label": "Wonderland Pro Semi Bold"
+    "label": "WONDERLANDPRO SemiBold"
   },
   {
-    "family": "Wonderland Pro Semi Bold Italic",
-    "group": "Wonderland Pro",
+    "family": "WONDERLANDPRO",
     "file": "Fonts/Wonderland Pro/WONDERLANDPRO-SemiBoldItalic.ttf",
     "format": "truetype",
     "weight": 600,
     "style": "italic",
-    "label": "Wonderland Pro Semi Bold Italic"
+    "label": "WONDERLANDPRO SemiBoldItalic"
   }
 ]

@@ -1529,10 +1529,27 @@ body:not(.theme-sgi-irix) #canvasOuter.irix-swipe-active{
     src:url("assets/asset_ttf_001.ttf") format("truetype");
     font-display:swap;
   }
-  /* Local custom fonts are loaded dynamically from /Fonts/manifest.json by
-     loadCustomFonts() — each variant gets its own unique family name so
-     Canvas2D (which ignores font-weight when only family differs) can pick
-     the correct file. */
+  @font-face { font-family: "SGI-Text"; src: url("assets/asset_otf_001.otf") format("opentype"); font-weight: 400; font-style: normal; font-display: swap; }
+  @font-face { font-family: "Optician Sans"; src: url("assets/asset_otf_002.otf") format("opentype"); font-weight: 400; font-style: normal; font-display: swap; }
+  @font-face { font-family: "ArticulatCF"; src: url("assets/asset_otf_003.otf") format("opentype"); font-weight: 200; font-style: normal; font-display: swap; }
+  @font-face { font-family: "ArticulatCF"; src: url("assets/asset_otf_004.otf") format("opentype"); font-weight: 300; font-style: normal; font-display: swap; }
+  @font-face { font-family: "ArticulatCF"; src: url("assets/asset_otf_005.otf") format("opentype"); font-weight: 400; font-style: normal; font-display: swap; }
+  @font-face { font-family: "ArticulatCF"; src: url("assets/asset_otf_006.otf") format("opentype"); font-weight: 500; font-style: normal; font-display: swap; }
+  @font-face { font-family: "ArticulatCF"; src: url("assets/asset_otf_007.otf") format("opentype"); font-weight: 600; font-style: normal; font-display: swap; }
+  @font-face { font-family: "ArticulatCF"; src: url("assets/asset_otf_008.otf") format("opentype"); font-weight: 700; font-style: normal; font-display: swap; }
+  @font-face { font-family: "ArticulatCF"; src: url("assets/asset_otf_009.otf") format("opentype"); font-weight: 800; font-style: normal; font-display: swap; }
+  @font-face { font-family: "ArticulatCF"; src: url("assets/asset_otf_010.otf") format("opentype"); font-weight: 900; font-style: normal; font-display: swap; }
+  @font-face { font-family: "Lemur"; src: url("assets/asset_otf_011.otf") format("opentype"); font-weight: 300; font-style: normal; font-display: swap; }
+  @font-face { font-family: "Lemur"; src: url("assets/asset_otf_012.otf") format("opentype"); font-weight: 400; font-style: normal; font-display: swap; }
+  @font-face { font-family: "Lemur"; src: url("assets/asset_otf_013.otf") format("opentype"); font-weight: 500; font-style: normal; font-display: swap; }
+  @font-face { font-family: "Lemur"; src: url("assets/asset_otf_014.otf") format("opentype"); font-weight: 700; font-style: normal; font-display: swap; }
+  @font-face { font-family: "Wonderland Pro"; src: url("assets/asset_ttf_002.ttf") format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }
+  @font-face { font-family: "Wonderland Pro"; src: url("assets/asset_ttf_003.ttf") format("truetype"); font-weight: 500; font-style: normal; font-display: swap; }
+  @font-face { font-family: "Wonderland Pro"; src: url("assets/asset_ttf_004.ttf") format("truetype"); font-weight: 600; font-style: normal; font-display: swap; }
+  @font-face { font-family: "Wonderland Pro"; src: url("assets/asset_ttf_005.ttf") format("truetype"); font-weight: 700; font-style: normal; font-display: swap; }
+  @font-face { font-family: "Wonderland Pro"; src: url("assets/asset_ttf_006.ttf") format("truetype"); font-weight: 800; font-style: normal; font-display: swap; }
+  @font-face { font-family: "Wonderland Pro"; src: url("assets/asset_ttf_007.ttf") format("truetype"); font-weight: 900; font-style: normal; font-display: swap; }
+  @font-face { font-family: "Wonderland Pro Outline"; src: url("assets/asset_ttf_008.ttf") format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }
   #omitsu-splash{
     position:fixed; inset:0; z-index:99999;
     background:#a59f80;
@@ -1811,9 +1828,27 @@ body:not(.theme-sgi-irix) #canvasOuter.irix-swipe-active{
               <option value="'Space Mono', monospace" data-preview="Space Mono">Space Mono</option>
               <option value="'Major Mono Display', monospace" data-preview="Major Mono Display">Major Mono Display</option>
             </optgroup>
-            <!-- Local font optgroups are appended dynamically by loadCustomFonts()
-                 from /Fonts/manifest.json. -->
-
+            <optgroup label="Local — Articulate CF">
+              <option value="'ArticulatCF', sans-serif" data-preview="ArticulatCF">ArticulatCF Regular</option>
+              <option value="'ArticulatCF', sans-serif" style="font-weight:300" data-preview="ArticulatCF Light">ArticulatCF Light</option>
+              <option value="'ArticulatCF', sans-serif" style="font-weight:700" data-preview="ArticulatCF Bold">ArticulatCF Bold</option>
+              <option value="'ArticulatCF', sans-serif" style="font-weight:900" data-preview="ArticulatCF Heavy">ArticulatCF Heavy</option>
+            </optgroup>
+            <optgroup label="Local — Lemur">
+              <option value="'Lemur', sans-serif" data-preview="Lemur">Lemur Regular</option>
+              <option value="'Lemur', sans-serif" style="font-weight:300" data-preview="Lemur Light">Lemur Light</option>
+              <option value="'Lemur', sans-serif" style="font-weight:700" data-preview="Lemur Bold">Lemur Bold</option>
+            </optgroup>
+            <optgroup label="Local — Wonderland Pro">
+              <option value="'Wonderland Pro', cursive" data-preview="Wonderland Pro">Wonderland Pro</option>
+              <option value="'Wonderland Pro', cursive" style="font-weight:700" data-preview="Wonderland Pro Bold">Wonderland Pro Bold</option>
+              <option value="'Wonderland Pro', cursive" style="font-weight:900" data-preview="Wonderland Pro Black">Wonderland Pro Black</option>
+              <option value="'Wonderland Pro Outline', cursive" data-preview="Wonderland Pro Outline">Wonderland Pro Outline</option>
+            </optgroup>
+            <optgroup label="Local — Other">
+              <option value="'Optician Sans', sans-serif" data-preview="Optician Sans">Optician Sans</option>
+              <option value="'SGI-Text', monospace" data-preview="SGI-Text">SGI Text</option>
+            </optgroup>
           </select>
           <span class="font-select-arrow">v</span>
         </div>
@@ -6405,56 +6440,44 @@ function loadCustomFonts() {
       var sel = document.getElementById('fontSelect');
       if (!sel) return;
 
-      // Collect the (font-family) values already present in <select> so we don't dupe.
+      // Collect the families already present in <select>.
       var present = new Set();
       Array.prototype.forEach.call(sel.querySelectorAll('option'), function(opt){
         var v = (opt.value || '').replace(/['"]/g,'').split(',')[0].trim().toLowerCase();
         if (v) present.add(v);
       });
 
-      // Group manifest entries by their `group` field (falling back to family).
-      var byGroup = {};
+      // Group manifest entries by family.
+      var byFamily = {};
       list.forEach(function(f){
         if (!f.family) return;
-        var g = f.group || f.family;
-        (byGroup[g] = byGroup[g] || []).push(f);
+        (byFamily[f.family] = byFamily[f.family] || []).push(f);
       });
 
-      Object.keys(byGroup).sort().forEach(function(groupName){
-        var label = 'Local — ' + groupName;
-        var grp = sel.querySelector('optgroup[data-local="' + groupName + '"]');
-        if (!grp) {
-          grp = document.createElement('optgroup');
-          grp.label = label;
-          grp.setAttribute('data-local', groupName);
-          sel.appendChild(grp);
-        }
-        // One option per variant. Each variant has a UNIQUE family name so
-        // Canvas2D can resolve the correct font file regardless of weight.
-        byGroup[groupName].forEach(function(f){
-          if (present.has(f.family.toLowerCase())) return;
-          present.add(f.family.toLowerCase());
+      // Find or create the "Local — From /Fonts" optgroup.
+      var grp = sel.querySelector('optgroup[label="Local — From /Fonts"]');
+      if (!grp) {
+        grp = document.createElement('optgroup');
+        grp.label = 'Local — From /Fonts';
+        sel.appendChild(grp);
+      }
+
+      Object.keys(byFamily).sort().forEach(function(family){
+        if (present.has(family.toLowerCase())) return; // already exposed elsewhere
+        // Add one option per (weight,style) variant for nicer previews.
+        byFamily[family].forEach(function(f){
           var opt = document.createElement('option');
-          var generic = /mono|term|fixedsys|sgi|w95|sudo|cinecav/i.test(groupName) ? 'monospace'
-                       : /wonder|benyor|ligon|screen|outline/i.test(groupName) ? 'cursive'
-                       : 'sans-serif';
-          opt.value = "'" + f.family + "', " + generic;
+          var stack = "'" + family + "', sans-serif";
+          opt.value = stack;
           if (f.weight && f.weight !== 400) opt.style.fontWeight = f.weight;
           if (f.style === 'italic') opt.style.fontStyle = 'italic';
-          opt.dataset.preview = f.label || f.family;
-          opt.textContent = f.label || f.family;
+          opt.dataset.preview = f.label || family;
+          opt.textContent = f.label || family;
           grp.appendChild(opt);
         });
       });
 
-      // Force-load every font so canvas measurements are correct on first render.
-      if (document.fonts && document.fonts.load) {
-        list.forEach(function(f){
-          try { document.fonts.load('16px "' + f.family + '"'); } catch(_){}
-        });
-      }
-
-      // Refresh the keyboard-navigable / SGI-swipe font list, if the helper exists.
+      // Refresh the keyboard-navigable font list, if the helper exists.
       if (typeof buildFontList === 'function') { try { buildFontList(); } catch(_){} }
     })
     .catch(function(){ /* no manifest, no-op */ });
