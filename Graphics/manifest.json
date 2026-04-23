@@ -1,11 +1,115 @@
 [
   {
+    "name": "Antique",
+    "file": "Antique.png"
+  },
+  {
+    "name": "Blue Noise",
+    "file": "blue_noise.jpg"
+  },
+  {
+    "name": "Blue Patche",
+    "file": "blue_patche.jpg"
+  },
+  {
+    "name": "Blue YK",
+    "file": "blue_YK.jpg"
+  },
+  {
+    "name": "Carpaint Blue",
+    "file": "carpaint_blue.jpg"
+  },
+  {
+    "name": "Carpaint Green",
+    "file": "carpaint_Green.jpg"
+  },
+  {
+    "name": "Carpaint Orange",
+    "file": "carpaint_Orange.jpg"
+  },
+  {
+    "name": "Carpaint Pink",
+    "file": "carpaint_Pink.jpg"
+  },
+  {
+    "name": "Carpaint Yellow",
+    "file": "carpaint_Yellow.jpg"
+  },
+  {
+    "name": "CarpaintRed2",
+    "file": "carpaintRed2.jpg"
+  },
+  {
+    "name": "Cirrostratus",
+    "file": "Cirrostratus.png"
+  },
+  {
+    "name": "Dither H",
+    "file": "dither_h.jpg"
+  },
+  {
+    "name": "Dither V",
+    "file": "dither_v.jpg"
+  },
+  {
+    "name": "Escher Knot",
+    "file": "Escher Knot.png"
+  },
+  {
+    "name": "Fabric",
+    "file": "fabric.png"
+  },
+  {
+    "name": "Glow Light Bg",
+    "file": "glow_light_bg.png"
+  },
+  {
     "name": "Gradient 1",
     "file": "gradient_1.png"
   },
   {
     "name": "Gradient 2",
     "file": "gradient_2.png"
+  },
+  {
+    "name": "Gradient Blue",
+    "file": "gradient_blue.jpg"
+  },
+  {
+    "name": "Gradient Pink",
+    "file": "gradient_pink.png"
+  },
+  {
+    "name": "Granite A",
+    "file": "Granite_A.jpg"
+  },
+  {
+    "name": "Gray Med Paper Large",
+    "file": "gray_med_paper_large.jpg"
+  },
+  {
+    "name": "Green Leak Soft",
+    "file": "green_leak_soft.png"
+  },
+  {
+    "name": "Grunge",
+    "file": "Grunge.png"
+  },
+  {
+    "name": "Ice",
+    "file": "ice.jpg"
+  },
+  {
+    "name": "Light Ramp",
+    "file": "light_ramp.png"
+  },
+  {
+    "name": "Linen",
+    "file": "linen.png"
+  },
+  {
+    "name": "Nebula",
+    "file": "nebula.png"
   },
   {
     "name": "Noise 1",
@@ -20,7 +124,91 @@
     "file": "noise_3.png"
   },
   {
+    "name": "Noise Pink",
+    "file": "noise_pink.jpg"
+  },
+  {
+    "name": "Paper",
+    "file": "Paper.png"
+  },
+  {
+    "name": "Red Dotted",
+    "file": "red_dotted.png"
+  },
+  {
+    "name": "Rhodo",
+    "file": "Rhodo.png"
+  },
+  {
+    "name": "Scallop",
+    "file": "Scallop.png"
+  },
+  {
+    "name": "Scanline Glitch",
+    "file": "scanline_glitch.jpg"
+  },
+  {
+    "name": "Scatter Blue",
+    "file": "scatter blue.png"
+  },
+  {
+    "name": "Scatter Green",
+    "file": "scatter green.png"
+  },
+  {
     "name": "Spotlight 1",
     "file": "spotlight_1.png"
+  },
+  {
+    "name": "Stone Marble BarA",
+    "file": "stone_marble_barA.jpg"
+  },
+  {
+    "name": "Stone Marble BarE",
+    "file": "stone_marble_barE.jpg"
+  },
+  {
+    "name": "Storyboard Paper Red",
+    "file": "storyboard_paper_red.jpg"
+  },
+  {
+    "name": "Swirl",
+    "file": "swirl.png"
+  },
+  {
+    "name": "Tide Pool",
+    "file": "tide pool.png"
+  },
+  {
+    "name": "Verde Marble",
+    "file": "verde marble.png"
+  },
+  {
+    "name": "Vintage",
+    "file": "Vintage.png"
+  },
+  {
+    "name": "Watercolor Gradient Blue",
+    "file": "watercolor_gradient_blue.jpg"
+  },
+  {
+    "name": "Watercolor Gradient Green",
+    "file": "watercolor_gradient_green.jpg"
+  },
+  {
+    "name": "Watercolor Gradient Orange",
+    "file": "watercolor_gradient_orange.jpg"
+  },
+  {
+    "name": "Watercolor Gradient Purple",
+    "file": "watercolor_gradient_purple.jpg"
+  },
+  {
+    "name": "Watercolor Gradient Red",
+    "file": "watercolor_gradient_red.jpg"
+  },
+  {
+    "name": "Wicker",
+    "file": "Wicker.png"
   }
 ]

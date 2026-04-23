@@ -1,0 +1,386 @@
+[
+  {
+    "family": "decterm",
+    "file": "Fonts/_decterm.ttf",
+    "format": "truetype",
+    "weight": 400,
+    "style": "normal",
+    "label": "Decterm"
+  },
+  {
+    "family": "Articulat CF",
+    "file": "Fonts/ArticulatCF/ArticulatCF-Bold.otf",
+    "format": "opentype",
+    "weight": 700,
+    "style": "normal",
+    "label": "ArticulatCF Bold"
+  },
+  {
+    "family": "Articulat CF",
+    "file": "Fonts/ArticulatCF/ArticulatCF-BoldOblique.otf",
+    "format": "opentype",
+    "weight": 700,
+    "style": "italic",
+    "label": "ArticulatCF BoldOblique"
+  },
+  {
+    "family": "Articulat CF",
+    "file": "Fonts/ArticulatCF/ArticulatCF-DemiBold.otf",
+    "format": "opentype",
+    "weight": 600,
+    "style": "normal",
+    "label": "ArticulatCF DemiBold"
+  },
+  {
+    "family": "Articulat CF",
+    "file": "Fonts/ArticulatCF/ArticulatCF-DemiBoldOblique.otf",
+    "format": "opentype",
+    "weight": 600,
+    "style": "italic",
+    "label": "ArticulatCF DemiBoldOblique"
+  },
+  {
+    "family": "Articulat CF",
+    "file": "Fonts/ArticulatCF/ArticulatCF-ExtraBold.otf",
+    "format": "opentype",
+    "weight": 800,
+    "style": "normal",
+    "label": "ArticulatCF ExtraBold"
+  },
+  {
+    "family": "Articulat CF",
+    "file": "Fonts/ArticulatCF/ArticulatCF-ExtraBoldOblique.otf",
+    "format": "opentype",
+    "weight": 800,
+    "style": "italic",
+    "label": "ArticulatCF ExtraBoldOblique"
+  },
+  {
+    "family": "Articulat CF",
+    "file": "Fonts/ArticulatCF/ArticulatCF-ExtraLight.otf",
+    "format": "opentype",
+    "weight": 200,
+    "style": "normal",
+    "label": "ArticulatCF ExtraLight"
+  },
+  {
+    "family": "Articulat CF",
+    "file": "Fonts/ArticulatCF/ArticulatCF-ExtraLightOblique.otf",
+    "format": "opentype",
+    "weight": 200,
+    "style": "italic",
+    "label": "ArticulatCF ExtraLightOblique"
+  },
+  {
+    "family": "Articulat CF",
+    "file": "Fonts/ArticulatCF/ArticulatCF-Heavy.otf",
+    "format": "opentype",
+    "weight": 900,
+    "style": "normal",
+    "label": "ArticulatCF Heavy"
+  },
+  {
+    "family": "Articulat CF",
+    "file": "Fonts/ArticulatCF/ArticulatCF-HeavyOblique.otf",
+    "format": "opentype",
+    "weight": 900,
+    "style": "italic",
+    "label": "ArticulatCF HeavyOblique"
+  },
+  {
+    "family": "Articulat CF",
+    "file": "Fonts/ArticulatCF/ArticulatCF-Light.otf",
+    "format": "opentype",
+    "weight": 300,
+    "style": "normal",
+    "label": "ArticulatCF Light"
+  },
+  {
+    "family": "Articulat CF",
+    "file": "Fonts/ArticulatCF/ArticulatCF-LightOblique.otf",
+    "format": "opentype",
+    "weight": 300,
+    "style": "italic",
+    "label": "ArticulatCF LightOblique"
+  },
+  {
+    "family": "Articulat CF",
+    "file": "Fonts/ArticulatCF/ArticulatCF-Medium.otf",
+    "format": "opentype",
+    "weight": 500,
+    "style": "normal",
+    "label": "ArticulatCF Medium"
+  },
+  {
+    "family": "Articulat CF",
+    "file": "Fonts/ArticulatCF/ArticulatCF-MediumOblique.otf",
+    "format": "opentype",
+    "weight": 500,
+    "style": "italic",
+    "label": "ArticulatCF MediumOblique"
+  },
+  {
+    "family": "Articulat CF",
+    "file": "Fonts/ArticulatCF/ArticulatCF-Normal.otf",
+    "format": "opentype",
+    "weight": 400,
+    "style": "normal",
+    "label": "ArticulatCF Normal"
+  },
+  {
+    "family": "Articulat CF",
+    "file": "Fonts/ArticulatCF/ArticulatCF-NormalOblique.otf",
+    "format": "opentype",
+    "weight": 400,
+    "style": "italic",
+    "label": "ArticulatCF NormalOblique"
+  },
+  {
+    "family": "Articulat CF",
+    "file": "Fonts/ArticulatCF/ArticulatCF-Regular.otf",
+    "format": "opentype",
+    "weight": 400,
+    "style": "normal",
+    "label": "ArticulatCF Regular"
+  },
+  {
+    "family": "Articulat CF",
+    "file": "Fonts/ArticulatCF/ArticulatCF-RegularOblique.otf",
+    "format": "opentype",
+    "weight": 400,
+    "style": "italic",
+    "label": "ArticulatCF RegularOblique"
+  },
+  {
+    "family": "Articulat CF",
+    "file": "Fonts/ArticulatCF/ArticulatCF-Thin.otf",
+    "format": "opentype",
+    "weight": 100,
+    "style": "normal",
+    "label": "ArticulatCF Thin"
+  },
+  {
+    "family": "Articulat CF",
+    "file": "Fonts/ArticulatCF/ArticulatCF-ThinOblique.otf",
+    "format": "opentype",
+    "weight": 100,
+    "style": "italic",
+    "label": "ArticulatCF ThinOblique"
+  },
+  {
+    "family": "Benyoritha G334D",
+    "file": "Fonts/Benyoritha-G334D.otf",
+    "format": "opentype",
+    "weight": 400,
+    "style": "normal",
+    "label": "Benyoritha G334D"
+  },
+  {
+    "family": "cinecav D mono",
+    "file": "Fonts/cinecavD mono.ttf",
+    "format": "truetype",
+    "weight": 400,
+    "style": "normal",
+    "label": "CinecavD Mono"
+  },
+  {
+    "family": "Fixedsys62",
+    "file": "Fonts/Fixedsys62.ttf",
+    "format": "truetype",
+    "weight": 400,
+    "style": "normal",
+    "label": "Fixedsys62"
+  },
+  {
+    "family": "Lemur",
+    "file": "Fonts/Lemur/Lemur-Bold.otf",
+    "format": "opentype",
+    "weight": 700,
+    "style": "normal",
+    "label": "Lemur Bold"
+  },
+  {
+    "family": "Lemur",
+    "file": "Fonts/Lemur/Lemur-Light.otf",
+    "format": "opentype",
+    "weight": 300,
+    "style": "normal",
+    "label": "Lemur Light"
+  },
+  {
+    "family": "Lemur",
+    "file": "Fonts/Lemur/Lemur-Medium.otf",
+    "format": "opentype",
+    "weight": 500,
+    "style": "normal",
+    "label": "Lemur Medium"
+  },
+  {
+    "family": "Lemur",
+    "file": "Fonts/Lemur/Lemur-Regular.otf",
+    "format": "opentype",
+    "weight": 400,
+    "style": "normal",
+    "label": "Lemur Regular"
+  },
+  {
+    "family": "Ligon OZ",
+    "file": "Fonts/LigonBold_OZ.otf",
+    "format": "opentype",
+    "weight": 700,
+    "style": "normal",
+    "label": "LigonBold OZ"
+  },
+  {
+    "family": "Optician Sans",
+    "file": "Fonts/Optician Sans/Optician-Sans.otf",
+    "format": "opentype",
+    "weight": 400,
+    "style": "normal",
+    "label": "Optician Sans"
+  },
+  {
+    "family": "Screen",
+    "file": "Fonts/ScreenBold.ttf",
+    "format": "truetype",
+    "weight": 700,
+    "style": "normal",
+    "label": "ScreenBold"
+  },
+  {
+    "family": "SGI Text",
+    "file": "Fonts/SGI-Text.otf",
+    "format": "opentype",
+    "weight": 400,
+    "style": "normal",
+    "label": "SGI Text"
+  },
+  {
+    "family": "Sudo Variable",
+    "file": "Fonts/SudoVariable.ttf",
+    "format": "truetype",
+    "weight": 400,
+    "style": "normal",
+    "label": "SudoVariable"
+  },
+  {
+    "family": "W95F",
+    "file": "Fonts/Win95/W95F.otf",
+    "format": "opentype",
+    "weight": 400,
+    "style": "normal",
+    "label": "W95F"
+  },
+  {
+    "family": "w95f",
+    "file": "Fonts/Win95/w95f.woff",
+    "format": "woff",
+    "weight": 400,
+    "style": "normal",
+    "label": "W95f"
+  },
+  {
+    "family": "w95f",
+    "file": "Fonts/Win95/w95f.woff2",
+    "format": "woff2",
+    "weight": 400,
+    "style": "normal",
+    "label": "W95f"
+  },
+  {
+    "family": "WONDERLANDPRO",
+    "file": "Fonts/Wonderland Pro/WONDERLANDPRO-Black.ttf",
+    "format": "truetype",
+    "weight": 900,
+    "style": "normal",
+    "label": "WONDERLANDPRO Black"
+  },
+  {
+    "family": "WONDERLANDPRO",
+    "file": "Fonts/Wonderland Pro/WONDERLANDPRO-BlackItalic.ttf",
+    "format": "truetype",
+    "weight": 900,
+    "style": "italic",
+    "label": "WONDERLANDPRO BlackItalic"
+  },
+  {
+    "family": "WONDERLANDPRO",
+    "file": "Fonts/Wonderland Pro/WONDERLANDPRO-Bold.ttf",
+    "format": "truetype",
+    "weight": 700,
+    "style": "normal",
+    "label": "WONDERLANDPRO Bold"
+  },
+  {
+    "family": "WONDERLANDPRO",
+    "file": "Fonts/Wonderland Pro/WONDERLANDPRO-BoldItalic.ttf",
+    "format": "truetype",
+    "weight": 700,
+    "style": "italic",
+    "label": "WONDERLANDPRO BoldItalic"
+  },
+  {
+    "family": "WONDERLANDPRO",
+    "file": "Fonts/Wonderland Pro/WONDERLANDPRO-ExtraBold.ttf",
+    "format": "truetype",
+    "weight": 800,
+    "style": "normal",
+    "label": "WONDERLANDPRO ExtraBold"
+  },
+  {
+    "family": "WONDERLANDPRO",
+    "file": "Fonts/Wonderland Pro/WONDERLANDPRO-ExtraBoldItalic.ttf",
+    "format": "truetype",
+    "weight": 800,
+    "style": "italic",
+    "label": "WONDERLANDPRO ExtraBoldItalic"
+  },
+  {
+    "family": "WONDERLANDPRO",
+    "file": "Fonts/Wonderland Pro/WONDERLANDPRO-Medium.ttf",
+    "format": "truetype",
+    "weight": 500,
+    "style": "normal",
+    "label": "WONDERLANDPRO Medium"
+  },
+  {
+    "family": "WONDERLANDPRO",
+    "file": "Fonts/Wonderland Pro/WONDERLANDPRO-MediumItalic.ttf",
+    "format": "truetype",
+    "weight": 500,
+    "style": "italic",
+    "label": "WONDERLANDPRO MediumItalic"
+  },
+  {
+    "family": "WONDERLANDPRO Outline",
+    "file": "Fonts/Wonderland Pro/WONDERLANDPRO-Outline.ttf",
+    "format": "truetype",
+    "weight": 400,
+    "style": "normal",
+    "label": "WONDERLANDPRO Outline"
+  },
+  {
+    "family": "WONDERLANDPRO",
+    "file": "Fonts/Wonderland Pro/WONDERLANDPRO-Regular.ttf",
+    "format": "truetype",
+    "weight": 400,
+    "style": "normal",
+    "label": "WONDERLANDPRO Regular"
+  },
+  {
+    "family": "WONDERLANDPRO",
+    "file": "Fonts/Wonderland Pro/WONDERLANDPRO-SemiBold.ttf",
+    "format": "truetype",
+    "weight": 600,
+    "style": "normal",
+    "label": "WONDERLANDPRO SemiBold"
+  },
+  {
+    "family": "WONDERLANDPRO",
+    "file": "Fonts/Wonderland Pro/WONDERLANDPRO-SemiBoldItalic.ttf",
+    "format": "truetype",
+    "weight": 600,
+    "style": "italic",
+    "label": "WONDERLANDPRO SemiBoldItalic"
+  }
+]
