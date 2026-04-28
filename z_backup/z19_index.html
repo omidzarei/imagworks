@@ -2861,31 +2861,6 @@ function zoomFit(){
   applyZoom();
 }
 
-// ── Full view reset: clears all pan transforms, resets zoom to fit ──
-function resetView(){
-  // 1. Clear any props-focus or text-edit pan transform on canvasOuter
-  const o=document.getElementById('canvasOuter');
-  if(o){
-    o.style.transition='transform 0.25s cubic-bezier(0.4,0,0.2,1)';
-    o.style.transform='';
-    setTimeout(()=>{if(o)o.style.transition='';},280);
-  }
-  // 2. Reset both pan-state flags so their cleanup paths don't fight us
-  if(typeof _propsZoomActive!=='undefined') _propsZoomActive=false;
-  if(typeof _textEditZoomActive!=='undefined'){
-    _textEditZoomActive=false;
-    _textEditLayerId=null;
-    if(typeof _textEditRetryTO!=='undefined'&&_textEditRetryTO){clearTimeout(_textEditRetryTO);_textEditRetryTO=null;}
-    if(window.visualViewport&&typeof _textEditVVHandler!=='undefined'&&_textEditVVHandler){
-      window.visualViewport.removeEventListener('resize',_textEditVVHandler);
-      window.visualViewport.removeEventListener('scroll',_textEditVVHandler);
-      _textEditVVHandler=null;
-    }
-  }
-  // 3. Recalculate fit-zoom after the transform clears (brief delay so layout settles)
-  setTimeout(zoomFit, 30);
-}
-
 function c2c(cx,cy){const r=canvas.getBoundingClientRect();return{x:(cx-r.left)*(CW/r.width),y:(cy-r.top)*(CH/r.height)};}
 function c2o(cx,cy){const r=document.getElementById('canvasOuter').getBoundingClientRect();return{x:cx-r.left,y:cy-r.top};}
 
@@ -4164,41 +4139,7 @@ function updateFpsVis(){const f=document.getElementById('fpsChooser');if(f)f.sty
 function selectFmt(el){document.querySelectorAll('.eopt[data-fmt]').forEach(e=>e.classList.remove('selected'));el.classList.add('selected');exportFmt=el.dataset.fmt;updateFpsVis();}
 function selectFps(el){document.querySelectorAll('.eopt[data-fps]').forEach(e=>e.classList.remove('selected'));el.classList.add('selected');exportFps=parseInt(el.dataset.fps,10);}
 function doExport(){if(exportFmt==='png')exportImg('png');else if(exportFmt==='jpg')exportImg('jpg');else window.exportVid();}
-function exportImg(fmt){
-  const pv=new Set(selectedIds);
-  selectedIds.clear();
-
-  // Render into a dedicated full-resolution offscreen canvas.
-  // The main canvas is CSS-scaled and the fx cache bakes at display resolution,
-  // so we must render fresh at native CW×CH with zoom=1 to get pixel-perfect output.
-  const offscreen=document.createElement('canvas');
-  offscreen.width=CW;
-  offscreen.height=CH;
-  const offCtx=offscreen.getContext('2d');
-
-  // Temporarily swap globals so render() draws into the offscreen canvas at full res
-  const savedCtx=ctx;
-  const savedZoom=zoom;
-  ctx=offCtx;
-  zoom=1; // forces bakeMediaFx to work at native layer dimensions
-
-  render(true); // ex=true skips selection handles
-
-  // Restore
-  ctx=savedCtx;
-  zoom=savedZoom;
-  selectedIds=pv;
-
-  setTimeout(()=>{
-    const quality=fmt==='jpg'?0.97:1;
-    const mime=fmt==='jpg'?'image/jpeg':'image/png';
-    const a=document.createElement('a');
-    a.download=`omitsu-studio.${fmt}`;
-    a.href=offscreen.toDataURL(mime,quality);
-    a.click();
-    closeExport();
-  },0);
-}
+function exportImg(fmt){const pv=new Set(selectedIds);selectedIds.clear();render(true);setTimeout(()=>{const a=document.createElement('a');a.download=`omitsu-studio.${fmt}`;a.href=canvas.toDataURL(fmt==='jpg'?'image/jpeg':'image/png',fmt==='jpg'?0.95:1);a.click();selectedIds=pv;closeExport();},80);}
 
 async function _exportVidOrig(){
   const pw=document.getElementById('progWrap'),pb=document.getElementById('progBar'),pl=document.getElementById('progLbl');
@@ -4235,19 +4176,18 @@ async function _exportVidOrig(){
   await new Promise(r=>setTimeout(r,120));
   const TOT=Math.round(DURATION*FPS_OUT);
   rec.start();
+  // Wait one tick so the recorder is actually active before pushing frames.
   await new Promise(r=>setTimeout(r,60));
-  const savedZoomVid=zoom;
-  zoom=1; // bake video frames at native canvas resolution
   for(let f=0; f<TOT; f++){
     playhead=f/FPS_OUT;
     syncVideosToPlayhead();
+    // Allow at most ~50ms for the video element to seek to the new time.
     await new Promise(r=>setTimeout(r,18));
     render(true);
     reqFrame();
     pb.style.width=Math.round((f+1)/TOT*100)+'%';
     pl.textContent=`Encoding ${f+1}/${TOT} · ${FPS_OUT} FPS · ${isMP4?'MP4':'WebM'}`;
   }
-  zoom=savedZoomVid;
   // Flush: small wait so the last frame is captured, then stop.
   await new Promise(r=>setTimeout(r,120));
   try{rec.requestData&&rec.requestData();}catch(e){}
@@ -7058,12 +6998,6 @@ function clearBgGraphic() {
         if(_logoTapTimer){ clearTimeout(_logoTapTimer); _logoTapTimer=null; _doLogoReset(); }
         else _logoTapTimer=setTimeout(function(){ _logoTapTimer=null; },380);
       });
-      // Native dblclick for desktop (fires before the two-click timer on desktop)
-      logoEl.addEventListener('dblclick',function(e){
-        e.preventDefault();
-        clearTimeout(_logoTapTimer); _logoTapTimer=null;
-        _doLogoReset();
-      });
     }
     function _doLogoReset(){
       if(!collapsed){ collapsed=true; scaleEl.classList.add('irix-collapsed'); btnEl.classList.remove('is-open'); }
@@ -7071,7 +7005,7 @@ function clearBgGraphic() {
       var at=document.getElementById('alignToggleBtn'); if(at) at.classList.remove('active');
       var qb=document.getElementById('mobQuickBar'); if(qb) qb.classList.remove('show');
       document.body.classList.remove('mob-has-sel','mob-multi-sel');
-      if(typeof resetView==='function') resetView(); else if(typeof zoomFit==='function') zoomFit();
+      if(typeof zoomFit==='function') zoomFit();
       clearTimeout(_wRestoreTimer);
       if(qb) qb.style.opacity=''; if(ab) ab.style.opacity=''; if(at) at.style.opacity='';
       hideLabel();
