@@ -630,14 +630,6 @@ header{height:var(--header-h);background:var(--surface);border-bottom:1px solid 
 input[type="range"]{flex:1;-webkit-appearance:none;height:2px;background:var(--surface3);border-radius:2px;outline:none;}
 input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:11px;height:11px;border-radius:50%;background:var(--accent);cursor:pointer;}
 .rval{font-size:9px;color:var(--text-muted);min-width:30px;text-align:right;}
-/* ── Color section sliders: uniform label width, consistent value column ── */
-.color-row-fx{margin-bottom:7px;}
-.color-lbl{font-size:9px;color:var(--text-muted);width:28px;flex-shrink:0;text-align:right;}
-.color-rval{min-width:36px;text-align:right;}
-/* Hue slider: rainbow track so direction is obvious */
-#pHue{background:linear-gradient(to right,
-  hsl(0,80%,45%),hsl(60,80%,45%),hsl(120,80%,45%),
-  hsl(180,80%,45%),hsl(240,80%,45%),hsl(300,80%,45%),hsl(360,80%,45%));}
 .snap-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:10px;}
 .sopt{background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:5px 7px;
   font-size:8px;letter-spacing:0.05em;cursor:pointer;text-align:center;color:var(--text-muted);transition:all .15s;
@@ -998,15 +990,6 @@ body.theme-sgi-irix .layer-blend.is-active{color:#a52a2a;border-color:#a52a2a;ba
   .plabel{font-size:10px;letter-spacing:0.08em;}
   .pgrp{margin-bottom:18px;}
   .prow{gap:8px;margin-bottom:8px;}
-  /* Color section: taller track + bigger thumb for precise hue/exp/etc dragging */
-  .color-row-fx{margin-bottom:10px;}
-  .color-row-fx input[type="range"]{height:10px;border-radius:5px;}
-  .color-row-fx input[type="range"]::-webkit-slider-thumb{width:32px;height:32px;box-shadow:0 2px 10px rgba(0,0,0,0.5);}
-  .color-row-fx input[type="range"]::-moz-range-thumb{width:32px;height:32px;border-radius:50%;background:var(--accent);border:none;box-shadow:0 2px 10px rgba(0,0,0,0.5);}
-  .color-lbl{font-size:11px;width:32px;}
-  .color-rval{font-size:12px;min-width:40px;}
-  /* rainbow hue track stays visible on mobile */
-  #pHue{height:10px;border-radius:5px;}
 
   /* snaps/options */
   .sopt{padding:12px 8px;font-size:11px;border-radius:7px;min-height:44px;}
@@ -1991,13 +1974,12 @@ body:not(.theme-sgi-irix) #canvasOuter.irix-swipe-active{
           </div>
           <div class="pgrp">
             <div class="plabel">Color</div>
-            <div class="prow color-row-fx"><label class="color-lbl">Exp</label><input type="range" id="pExp" min="-100" max="100" value="0" oninput="document.getElementById('pExpVal').textContent=this.value;mediaFxToLayer()"><span class="rval color-rval" id="pExpVal">0</span></div>
-            <div class="prow color-row-fx"><label class="color-lbl">Con</label><input type="range" id="pCon" min="-100" max="100" value="0" oninput="document.getElementById('pConVal').textContent=this.value;mediaFxToLayer()"><span class="rval color-rval" id="pConVal">0</span></div>
-            <div class="prow color-row-fx"><label class="color-lbl">Sat</label><input type="range" id="pSat" min="-100" max="100" value="0" oninput="document.getElementById('pSatVal').textContent=this.value;mediaFxToLayer()"><span class="rval color-rval" id="pSatVal">0</span></div>
-            <div class="prow color-row-fx"><label class="color-lbl">Hue</label><input type="range" id="pHue" min="-180" max="180" value="0" oninput="document.getElementById('pHueVal').textContent=this.value+'°';mediaFxToLayer()"><span class="rval color-rval" id="pHueVal">0°</span></div>
-            <div class="prow color-row-fx"><label class="color-lbl">Blur</label><input type="range" id="pBlur" min="0" max="100" value="0" oninput="document.getElementById('pBlurVal').textContent=this.value;mediaFxToLayer()"><span class="rval color-rval" id="pBlurVal">0</span></div>
+            <div class="prow"><label style="width:auto;font-size:9px">Exposure</label><input type="range" id="pExp" min="-100" max="100" value="0" oninput="document.getElementById('pExpVal').textContent=this.value;mediaFxToLayer()"><span class="rval" id="pExpVal">0</span></div>
+            <div class="prow"><label style="width:auto;font-size:9px">Contrast</label><input type="range" id="pCon" min="-100" max="100" value="0" oninput="document.getElementById('pConVal').textContent=this.value;mediaFxToLayer()"><span class="rval" id="pConVal">0</span></div>
+            <div class="prow"><label style="width:auto;font-size:9px">Saturation</label><input type="range" id="pSat" min="-100" max="100" value="0" oninput="document.getElementById('pSatVal').textContent=this.value;mediaFxToLayer()"><span class="rval" id="pSatVal">0</span></div>
+            <div class="prow"><label style="width:auto;font-size:9px">Box Blur</label><input type="range" id="pBlur" min="0" max="100" value="0" oninput="document.getElementById('pBlurVal').textContent=this.value;mediaFxToLayer()"><span class="rval" id="pBlurVal">0</span></div>
             <div class="style-row" style="margin-top:6px">
-              <button class="style-btn" id="pInvBtn" type="button" onclick="toggleInvert()">Invert</button>
+              <button class="style-btn" id="pInvBtn" type="button" onclick="toggleInvert()">Invert Colors</button>
               <button class="style-btn" type="button" onclick="resetColor()">[ Reset ]</button>
             </div>
           </div>
@@ -2409,21 +2391,7 @@ function preloadFonts(){
   }
 }
 
-// ── Dirty-flag render loop ────────────────────────────────
-// Only redraws when something actually changed. Videos and
-// playing timeline mark themselves dirty automatically.
-let _dirty = true;
-let _rafId = null;
-function markDirty(){ _dirty = true; }
-function renderLoop(){
-  if(_dirty){
-    _dirty = false;
-    render();
-    // Keep repainting while video is playing (frames change every tick)
-    if(isPlaying) _dirty = true;
-  }
-  _rafId = requestAnimationFrame(renderLoop);
-}
+function renderLoop(){render();requestAnimationFrame(renderLoop);}
 function render(ex=false){
   ctx.clearRect(0,0,CW,CH);ctx.fillStyle=bgColor;ctx.fillRect(0,0,CW,CH);
   if(gridState.rule3)drawR3();if(gridState.safe)drawSZ();
@@ -2461,72 +2429,35 @@ function _blendModeGCO(m){
     default:         return null; // 'normal' / unset = source-over (default)
   }
 }
-// ── FX Cache: pre-bake image effects at display resolution ──────────
-// High-res images are downscaled ONCE to the layer's on-screen pixel size
-// before pixel-manipulation. The result is cached and reused every frame
-// until the layer properties change. This is the single biggest perf win:
-// a 4000×3000 source image previously cost ~36M pixel ops per frame;
-// with caching at display size it costs 0 (cache hit) or ~0.3M (miss).
+// Draws an image/video layer with crop (L/R/T/B as % 0..100) and filters (invert/exposure/contrast)
+// Uses direct pixel math instead of browser-dependent canvas filter support.
 const _fxCanvas=document.createElement('canvas');
 const _fxCtx=_fxCanvas.getContext('2d',{willReadFrequently:true});
 function clamp255(v){return v<0?0:v>255?255:v;}
-
-function _fxCacheKey(l, sw, sh) {
-  // Include display size in key so cache invalidates on resize/zoom changes
-  const dw = Math.round(l.w * zoom) || 1;
-  const dh = Math.round(l.h * zoom) || 1;
-  return `${l.id}|${dw}x${dh}|${l.exposure||0}|${l.contrast||0}|${l.saturation===undefined?1:l.saturation}|${l.hue||0}|${l.invert?1:0}|${l.blur||0}|${l.cropL||0}|${l.cropR||0}|${l.cropT||0}|${l.cropB||0}|${l.frameMode?1:0}|${l.contentScale||1}|${l.contentOffsetX||0}|${l.contentOffsetY||0}`;
-}
-// Per-layer fx canvas cache: layerId → {key, canvas}
-const _fxCache = new Map();
-
-function bakeMediaFx(src,sw,sh,brightness,contrast,invert,saturation,layerDisplayW,layerDisplayH,hueShift){
-  // Work at display resolution rather than native image resolution.
-  const dw = Math.max(1, Math.round(layerDisplayW || sw));
-  const dh = Math.max(1, Math.round(layerDisplayH || sh));
-
-  if(_fxCanvas.width!==dw)_fxCanvas.width=dw;
-  if(_fxCanvas.height!==dh)_fxCanvas.height=dh;
-  _fxCtx.clearRect(0,0,dw,dh);
-  _fxCtx.imageSmoothingEnabled=true;
-  _fxCtx.imageSmoothingQuality='high';
-  _fxCtx.drawImage(src,0,0,sw,sh,0,0,dw,dh);
-
+function bakeMediaFx(src,sw,sh,brightness,contrast,invert,saturation){
+  if(_fxCanvas.width!==sw)_fxCanvas.width=sw;
+  if(_fxCanvas.height!==sh)_fxCanvas.height=sh;
+  _fxCtx.clearRect(0,0,sw,sh);
+  _fxCtx.drawImage(src,0,0,sw,sh);
   const sat=saturation===undefined?1:saturation;
-  const hue=(hueShift||0);
-  const noFx=(brightness===1&&contrast===1&&!invert&&sat===1&&hue===0);
-  if(noFx)return _fxCanvas;
-
+  if(brightness===1&&contrast===1&&!invert&&sat===1)return _fxCanvas;
   let imgData;
-  try{ imgData=_fxCtx.getImageData(0,0,dw,dh); }
+  try{ imgData=_fxCtx.getImageData(0,0,sw,sh); }
   catch(e){
     try{
-      _fxCtx.clearRect(0,0,dw,dh);
+      _fxCtx.clearRect(0,0,sw,sh);
       _fxCtx.save();
-      _fxCtx.filter=`brightness(${brightness}) contrast(${contrast}) saturate(${sat})${invert?' invert(1)':''}${hue!==0?` hue-rotate(${hue}deg)`:''}`;
-      _fxCtx.drawImage(src,0,0,sw,sh,0,0,dw,dh);
+      _fxCtx.filter=`brightness(${brightness}) contrast(${contrast}) saturate(${sat})${invert?' invert(1)':''}`;
+      _fxCtx.drawImage(src,0,0,sw,sh);
       _fxCtx.restore();
       _fxCtx.filter='none';
     }catch(_e){}
     return _fxCanvas;
   }
   const d=imgData.data;
-  // Precompute hue rotation matrix components (applied in RGB space via YIQ approximation)
-  const hRad = hue * Math.PI / 180;
-  const cosH = Math.cos(hRad), sinH = Math.sin(hRad);
-  // Hue rotation 3×3 matrix for RGB (standard formula)
-  const rr=0.213+cosH*0.787-sinH*0.213, rg=0.213-cosH*0.213+sinH*0.143, rb=0.213-cosH*0.213-sinH*0.787;
-  const gr=0.715-cosH*0.715-sinH*0.715, gg=0.715+cosH*0.285+sinH*0.140, gb=0.715-cosH*0.715+sinH*0.715;
-  const br=0.072-cosH*0.072+sinH*0.928, bg=0.072-cosH*0.072-sinH*0.283, bb=0.072+cosH*0.928+sinH*0.072;
   for(let i=0;i<d.length;i+=4){
     let r=d[i],g=d[i+1],b=d[i+2];
-    // Hue rotate
-    if(hue!==0){
-      const nr=clamp255(rr*r+rg*g+rb*b);
-      const ng=clamp255(gr*r+gg*g+gb*b);
-      const nb=clamp255(br*r+bg*g+bb*b);
-      r=nr;g=ng;b=nb;
-    }
+    // Saturation via luminance-weighted desaturation
     if(sat!==1){const lum=0.299*r+0.587*g+0.114*b;r=lum+(r-lum)*sat;g=lum+(g-lum)*sat;b=lum+(b-lum)*sat;}
     r*=brightness; g*=brightness; b*=brightness;
     r=(r-128)*contrast+128;
@@ -2539,44 +2470,6 @@ function bakeMediaFx(src,sw,sh,brightness,contrast,invert,saturation,layerDispla
   }
   _fxCtx.putImageData(imgData,0,0);
   return _fxCanvas;
-}
-
-// Cached wrapper — returns a stable offscreen canvas, reusing it when params unchanged
-function bakeMediaFxCached(src, sw, sh, brightness, contrast, invert, saturation, blurPx, cacheKey, layerDisplayW, layerDisplayH, hueShift) {
-  let entry = _fxCache.get(cacheKey);
-  if (entry) return entry.canvas;
-
-  const dw = Math.max(1, Math.round(layerDisplayW || sw));
-  const dh = Math.max(1, Math.round(layerDisplayH || sh));
-
-  const out = document.createElement('canvas');
-  out.width = dw; out.height = dh;
-  const outCtx = out.getContext('2d', {willReadFrequently: false});
-
-  const baked = bakeMediaFx(src, sw, sh, brightness, contrast, invert, saturation, dw, dh, hueShift);
-
-  let finalSrc = baked;
-  if (blurPx > 0) {
-    const displayBlur = blurPx * (dw / sw);
-    finalSrc = bakeBlur(baked, dw, dh, displayBlur);
-  }
-
-  outCtx.drawImage(finalSrc, 0, 0, dw, dh);
-
-  if (_fxCache.size >= 20) {
-    const firstKey = _fxCache.keys().next().value;
-    _fxCache.delete(firstKey);
-  }
-  _fxCache.set(cacheKey, {canvas: out});
-  return out;
-}
-
-// Call this whenever layer properties change (fx params, size, etc.)
-function invalidateLayerFxCache(layerId) {
-  // Remove all entries for this layer (they start with layerId|)
-  for (const k of _fxCache.keys()) {
-    if (k.startsWith(layerId + '|')) _fxCache.delete(k);
-  }
 }
 function runMediaFxSelfTest(){
   try{
@@ -2604,31 +2497,22 @@ function drawMedia(l){
   const sw=src.naturalWidth||src.videoWidth||0;
   const sh=src.naturalHeight||src.videoHeight||0;
   if(!sw||!sh)return;
-  const expN=Number(l.exposure), conN=Number(l.contrast), satN=Number(l.saturation), hueN=Number(l.hue);
+  const expN=Number(l.exposure), conN=Number(l.contrast), satN=Number(l.saturation);
   const expV=isFinite(expN)?expN:0;
   const conV=isFinite(conN)?conN:0;
   const satV=isFinite(satN)?satN:0;
-  const hueV=isFinite(hueN)?hueN:0;
   const brightness=Math.max(0,1+expV/100);
   const contrast=Math.max(0,1+conV/100);
   const saturation=Math.max(0,1+satV/100);
   const invert=!!l.invert;
-  const blurPx = Math.max(0, Number(l.blur)||0) * (l.w / 100) * 0.15;
+  const blurPx = Math.max(0, Number(l.blur)||0) * (l.w / 100) * 0.15; // scales with layer size
 
-  const dispW = Math.min(sw, Math.round(l.w * zoom) || l.w);
-  const dispH = Math.min(sh, Math.round(l.h * zoom) || l.h);
-
-  const useCache = l.type === 'image';
-  const cacheKey = useCache ? _fxCacheKey(l, sw, sh) : null;
-
+  // ── FRAME MODE (fill-and-slide) ──
+  // If l.frameMode is true, the layer boundary is a fixed frame.
+  // The content fills that frame with cover scaling, then can be panned/zoomed within it.
   if(l.frameMode){
-    let drawSrc;
-    if(useCache){
-      drawSrc = bakeMediaFxCached(src,sw,sh,brightness,contrast,invert,saturation,blurPx,cacheKey,dispW,dispH,hueV);
-    } else {
-      drawSrc=bakeMediaFx(src,sw,sh,brightness,contrast,invert,saturation,dispW,dispH,hueV);
-      if(blurPx>0) drawSrc=bakeBlur(drawSrc,dispW,dispH,blurPx*(dispW/sw));
-    }
+    let drawSrc=bakeMediaFx(src,sw,sh,brightness,contrast,invert,saturation);
+    if(blurPx>0) drawSrc=bakeBlur(drawSrc,sw,sh,blurPx);
     const contentScale=l.contentScale||1;
     const baseScale=Math.max(l.w/sw, l.h/sh);
     const scale=baseScale*contentScale;
@@ -2637,8 +2521,7 @@ function drawMedia(l){
     const oy=(l.h-ch)/2 + (l.contentOffsetY||0);
     ctx.save();
     ctx.beginPath();ctx.rect(0,0,l.w,l.h);ctx.clip();
-    // Draw cached (display-res) canvas scaled up to layer size
-    ctx.drawImage(drawSrc,0,0,dispW,dispH,ox,oy,cw,ch);
+    ctx.drawImage(drawSrc,0,0,sw,sh,ox,oy,cw,ch);
     ctx.restore();
     return;
   }
@@ -2649,20 +2532,15 @@ function drawMedia(l){
   const cT=Math.max(0,Math.min(99,Number(l.cropT)||0))/100;
   const cB=Math.max(0,Math.min(99,Number(l.cropB)||0))/100;
   if(cL+cR>=0.99||cT+cB>=0.99)return;
-  let drawSrc;
-  if(useCache){
-    drawSrc = bakeMediaFxCached(src,sw,sh,brightness,contrast,invert,saturation,blurPx,cacheKey,dispW,dispH,hueV);
-  } else {
-    drawSrc=bakeMediaFx(src,sw,sh,brightness,contrast,invert,saturation,dispW,dispH,hueV);
-    if(blurPx>0) drawSrc=bakeBlur(drawSrc,dispW,dispH,blurPx*(dispW/sw));
-  }
+  let drawSrc=bakeMediaFx(src,sw,sh,brightness,contrast,invert,saturation);
+  if(blurPx>0) drawSrc=bakeBlur(drawSrc,sw,sh,blurPx);
   ctx.save();
   const clipX=l.w*cL, clipY=l.h*cT;
   const clipW=l.w*(1-cL-cR), clipH=l.h*(1-cT-cB);
   ctx.beginPath();
   ctx.rect(clipX,clipY,clipW,clipH);
   ctx.clip();
-  ctx.drawImage(drawSrc,0,0,dispW,dispH,0,0,l.w,l.h);
+  ctx.drawImage(drawSrc,0,0,sw,sh,0,0,l.w,l.h);
   ctx.restore();
 }
 
@@ -2838,7 +2716,7 @@ function drawR3(){ctx.strokeStyle='rgba(255,255,255,0.12)';ctx.lineWidth=1;ctx.s
 function drawSZ(){ctx.strokeStyle='rgba(200,245,90,0.2)';ctx.lineWidth=2;ctx.setLineDash([12,6]);ctx.strokeRect(90,90,CW-180,CH-180);ctx.setLineDash([]);}
 
 function updateResLabel(){const el=document.getElementById('canvasResLabel');if(el)el.textContent=CW+'×'+CH;}
-function applyZoom(){const o=document.getElementById('canvasOuter');const w=Math.round(CW*zoom),h=Math.round(CH*zoom);o.style.width=w+'px';o.style.height=h+'px';canvas.style.width=w+'px';canvas.style.height=h+'px';document.getElementById('zlabel').textContent=Math.round(zoom*100)+'%';_fxCache.clear();markDirty();}
+function applyZoom(){const o=document.getElementById('canvasOuter');const w=Math.round(CW*zoom),h=Math.round(CH*zoom);o.style.width=w+'px';o.style.height=h+'px';canvas.style.width=w+'px';canvas.style.height=h+'px';document.getElementById('zlabel').textContent=Math.round(zoom*100)+'%';}
 function zoomIn(){zoom=Math.min(zoom+0.1,3);applyZoom();}
 function zoomOut(){zoom=Math.max(zoom-0.1,0.05);applyZoom();}
 function zoomFit(){
@@ -2898,9 +2776,9 @@ function onMD(e){
 }
 function onMM(e){
   const pos=c2c(e.clientX,e.clientY),op=c2o(e.clientX,e.clientY);
-  if(isRubber){const rb=document.getElementById('rubberBand');const rx=Math.min(op.x,rubStart.x),ry=Math.min(op.y,rubStart.y),rw=Math.abs(op.x-rubStart.x),rh=Math.abs(op.y-rubStart.y);rb.style.left=rx+'px';rb.style.top=ry+'px';rb.style.width=rw+'px';rb.style.height=rh+'px';const cx0=rx*(CW/(CW*zoom)),cy0=ry*(CH/(CH*zoom)),cx1=cx0+rw*(CW/(CW*zoom)),cy1=cy0+rh*(CH/(CH*zoom));selectedIds=new Set();for(const l of layers)if(!l.locked&&l.x<cx1&&l.x+l.w>cx0&&l.y<cy1&&l.y+l.h>cy0)selectedIds.add(l.id);updateLayersList();markDirty();return;}
-  if(isDragging){const dx=pos.x-dragStart.x,dy=pos.y-dragStart.y;for(const s of dragLayerStarts){const l=layers.find(x=>x.id===s.id);if(!l)continue;let nx=s.x+dx,ny=s.y+dy;if(selectedIds.size===1){const sn=applySnap(nx,ny,l.w,l.h,l.id);nx=sn.x;ny=sn.y;}l.x=nx;l.y=ny;}updatePropsPanel();markDirty();return;}
-  if(isResizing){doResize(pos);markDirty();}
+  if(isRubber){const rb=document.getElementById('rubberBand');const rx=Math.min(op.x,rubStart.x),ry=Math.min(op.y,rubStart.y),rw=Math.abs(op.x-rubStart.x),rh=Math.abs(op.y-rubStart.y);rb.style.left=rx+'px';rb.style.top=ry+'px';rb.style.width=rw+'px';rb.style.height=rh+'px';const cx0=rx*(CW/(CW*zoom)),cy0=ry*(CH/(CH*zoom)),cx1=cx0+rw*(CW/(CW*zoom)),cy1=cy0+rh*(CH/(CH*zoom));selectedIds=new Set();for(const l of layers)if(!l.locked&&l.x<cx1&&l.x+l.w>cx0&&l.y<cy1&&l.y+l.h>cy0)selectedIds.add(l.id);updateLayersList();return;}
+  if(isDragging){const dx=pos.x-dragStart.x,dy=pos.y-dragStart.y;for(const s of dragLayerStarts){const l=layers.find(x=>x.id===s.id);if(!l)continue;let nx=s.x+dx,ny=s.y+dy;if(selectedIds.size===1){const sn=applySnap(nx,ny,l.w,l.h,l.id);nx=sn.x;ny=sn.y;}l.x=nx;l.y=ny;}updatePropsPanel();return;}
+  if(isResizing)doResize(pos);
   if(selectedIds.size===1&&!isDragging&&!isResizing){const l=layers.find(x=>x.id===[...selectedIds][0]);if(l){const h=hitH(pos,l);canvas.style.cursor=h?getCurs(h):(hitT(pos,l)?'move':'default');}else canvas.style.cursor='default';}
   else if(!isDragging&&!isResizing)canvas.style.cursor='default';
 }
@@ -2966,12 +2844,12 @@ function beginTextEdit(l){
     }
     _caretPos=ta.selectionStart??ta.value.length;
     _caretVisible=true;
-    markDirty();
+    render&&render();
   };
   ta.onkeyup=()=>{
     _caretPos=ta.selectionStart??ta.value.length;
     _caretVisible=true;
-    markDirty();
+    render&&render();
   };
 
   _editBlurGuard=true;
@@ -2985,7 +2863,7 @@ function beginTextEdit(l){
 
   _caretVisible=true;
   if(_caretInterval)clearInterval(_caretInterval);
-  _caretInterval=setInterval(()=>{ _caretVisible=!_caretVisible; markDirty(); },530);
+  _caretInterval=setInterval(()=>{ _caretVisible=!_caretVisible; render&&render(); },530);
 
   // Pan canvas to show the text layer — single shot, no retry loop
   try{ textEditZoomIn(l); }catch(e){}
@@ -3010,7 +2888,7 @@ function endTextEdit(){
   ta.style.display='none';ta.value='';ta.oninput=null;ta.onblur=null;ta.onkeydown=null;ta.onkeyup=null;
   _editingLayerId=null;
   try{ textEditZoomOut(); }catch(e){}
-  markDirty();
+  render&&render();
 }
 function onKD(e){if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.tagName==='SELECT')return;const s=e.shiftKey?10:1;if(selectedIds.size&&(e.key==='ArrowLeft'||e.key==='ArrowRight'||e.key==='ArrowUp'||e.key==='ArrowDown'))_pushUndo();for(const id of selectedIds){const l=layers.find(x=>x.id===id);if(!l||l.locked)continue;if(e.key==='ArrowLeft')l.x-=s;if(e.key==='ArrowRight')l.x+=s;if(e.key==='ArrowUp')l.y-=s;if(e.key==='ArrowDown')l.y+=s;}if((e.key==='Delete'||e.key==='Backspace')&&selectedIds.size){deleteSelected();return;}updatePropsPanel();}
 
@@ -3167,7 +3045,7 @@ function onTS(e){
           _caretPos=Math.max(0,Math.min(ta.value.length,bestRow.startIdx+finalOff));
           try{ta.setSelectionRange(_caretPos,_caretPos);}catch(_){}
           _caretVisible=true;
-          markDirty();
+          render&&render();
         }
       }
       return;
@@ -3234,8 +3112,8 @@ function onTM(e){
     updateLayersList();updatePropsPanel();
     return;
   }
-  if(isDragging){const dx=pos.x-dragStart.x,dy=pos.y-dragStart.y;for(const s of dragLayerStarts){const l=layers.find(x=>x.id===s.id);if(!l)continue;let nx=s.x+dx,ny=s.y+dy;if(selectedIds.size===1){const sn=applySnap(nx,ny,l.w,l.h,l.id);nx=sn.x;ny=sn.y;}l.x=nx;l.y=ny;}updatePropsPanel();markDirty();}
-  if(isResizing){doResize(pos);markDirty();}
+  if(isDragging){const dx=pos.x-dragStart.x,dy=pos.y-dragStart.y;for(const s of dragLayerStarts){const l=layers.find(x=>x.id===s.id);if(!l)continue;let nx=s.x+dx,ny=s.y+dy;if(selectedIds.size===1){const sn=applySnap(nx,ny,l.w,l.h,l.id);nx=sn.x;ny=sn.y;}l.x=nx;l.y=ny;}updatePropsPanel();}
+  if(isResizing)doResize(pos);
 }
 let _pendingTextEdit=null;
 function onTE(e){
@@ -3300,7 +3178,7 @@ function alignLayers(mode){
 }
 
 // LAYERS
-function addLayer(l){layers.push(l);selectedIds=new Set([l.id]);updateLayersList();updatePropsPanel();markDirty();}
+function addLayer(l){layers.push(l);selectedIds=new Set([l.id]);updateLayersList();updatePropsPanel();}
 function addImageLayer(el,name,isVideo){
   const nw=el.naturalWidth||el.videoWidth||600,nh=el.naturalHeight||el.videoHeight||600,ar=nw/nh;
   let w=Math.min(700,CW*.65),h=w/ar;if(h>CH*.65){h=CH*.65;w=h*ar;}
@@ -3359,11 +3237,10 @@ function deleteSelected(){
   // Never delete locked layers
   layers=layers.filter(l=>!selectedIds.has(l.id)||l.locked);
   selectedIds=new Set([...selectedIds].filter(id=>layers.find(l=>l.id===id)));
-  updateLayersList();updatePropsPanel();markDirty();
+  updateLayersList();updatePropsPanel();
 }
 
 function updateLayersList(){
-  markDirty();
   const list=document.getElementById('layersList');
   if(!layers.length){list.innerHTML='<div class="no-sel-msg">No layers yet.</div>';return;}
   list.innerHTML='';
@@ -3543,8 +3420,6 @@ function updatePropsPanel(){
       setRng('pCon',l.contrast||0,'pConVal','');
       setRng('pSat',l.saturation||0,'pSatVal','');
       setRng('pBlur',l.blur||0,'pBlurVal','');
-      const hueEl=document.getElementById('pHue');if(hueEl&&document.activeElement!==hueEl)hueEl.value=l.hue||0;
-      const hueVEl=document.getElementById('pHueVal');if(hueVEl)hueVEl.textContent=(l.hue||0)+'°';
       const ib=document.getElementById('pInvBtn');if(ib)ib.classList.toggle('on',!!l.invert);
       const ag=document.getElementById('pAudioGrp');if(ag)ag.style.display=(l.type==='video')?'block':'none';
       const mb=document.getElementById('pMuteBtn');
@@ -3589,25 +3464,22 @@ function mediaFxToLayer(){
   const v=(eid)=>{const e=document.getElementById(eid);if(!e)return 0;const n=parseInt(e.value,10);return isFinite(n)?n:0;};
   l.cropL=v('pCropL'); l.cropR=v('pCropR'); l.cropT=v('pCropT'); l.cropB=v('pCropB');
   l.exposure=v('pExp'); l.contrast=v('pCon'); l.saturation=v('pSat'); l.blur=v('pBlur');
-  l.hue=v('pHue');
   const setT=(eid,t)=>{const e=document.getElementById(eid);if(e)e.textContent=t;};
   setT('pCropLVal',l.cropL+'%'); setT('pCropRVal',l.cropR+'%');
   setT('pCropTVal',l.cropT+'%'); setT('pCropBVal',l.cropB+'%');
   setT('pExpVal',l.exposure); setT('pConVal',l.contrast); setT('pSatVal',l.saturation); setT('pBlurVal',l.blur);
-  setT('pHueVal',l.hue+'°');
-  invalidateLayerFxCache(id); markDirty();
 }
 function resetCrop(){
   const l=layers.find(x=>x.id===[...selectedIds][0]); if(!l) return;
-  l.cropL=l.cropR=l.cropT=l.cropB=0; invalidateLayerFxCache(l.id); updatePropsPanel(); markDirty();
+  l.cropL=l.cropR=l.cropT=l.cropB=0; updatePropsPanel();
 }
 function resetColor(){
   const l=layers.find(x=>x.id===[...selectedIds][0]); if(!l) return;
-  l.exposure=0; l.contrast=0; l.saturation=0; l.hue=0; l.invert=false; l.blur=0; invalidateLayerFxCache(l.id); updatePropsPanel(); markDirty();
+  l.exposure=0; l.contrast=0; l.saturation=0; l.invert=false; l.blur=0; updatePropsPanel();
 }
 function toggleInvert(){
   const l=layers.find(x=>x.id===[...selectedIds][0]); if(!l) return;
-  _pushUndo(); l.invert=!l.invert; invalidateLayerFxCache(l.id); updatePropsPanel(); markDirty();
+  _pushUndo(); l.invert=!l.invert; updatePropsPanel();
 }
 function toggleClipMute(){
   const l=layers.find(x=>x.id===[...selectedIds][0]); if(!l||l.type!=='video') return;
@@ -3650,12 +3522,12 @@ function startNudgeRepeat(dx,dy,btn,e){
   }
   // Fire once immediately
   qbNudge(dx,dy);
-  markDirty();
+  render&&render();
   // After 400ms initial delay, repeat at ~60fps
   _nudgeTimer=setTimeout(function(){
     function tick(){
       qbNudge(dx,dy);
-      markDirty();
+      render&&render();
       _nudgeRAF=requestAnimationFrame(tick);
     }
     _nudgeRAF=requestAnimationFrame(tick);
@@ -3715,26 +3587,27 @@ function syncSlider(inputId, sliderId){
 }
 function propsToLayer(){
   const l=layers.find(x=>x.id===[...selectedIds][0]);if(!l)return;
+  // Read from whichever input changed (both sets stay in sync)
   const getVal=(a,b)=>{const ea=document.getElementById(a),eb=document.getElementById(b);return parseInt((ea||eb).value)||0;};
   l.x=getVal('pX','rpX');l.y=getVal('pY','rpY');
   l.rotation=getVal('pRot','rpRot');
   l.opacity=parseInt((document.getElementById('pOp')||{value:100}).value)??100;
+  // sync both panels
   updatePropsPanel();
-  markDirty();
 }
 function propsWChanged(){
   const l=layers.find(x=>x.id===[...selectedIds][0]);if(!l)return;
   const ea=document.getElementById('pW'),eb=document.getElementById('rpW');
   const nw=Math.max(1,parseInt((ea||eb).value)||1);
   if(lockRatio&&l.aspectRatio){l.h=nw/l.aspectRatio;}
-  l.w=nw;invalidateLayerFxCache(l.id);propsToLayer();
+  l.w=nw;propsToLayer();
 }
 function propsHChanged(){
   const l=layers.find(x=>x.id===[...selectedIds][0]);if(!l)return;
   const ea=document.getElementById('pH'),eb=document.getElementById('rpH');
   const nh=Math.max(1,parseInt((ea||eb).value)||1);
   if(lockRatio&&l.aspectRatio){l.w=nh*l.aspectRatio;}
-  l.h=nh;invalidateLayerFxCache(l.id);propsToLayer();
+  l.h=nh;propsToLayer();
 }
 function toggleLockRatio(){lockRatio=!lockRatio;document.getElementById('lockRatioBtn').textContent=lockRatio?'LOCK':'FREE';document.getElementById('lockRatioBtn').classList.toggle('on',lockRatio);}
 
@@ -3892,11 +3765,10 @@ function toggleBold(){txtCfg.bold=!txtCfg.bold;document.getElementById('boldBtn'
 function toggleItalic(){txtCfg.italic=!txtCfg.italic;document.getElementById('italicBtn').classList.toggle('on',txtCfg.italic);const l=layers.find(x=>x.id===[...selectedIds][0]&&x.type==='text');if(l)l.italic=txtCfg.italic;}
 function toggleShadow(){txtCfg.shadow=!txtCfg.shadow;document.getElementById('shadowBtn').classList.toggle('on',txtCfg.shadow);const l=layers.find(x=>x.id===[...selectedIds][0]&&x.type==='text');if(l)l.shadow=txtCfg.shadow;}
 function setTxtAlign(a){txtCfg.align=a;['left','center','right'].forEach(v=>{const b=document.getElementById('align'+v.charAt(0).toUpperCase()+v.slice(1)+'Btn');if(b)b.classList.toggle('on',v===a);});const l=layers.find(x=>x.id===[...selectedIds][0]&&x.type==='text');if(l)l.align=a;}
-function setBg(el){document.querySelectorAll('#tab-canvas .swatches .sw').forEach(s=>s.classList.remove('active'));el.classList.add('active');bgColor=el.dataset.c;document.getElementById('bgPicker').value=bgColor;markDirty();}
+function setBg(el){document.querySelectorAll('#tab-canvas .swatches .sw').forEach(s=>s.classList.remove('active'));el.classList.add('active');bgColor=el.dataset.c;document.getElementById('bgPicker').value=bgColor;}
 function onBgPickerChange(v){
   bgColor=v;
   document.querySelectorAll('#tab-canvas .swatches .sw').forEach(s=>s.classList.remove('active'));
-  markDirty();
 }
 function toggleSnap(el){const k=el.dataset.snap;snapState[k]=!snapState[k];el.classList.toggle('on',snapState[k]);el.textContent=(snapState[k]?'[x] ':'[ ] ')+el.textContent.slice(4);}
 function toggleGrid(el){const k=el.dataset.grid;gridState[k]=!gridState[k];el.classList.toggle('on',gridState[k]);el.textContent=(gridState[k]?'[x] ':'[ ] ')+el.textContent.slice(4);}
@@ -4235,8 +4107,7 @@ function _restoreState(st){
   });
   bgColor=st.bgColor;nextId=st.nextId;
   selectedIds=new Set();
-  _fxCache.clear();
-  updateLayersList();updatePropsPanel();markDirty();
+  updateLayersList();updatePropsPanel();
 }
 function doUndo(){
   if(!_undoStack.length)return;
@@ -6187,7 +6058,7 @@ XXXXXXXXXX..
   function doAlign(a){
     if(!W.layers||!W.selectedIds)return;
     const l=W.layers.find(x=>x.id===[...W.selectedIds][0]);
-    if(l&&l.type==='text'){l.align=a;if(typeof markDirty==="function")markDirty();}
+    if(l&&l.type==='text'){l.align=a;if(W.render)W.render();}
   }
 
   function rebuildTC(){
@@ -6654,7 +6525,7 @@ function applyBgGraphic(val) {
     };
     layers.unshift(newLayer); // place at bottom of stack
     updateLayersList();
-    markDirty();
+    render && render();
   };
   _bgGraphicImg.src = g.src;
 }
@@ -6672,7 +6543,7 @@ function clearBgGraphic() {
   var prev = document.getElementById('bgGraphicPreview');
   if (prev) { prev.style.display = 'none'; prev.style.backgroundImage = ''; }
   updateLayersList();
-  markDirty();
+  render && render();
 }
 </script>
 
@@ -6827,7 +6698,7 @@ function clearBgGraphic() {
     if(sel) sel.value = f.value;
     if(typeof txtCfg !== 'undefined') txtCfg.font = f.value;
     var tl = getSelectedTextLayer();
-    if(tl){ tl.font = f.value; markDirty(); }
+    if(tl){ tl.font = f.value; if(typeof render === 'function') render(); }
     if(typeof updateFontPreview === 'function') updateFontPreview();
     if(typeof markActiveFontSample === 'function') markActiveFontSample();
     renderTicks();
